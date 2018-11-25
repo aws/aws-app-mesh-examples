@@ -44,7 +44,7 @@ Today, you can use AWS App Mesh with services running on Amazon ECS (with awsvpc
 * connect applications using API, 
 * Bootstrap Envoy and connect to XDS endpoint provided by App Mesh.
 * Configure routes 
-* ~~[optional] configure dashboards using cloudwatch or grafana etc. ~~To be added later based on what Tony provides
+* ~~[optional] configure dashboards using cloudwatch or grafana etc.~~ To be added later based on what Tony provides
 
 ### Roadmap
 
