@@ -27,11 +27,11 @@ App Mesh is built in direct response to our customers needs implementing a 'serv
 
 In order to best meet the needs of our customers, we have invested into building a service that includes a control plane and API that follows the AWS best practices. Specifically, App Mesh: 
 
-    * Is an AWS managed service that works across container services with a design that allows us to add support for other computer services in the future.
-    * Works with open source Envoy proxy, and over time support most of its capabilities
-    * Is designed to pluggable and can support bringing your own Envoy and Istio Mixer in the future.
-    * Implemented as a multi-tenant control plane to be scalable, robust, cost-effective, and efficient.
-    * Built to work independently of any particular container orchestration system. Today, App Mesh works with both Kubernetes and Amazon ECS.
+* Is an AWS managed service that works across container services with a design that allows us to add support for other computer services in the future.
+* Works with open source Envoy proxy, and over time support most of its capabilities
+* Is designed to pluggable and can support bringing your own Envoy and Istio Mixer in the future.
+* Implemented as a multi-tenant control plane to be scalable, robust, cost-effective, and efficient.
+* Built to work independently of any particular container orchestration system. Today, App Mesh works with both Kubernetes and Amazon ECS.
 
 ## Availability
 
