@@ -48,12 +48,16 @@ Today, you can use AWS App Mesh with services running on Amazon ECS (with awsvpc
 
 ### Roadmap
 
-Here is what we are working on between preview and GA [GA Roadmap](https://github.com/awslabs/aws-app-mesh/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22pre-GA%20Roadmap%22) and [post-GA Roadmap](https://github.com/awslabs/aws-app-mesh/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22post-GA%20Roadmap%22)
+Here is what we are working on between preview and GA [GA Roadmap](https://github.com/awslabs/aws-app-mesh/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22GA%22+label%3A%22Roadmap%22) and [post-GA Roadmap](https://github.com/awslabs/aws-app-mesh/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22post-GA%22+label%3A%22Roadmap%22)
 
 Here are some [FAQs about Preview](FAQ.md)
 
 ### Questions?
 
-About Features/Use cases: (https://github.com/awslabs/aws-app-mesh/issues)
-About Usage clarifications/ Issues: (https://github.com/awslabs/aws-app-mesh/issues)
-Other discussion: [Get invited to #containers on AWS Developers [awsdevelopers.slack.com]](slack)
+* About Features/Use cases: (https://github.com/awslabs/aws-app-mesh/issues)
+* About Usage clarifications/ Issues: (https://github.com/awslabs/aws-app-mesh/issues)
+* Other discussion: [Get invited to #containers on AWS Developers [awsdevelopers.slack.com]](slack)
+
+## License Summary
+
+This sample code is made available under a modified MIT license. See the LICENSE file.
