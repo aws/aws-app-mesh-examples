@@ -1,5 +1,6 @@
 # AWS App Mesh
 
+
 ## Introduction
 
 App Mesh makes it easy to run microservices by providing consistent visibility and network traffic controls for every microservice in an application. App Mesh separates the logic needed for monitoring and controlling communications into a proxy that runs next to every microservice. App Mesh removes the need to coordinate across teams or update application code to change how monitoring data is collected or traffic is routed. This allows you to quickly pinpoint the exact location of errors and automatically re-route network traffic when there are failures or when code changes need to be deployed.
@@ -55,9 +56,3 @@ Here are some [FAQs about Preview](FAQ.md)
 
 - About Features/Use cases: (https://github.com/awslabs/aws-app-mesh/issues)**About Usage clarifications/ - Issues: (https://github.com/awslabs/aws-app-mesh/issues)
 - Other discussion: [Get invited to #containers on AWS Developers [Slack Channel](awsdevelopers.slack.com)
-
-
-
-
-
-
