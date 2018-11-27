@@ -1,0 +1,8 @@
+{
+    "spec": {
+        "backends": [
+            "redis@@SERVICES_DOMAIN@@"
+        ]
+    },
+    "virtualNodeName": "redispinger-vn"
+}

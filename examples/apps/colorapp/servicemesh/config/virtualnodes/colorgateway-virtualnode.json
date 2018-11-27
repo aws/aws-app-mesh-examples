@@ -1,0 +1,23 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "name": "http-9080",
+                    "port": 9080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "serviceName": "colorgateway@@SERVICES_DOMAIN@@"
+            }
+        },
+        "backends": [
+            "redis@@SERVICES_DOMAIN@@",
+            "colorteller@@SERVICES_DOMAIN@@"
+        ]
+    },
+    "virtualNodeName": "colorgateway-vn"
+}

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: colorvegeta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: colorvegeta
+  template:
+    metadata:
+      labels:
+        app: colorvegeta
+    spec:
+      volumes:
+        - name: vegeta-volume
+          configMap:
+            name: colorapp-conf
+            items:
+              - key: colorvegeta-urls
+                path: targets
+      containers:
+        - name: vegeta
+          image: oba11/vegeta
+          volumeMounts:
+            - name: vegeta-volume
+              mountPath: /etc/vegeta
+          command:
+            - "/bin/vegeta"
+            - "attack"
+            - "-duration=1h"
+            - "-targets=/etc/vegeta/targets"
+---

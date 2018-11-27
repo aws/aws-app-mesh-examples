@@ -1,0 +1,8 @@
+{
+    "spec": {
+        "serviceNames": [
+            "colorgateway@@SERVICES_DOMAIN@@"
+        ]
+    },
+    "virtualRouterName": "colorgateway-vr"
+}

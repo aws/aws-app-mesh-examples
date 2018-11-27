@@ -1,0 +1,18 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 6379,
+                    "protocol": "tcp"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "serviceName": "redis@@SERVICES_DOMAIN@@"
+            }
+        }
+    },
+    "virtualNodeName": "redis-vn"
+}
