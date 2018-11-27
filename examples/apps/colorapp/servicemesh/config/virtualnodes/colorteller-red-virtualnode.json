@@ -1,0 +1,18 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 9080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "serviceName": "colorteller-red@@SERVICES_DOMAIN@@"
+            }
+        }
+    },
+    "virtualNodeName": "colorteller-red-vn"
+}
