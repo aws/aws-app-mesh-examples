@@ -42,13 +42,8 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "colorgateway"
             - name: "APPMESH_VIRTUAL_NODE_UID"
-              valueFrom: 
-                configMapKeyRef:
-                  name: "colorapp-conf"
-                  key: "colorgateway.node.id"
+              value: "mesh/defaultmesh/virtualNode/colorgateway-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
@@ -63,8 +58,6 @@ spec:
           env:
             - name: "APPMESH_START_ENABLED"
               value: "1"
-            - name: "APPMESH_USE_TPROXY"
-              value: "0"
             - name: "APPMESH_IGNORE_UID"
               value: "1337"
             - name: "APPMESH_ENVOY_INGRESS_PORT"

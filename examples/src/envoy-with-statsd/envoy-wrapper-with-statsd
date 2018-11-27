@@ -1,0 +1,30 @@
+#!/bin/sh -e
+
+if [ -z "$STATSD_ENDPOINT" ]; then
+  echo "STATSD_ENDPOINT environment variable is not set"
+  exit 1
+fi
+
+STATSD_PORT=${STATSD_PORT:-8125}
+ENVOY_STATS_CONFIG_FILE=${ENVOY_STATS_CONFIG_FILE:-/tmp/envoy_statsd_config.yaml}
+
+cat << CONFIG_EOF > "$ENVOY_STATS_CONFIG_FILE"
+
+static_resources:
+  clusters:
+    - name: statsd_cluster
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      hosts:
+        - socket_address:
+            address: "$STATSD_ENDPOINT"
+            port_value: ${STATSD_PORT}
+
+stats_sinks:
+  - name: envoy.statsd
+    config:
+      tcp_cluster_name: statsd_cluster
+
+CONFIG_EOF
+
+exec env ENVOY_STATS_CONFIG_FILE="$ENVOY_STATS_CONFIG_FILE" /usr/bin/envoy-wrapper

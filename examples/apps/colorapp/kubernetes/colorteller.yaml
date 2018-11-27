@@ -59,13 +59,8 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "colorteller"
             - name: "APPMESH_VIRTUAL_NODE_UID"
-              valueFrom: 
-                configMapKeyRef:
-                  name: "colorapp-conf"
-                  key: "colorteller-black.node.id"
+              value: "mesh/defaultmesh/virtualNode/colorteller-black-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
@@ -141,13 +136,8 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "colorteller"
             - name: "APPMESH_VIRTUAL_NODE_UID"
-              valueFrom: 
-                configMapKeyRef:
-                  name: "colorapp-conf"
-                  key: "colorteller-blue.node.id"
+              value: "mesh/defaultmesh/virtualNode/colorteller-blue-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
@@ -223,13 +213,8 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "colorteller"
             - name: "APPMESH_VIRTUAL_NODE_UID"
-              valueFrom: 
-                configMapKeyRef:
-                  name: "colorapp-conf"
-                  key: "colorteller-red.node.id"
+              value: "mesh/defaultmesh/virtualNode/colorteller-red-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"

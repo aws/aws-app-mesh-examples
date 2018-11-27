@@ -30,7 +30,7 @@ Parameters:
 
   EnvoyLogLevel:
     Type: String
-    Default: trace
+    Default: debug
 
   ColorTellerImage:
     Type: String
@@ -42,33 +42,9 @@ Parameters:
     Description: Color Gateway app image
     Default: "733656427674.dkr.ecr.us-west-2.amazonaws.com/color/gateway"
 
-  ColorTellerNodeId:
+  AppMeshMeshName:
     Type: String
-    Description: VirtualNode id of Color Teller that will be used for resolving colorteller's default service-name.
-
-  ColorTellerBlackNodeId:
-    Type: String
-    Description: VirtualNode id of Color Teller that returns black
-
-  ColorTellerBlueNodeId:
-    Type: String
-    Description: VirtualNode id of Color Teller that returns blue
-
-  ColorTellerRedNodeId:
-    Type: String
-    Description: VirtualNode id of Color Teller that returns red
-
-  ColorGatewayNodeId:
-    Type: String
-    Description: VirtualNode id of Color Gateway
-
-  RedisNodeId:
-    Type: String
-    Description: VirtualNode id for Redis
-
-  RedisPingerNodeId:
-    Type: String
-    Description: VirtualNode id for RedisPinger
+    Description: Name of mesh
 
   AppMeshEgressIgnoredIpCsv:
     Type: String
@@ -166,9 +142,7 @@ Resources:
               awslogs-stream-prefix: "colorteller-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "colorteller-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: ColorTellerNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -194,8 +168,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
@@ -299,9 +271,7 @@ Resources:
               awslogs-stream-prefix: "colorteller-blue-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "colorteller-blue-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: ColorTellerBlueNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -327,8 +297,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
@@ -432,9 +400,7 @@ Resources:
               awslogs-stream-prefix: "colorteller-red-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "colorteller-red-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: ColorTellerRedNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -460,8 +426,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
@@ -565,9 +529,7 @@ Resources:
               awslogs-stream-prefix: "colorteller-black-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "colorteller-black-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: ColorTellerBlackNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-black-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -593,8 +555,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
@@ -700,9 +660,7 @@ Resources:
               awslogs-stream-prefix: "colorgateway-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "colorgateway-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: ColorGatewayNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorgateway-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -728,8 +686,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
@@ -828,9 +784,7 @@ Resources:
               awslogs-stream-prefix: "redis-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "redis-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: RedisNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/redis-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -856,8 +810,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
@@ -941,9 +893,7 @@ Resources:
               awslogs-stream-prefix: "redis-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: "redispinger-vn"
-            - Name: "APPMESH_VIRTUAL_NODE_UID"
-              Value: { Ref: RedisPingerNodeId }
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/redispinger-vn"
             - Name: "APPMESH_XDS_ENDPOINT"
               Value: !Ref AppMeshXdsEndpoint
             - Name: "STATSD_ENDPOINT"
@@ -969,8 +919,6 @@ Resources:
           Environment:
             - Name: "APPMESH_START_ENABLED"
               Value: "1"
-            - Name: "APPMESH_USE_TPROXY"
-              Value: "0"
             - Name: "APPMESH_IGNORE_UID"
               Value: "1337"
             - Name: "APPMESH_ENVOY_INGRESS_PORT"
