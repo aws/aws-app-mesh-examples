@@ -47,10 +47,10 @@ Today, you can use AWS App Mesh with services running on Amazon ECS (with awsvpc
 
 ### Roadmap
 
-Here is what we are working on before App Mesh is Generally Available: [GA Roadmap](https://github.com/awslabs/aws-app-mesh/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22pre-GA%20Roadmap%22) and after: [Post-GA Roadmap](https://github.com/awslabs/aws-app-mesh/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22post-GA%20Roadmap%22)
+Here is what we are working on before App Mesh is Generally Available: [GA Roadmap](https://github.com/awslabs/aws-app-mesh-examples/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22pre-GA%20Roadmap%22) and after: [Post-GA Roadmap](https://github.com/awslabs/aws-app-mesh-examples/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22post-GA%20Roadmap%22)
 
 You can learn more about the App Mesh roadmap [in our FAQs](FAQ.md).
 
 ### Participate
 
-Let us know what works and what we should add on our [issues page](https://github.com/awslabs/aws-app-mesh/issues).
+Let us know what works and what we should add on our [issues page](https://github.com/awslabs/aws-app-mesh-examples/issues).
