@@ -41,9 +41,9 @@ Today, AWS App Mesh is available to use in preview. During the preview we will a
 
 Today, you can use AWS App Mesh with services running on Amazon ECS (with awsvpc networking mode) or Amazon EKS. You can:
 
-- connect applications using API, 
-- Bootstrap Envoy and connect to XDS endpoint provided by App Mesh.
-- Configure routes
+- Connect applications using the API
+- Bootstrap Envoy and connect to an XDS endpoint provided by App Mesh
+- Publish routes
 
 ### Roadmap
 
@@ -51,6 +51,6 @@ Here is what we are working on before App Mesh is Generally Available: [GA Roadm
 
 You can learn more about the App Mesh roadmap [in our FAQs](FAQ.md).
 
-### Questions?
+### Participate
 
-- About Features/Use cases: (https://github.com/awslabs/aws-app-mesh/issues)**About Usage clarifications/ - Issues: (https://github.com/awslabs/aws-app-mesh/issues)
+Let us know what works and what we should add on our [issues page](https://github.com/awslabs/aws-app-mesh/issues).
