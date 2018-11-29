@@ -33,8 +33,15 @@ Parameters:
 Mappings:
 
   AWSRegionToECSAmi:
+    eu-west-1:
+      AMI: ami-0627e141ce928067c
+    us-east-1:
+      AMI: ami-045f1b3f87ed83659
+    us-east-2:
+      AMI: ami-0307f7ccf6ea35750
     us-west-2:
-      AMI: ami-09568291a9d6c804c
+      AMI: ami-01b70aea4161476b7
+
 
 Resources:
 
