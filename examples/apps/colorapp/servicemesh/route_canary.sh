@@ -38,15 +38,11 @@ sanity_check() {
     if [ -z ${MESH_NAME} ]; then
         err "MESH_NAME is not set"
     fi
-
-    if [ -z ${APPMESH_FRONTEND} ]; then
-        err "APPMESH_FRONTEND is not set"
-    fi
 }
 
 update_route() {
     route_spec_file=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh update-route --mesh-name ${MESH_NAME} \
+    cmd=( aws appmesh update-route --mesh-name ${MESH_NAME} \
                 #--client-token "${service}-${RANDOM}" \
                 --cli-input-json file:///${route_spec_file} \
                 --query route.metadata.uid --output text )

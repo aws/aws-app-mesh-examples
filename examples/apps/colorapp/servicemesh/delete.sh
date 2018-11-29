@@ -32,16 +32,12 @@ sanity_check() {
     if [ -z ${MESH_NAME} ]; then
         err "MESH_NAME is not set"
     fi
-
-    if [ -z ${APPMESH_FRONTEND} ]; then
-        err "APPMESH_FRONTEND is not set"
-    fi
 }
 
 delete_route() {
     route_name=$1
     virtual_router_name=$2
-    aws --endpoint-url ${APPMESH_FRONTEND} appmesh delete-route \
+    aws appmesh delete-route \
         --mesh-name ${MESH_NAME} \
         --virtual-router-name ${virtual_router_name} \
         --route-name ${route_name} || print "Unable to delete route $route_name under virtual-router $virtual_router_name" "$?"
@@ -50,7 +46,7 @@ delete_route() {
 delete_virtual_router() {
     virtual_router_name=$1
     print "Deleting virtual-router ${virtual_router_name}"
-    aws --endpoint-url ${APPMESH_FRONTEND} appmesh delete-virtual-router \
+    aws appmesh delete-virtual-router \
         --mesh-name ${MESH_NAME} \
         --virtual-router-name ${virtual_router_name} || print "Unable to delete virtual-router $virtual_router_name" "$?"
 }
@@ -58,14 +54,14 @@ delete_virtual_router() {
 delete_virtual_node() {
     virtual_node_name=$1
     print "Deleting virutal-node ${virtual_node_name}"
-    aws --endpoint-url ${APPMESH_FRONTEND} appmesh delete-virtual-node \
+    aws appmesh delete-virtual-node \
         --mesh-name ${MESH_NAME} \
         --virtual-node-name ${virtual_node_name} || print "Unable to delete virtual-node $virtual_node_name" "$?"
 }
 
 main() {
     sanity_check
-   
+
     #delete routes
     for f in $(ls "${DIR}/config/routes/")
     do
