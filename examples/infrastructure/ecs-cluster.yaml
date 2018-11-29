@@ -32,6 +32,7 @@ Parameters:
 
 Mappings:
 
+  # Source: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
   AWSRegionToECSAmi:
     eu-west-1:
       AMI: ami-0627e141ce928067c

@@ -47,7 +47,7 @@ spec:
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
-              value: "us-west-2"
+              value: ${AWS_REGION}
       initContainers:
         - name: proxyinit
           image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager

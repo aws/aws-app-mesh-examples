@@ -12,6 +12,4 @@ aws --profile ${AWS_PROFILE} --region ${AWS_REGION} \
     --template-body file://${DIR}/eks-cluster.yaml  \
     --parameters \
     ParameterKey=EnvironmentName,ParameterValue=${ENVIRONMENT_NAME} \
-    ParameterKey=NodeImageId,ParameterValue="ami-0f54a2f7d2e9c88b3" \
     ParameterKey=KeyName,ParameterValue=${KEY_PAIR_NAME}
-
