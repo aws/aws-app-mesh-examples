@@ -8,10 +8,11 @@ if [ -f meshvars.sh ]; then
     source meshvars.sh
 fi
 
-# Only us-west-2 is supported right now.
-: ${AWS_DEFAULT_REGION:=us-west-2}
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+source $DIR/.region-config.sh
+
+: ${AWS_DEFAULT_REGION:=$DEFAULT_REGION}
 
 print() {
     printf "[MESH] [$(date)] : %s\n" "$*"
@@ -25,8 +26,8 @@ err() {
 }
 
 sanity_check() {
-    if [ "${AWS_DEFAULT_REGION}" != "us-west-2" ]; then
-        err "Only us-west-2 is supported at this time.  (Current default region: ${AWS_DEFAULT_REGION})"
+    if [ ! -n "${SUPPORTED_REGIONS[$AWS_DEFAULT_REGION]}" ]; then
+        err "Region ${AWS_DEFAULT_REGION} is not supported at this time (Supported regions: ${!SUPPORTED_REGIONS[*]})"
     fi
 
     if [ -z ${MESH_NAME} ]; then

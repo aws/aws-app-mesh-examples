@@ -1,0 +1,8 @@
+declare -A SUPPORTED_REGIONS
+
+SUPPORTED_REGIONS[eu-west-1]=true
+SUPPORTED_REGIONS[us-east-1]=true
+SUPPORTED_REGIONS[us-east-2]=true
+SUPPORTED_REGIONS[us-west-2]=true
+
+DEFAULT_REGION=us-west-2
