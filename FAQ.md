@@ -21,4 +21,4 @@ Envoy is built for high performance. Using App Mesh should incur the same overhe
 1. **What does App Mesh cost?**<br/>
 There is no additional charge for using AWS App Mesh. You pay only for the AWS resources (i.e. EC2 instances or requested Fargate CPU and memory) consumed by the App Mesh proxy that runs alongside your containers.<br/>
 1. **How do I start using App Mesh?**<br/>
-App Mesh is available today as a pubic preview. You can start using App Mesh from the AWS CLI or SDK. Learn more at aws.amazon.com/appmesh/getting-started<br/>
+App Mesh is available today as a pubic preview. You can start using App Mesh from the AWS CLI or SDK. Learn more at aws.amazon.com/app-mesh/getting-started<br/>
