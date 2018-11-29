@@ -44,6 +44,7 @@ Parameters:
 
 Mappings:
 
+  # Source: https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
   AWSRegionToEKSAmi:
     eu-west-1:
       AMI: ami-00c3b2d35bddd4f5c
