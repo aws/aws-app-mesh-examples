@@ -33,15 +33,11 @@ sanity_check() {
     if [ -z ${MESH_NAME} ]; then
         err "MESH_NAME is not set"
     fi
-
-    if [ -z ${APPMESH_FRONTEND} ]; then
-        err "APPMESH_FRONTEND is not set"
-    fi
 }
 
 update_virtual_node() {
     cli_input=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh update-virtual-node \
+    cmd=( aws appmesh update-virtual-node \
               --mesh-name ${MESH_NAME} \
               --cli-input-json "${cli_input}" \
               --query virtualNode.metadata.uid --output text )
@@ -52,7 +48,7 @@ update_virtual_node() {
 
 create_virtual_node() {
     cli_input=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh create-virtual-node \
+    cmd=( aws appmesh create-virtual-node \
               --mesh-name ${MESH_NAME} \
               --cli-input-json "${cli_input}" \
               --query virtualNode.metadata.uid --output text )
@@ -73,7 +69,7 @@ save_virtual_nodes() {
 
 create_virtual_router() {
     cli_input=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh create-virtual-router \
+    cmd=( aws appmesh create-virtual-router \
               --mesh-name ${MESH_NAME} \
               --cli-input-json "${cli_input}" \
               --query virtualRouter.metadata.uid --output text )
@@ -84,7 +80,7 @@ create_virtual_router() {
 
 update_virtual_router() {
     cli_input=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh update-virtual-router \
+    cmd=( aws appmesh update-virtual-router \
               --mesh-name ${MESH_NAME} \
               --cli-input-json "${cli_input}" \
               --query virtualRouter.metadata.uid --output text )
@@ -104,7 +100,7 @@ save_virtual_routers() {
 
 create_route() {
     cli_input=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh create-route \
+    cmd=( aws appmesh create-route \
               --mesh-name ${MESH_NAME} \
               --cli-input-json "${cli_input}" \
               --query route.metadata.uid --output text )
@@ -115,7 +111,7 @@ create_route() {
 
 update_route() {
     cli_input=$1
-    cmd=( aws --endpoint-url ${APPMESH_FRONTEND} appmesh update-route \
+    cmd=( aws appmesh update-route \
               --mesh-name ${MESH_NAME} \
               --cli-input-json "${cli_input}" \
               --query route.metadata.uid --output text )
