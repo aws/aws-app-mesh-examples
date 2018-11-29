@@ -42,13 +42,9 @@ Parameters:
     Description: The EC2 Key Pair to allow SSH access to the instances
     Type: AWS::EC2::KeyPair::KeyName
 
-  NodeImageId:
-    Type: AWS::EC2::Image::Id
-    Description: AMI id for the node instances.
-
 Mappings:
 
-  AWSRegionToEKSAMI:
+  AWSRegionToEKSAmi:
     eu-west-1:
       AMI: ami-00c3b2d35bddd4f5c
     us-east-1:
@@ -227,7 +223,7 @@ Resources:
     Properties:
       AssociatePublicIpAddress: 'true'
       IamInstanceProfile: !Ref NodeInstanceProfile
-      ImageId: !Ref NodeImageId
+      ImageId: !FindInMap [AWSRegionToEKSAmi, !Ref "AWS::Region", AMI]
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       SecurityGroups:
