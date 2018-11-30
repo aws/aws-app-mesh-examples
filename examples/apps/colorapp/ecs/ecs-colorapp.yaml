@@ -29,11 +29,6 @@ Parameters:
     Type: String
     Description: Name of mesh
 
-  AppMeshXdsEndpoint:
-    Type: String
-    Description: AWS App Mesh XDS endpoint (optional)
-    Default: ""
-
   AppMeshEgressIgnoredIpCsv:
     Type: String
     Default: 169.254.170.2,169.254.169.254
@@ -118,12 +113,8 @@ Resources:
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-vn"
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: !Ref AppMeshXdsEndpoint
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
-            - Name: "AWS_REGION"
-              Value: { Ref: "AWS::Region" }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -232,12 +223,8 @@ Resources:
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn"
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: !Ref AppMeshXdsEndpoint
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
-            - Name: "AWS_REGION"
-              Value: { Ref: "AWS::Region" }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -346,12 +333,8 @@ Resources:
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn"
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: !Ref AppMeshXdsEndpoint
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
-            - Name: "AWS_REGION"
-              Value: { Ref: "AWS::Region" }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -460,12 +443,8 @@ Resources:
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-black-vn"
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: !Ref AppMeshXdsEndpoint
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
-            - Name: "AWS_REGION"
-              Value: { Ref: "AWS::Region" }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -574,12 +553,8 @@ Resources:
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorgateway-vn"
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: !Ref AppMeshXdsEndpoint
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
-            - Name: "AWS_REGION"
-              Value: { Ref: "AWS::Region" }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -607,6 +582,55 @@ Resources:
               Value: "9080"
             - Name: "APPMESH_EGRESS_IGNORED_IP"
               Value: { Ref: AppMeshEgressIgnoredIpCsv }
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      TaskRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+
+  ### tester
+  TesterService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets: 
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: TesterTaskDefinition }
+
+  TesterTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+        - Name: "app"
+          Image: "plavignotte/continuous-curl"
+          Essential: true
+          Environment:
+            - Name: "LOOP"
+              Value: "5"
+            - Name: "DEBUG"
+              Value: "1"
+          Command:
+            - !Sub "http://colorgateway.${ECSServicesDomain}:9080/color"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: { Ref: "AWS::Region" }
+              awslogs-stream-prefix: "tester-app"
       ExecutionRoleArn:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
       TaskRoleArn:

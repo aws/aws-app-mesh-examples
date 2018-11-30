@@ -37,7 +37,7 @@ sanity_check() {
         err "Region ${AWS_DEFAULT_REGION} is not supported at this time (Supported regions: ${SUPPORTED_REGIONS[*]})"
     fi
 
-    if [ -z ${MESH_NAME} ]; then
+    if [ -z "${MESH_NAME}" ]; then
         err "MESH_NAME is not set"
     fi
 }
@@ -45,7 +45,7 @@ sanity_check() {
 update_virtual_node() {
     cli_input=$1
     cmd=( aws appmesh update-virtual-node \
-              --mesh-name ${MESH_NAME} \
+              --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualNode.metadata.uid --output text )
     print "${cmd[@]}"
@@ -56,7 +56,7 @@ update_virtual_node() {
 create_virtual_node() {
     cli_input=$1
     cmd=( aws appmesh create-virtual-node \
-              --mesh-name ${MESH_NAME} \
+              --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualNode.metadata.uid --output text )
     print "${cmd[@]}"
@@ -77,7 +77,7 @@ save_virtual_nodes() {
 create_virtual_router() {
     cli_input=$1
     cmd=( aws appmesh create-virtual-router \
-              --mesh-name ${MESH_NAME} \
+              --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualRouter.metadata.uid --output text )
     print "${cmd[@]}"
@@ -88,7 +88,7 @@ create_virtual_router() {
 update_virtual_router() {
     cli_input=$1
     cmd=( aws appmesh update-virtual-router \
-              --mesh-name ${MESH_NAME} \
+              --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualRouter.metadata.uid --output text )
     print "${cmd[@]}"
@@ -108,7 +108,7 @@ save_virtual_routers() {
 create_route() {
     cli_input=$1
     cmd=( aws appmesh create-route \
-              --mesh-name ${MESH_NAME} \
+              --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query route.metadata.uid --output text )
     print "${cmd[@]}"
@@ -119,7 +119,7 @@ create_route() {
 update_route() {
     cli_input=$1
     cmd=( aws appmesh update-route \
-              --mesh-name ${MESH_NAME} \
+              --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query route.metadata.uid --output text )
     print "${cmd[@]}"
