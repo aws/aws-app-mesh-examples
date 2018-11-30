@@ -25,9 +25,16 @@ err() {
     exit ${code}
 }
 
+contains() {
+    local e match="$1"
+    shift
+    for e; do [[ "$e" == "$match" ]] && return 0; done
+    return 1
+}
+
 sanity_check() {
-    if [ ! -n "${SUPPORTED_REGIONS[$AWS_DEFAULT_REGION]}" ]; then
-        err "Region ${AWS_DEFAULT_REGION} is not supported at this time (Supported regions: ${!SUPPORTED_REGIONS[*]})"
+    if ! contains "${AWS_DEFAULT_REGION}" "${SUPPORTED_REGIONS[@]}"; then
+        err "Region ${AWS_DEFAULT_REGION} is not supported at this time (Supported regions: ${SUPPORTED_REGIONS[*]})"
     fi
 
     if [ -z ${MESH_NAME} ]; then
