@@ -11,7 +11,7 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 UPDATE_ROUTES_DIR="${DIR}/config/update_routes/"
 
-source $DIR/.region-config.sh
+source "$DIR/.region-config.sh"
 
 : ${AWS_DEFAULT_REGION:=$DEFAULT_REGION}
 
@@ -21,7 +21,7 @@ print() {
 
 err() {
     msg="Error: $1"
-    print ${msg}
+    print "${msg}"
     code=${2:-"1"}
     exit ${code}
 }
@@ -31,20 +31,19 @@ sanity_check() {
         err "Region ${AWS_DEFAULT_REGION} is not supported at this time (Supported regions: ${!SUPPORTED_REGIONS[*]})"
     fi
 
-    if [ -z ${ENVIRONMENT_NAME} ]; then
+    if [ -z "${ENVIRONMENT_NAME}" ]; then
         err "ENVIRONMENT_NAME is not set"
     fi
 
-    if [ -z ${MESH_NAME} ]; then
+    if [ -z "${MESH_NAME}" ]; then
         err "MESH_NAME is not set"
     fi
 }
 
 update_route() {
     route_spec_file=$1
-    cmd=( aws appmesh update-route --mesh-name ${MESH_NAME} \
-                #--client-token "${service}-${RANDOM}" \
-                --cli-input-json file:///${route_spec_file} \
+    cmd=( aws appmesh update-route --mesh-name "${MESH_NAME}" \
+                --cli-input-json "file:///${route_spec_file}" \
                 --query route.metadata.uid --output text )
     print "${cmd[@]}"
     uid=$("${cmd[@]}") || err "Unable to update route" "$?"
