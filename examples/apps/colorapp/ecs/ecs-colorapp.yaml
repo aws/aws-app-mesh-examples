@@ -621,7 +621,7 @@ Resources:
             - Name: "LOOP"
               Value: "5"
             - Name: "DEBUG"
-              Value: "1"
+              Value: "0"
           Command:
             - !Sub "http://colorgateway.${ECSServicesDomain}:9080/color"
           LogConfiguration:
