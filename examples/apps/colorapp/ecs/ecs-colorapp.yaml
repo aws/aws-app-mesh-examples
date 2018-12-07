@@ -13,6 +13,11 @@ Parameters:
     Type: String
     Description: Envoy image to use
 
+  AppMeshXdsEndpoint:
+    Type: String
+    Description: App Mesh XDS Endpoint Override
+    Default: ""
+
   EnvoyLogLevel:
     Type: String
     Default: debug
@@ -115,6 +120,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -225,6 +232,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -335,6 +344,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -445,6 +456,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-black-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -555,6 +568,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorgateway-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false

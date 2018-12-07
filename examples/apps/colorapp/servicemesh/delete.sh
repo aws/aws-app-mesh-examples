@@ -13,6 +13,12 @@ if [ ! -z "$AWS_PROFILE" ]; then
     PROFILE_OPT="--profile ${AWS_PROFILE}"
 fi
 
+if [ "$APPMESH_ENDPOINT" = "" ]; then
+    appmesh_cmd="aws appmesh"
+else
+    appmesh_cmd="aws --endpoint-url "${APPMESH_ENDPOINT}" appmesh"
+fi
+
 print() {
     printf "[MESH] [$(date)] : %s\n" "$*"
 }
@@ -48,7 +54,7 @@ sanity_check() {
 delete_route() {
     route_name=$1
     virtual_router_name=$2
-    aws appmesh delete-route \
+    $appmesh_cmd delete-route \
         ${PROFILE_OPT} \
         --mesh-name ${MESH_NAME} \
         --virtual-router-name ${virtual_router_name} \
@@ -58,7 +64,7 @@ delete_route() {
 delete_virtual_router() {
     virtual_router_name=$1
     print "Deleting virtual-router ${virtual_router_name}"
-    aws appmesh delete-virtual-router \
+    $appmesh_cmd delete-virtual-router \
         ${PROFILE_OPT} \
         --mesh-name ${MESH_NAME} \
         --virtual-router-name ${virtual_router_name} || print "Unable to delete virtual-router $virtual_router_name" "$?"
@@ -67,7 +73,7 @@ delete_virtual_router() {
 delete_virtual_node() {
     virtual_node_name=$1
     print "Deleting virutal-node ${virtual_node_name}"
-    aws appmesh delete-virtual-node \
+    $appmesh_cmd delete-virtual-node \
         ${PROFILE_OPT} \
         --mesh-name ${MESH_NAME} \
         --virtual-node-name ${virtual_node_name} || print "Unable to delete virtual-node $virtual_node_name" "$?"

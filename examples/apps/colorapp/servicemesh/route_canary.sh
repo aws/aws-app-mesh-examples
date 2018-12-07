@@ -19,6 +19,12 @@ source "$DIR/.region-config.sh"
 
 : ${AWS_DEFAULT_REGION:=$DEFAULT_REGION}
 
+if [ "$APPMESH_ENDPOINT" = "" ]; then
+    appmesh_cmd="aws appmesh"
+else
+    appmesh_cmd="aws --endpoint-url "${APPMESH_ENDPOINT}" appmesh"
+fi
+
 print() {
     printf "[MESH] [$(date)] : %s\n" "$*"
 }
@@ -49,7 +55,7 @@ sanity_check() {
 
 update_route() {
     route_spec_file=$1
-    cmd=( aws appmesh update-route --mesh-name "${MESH_NAME}" \
+    cmd=( $appmesh_cmd update-route --mesh-name "${MESH_NAME}" \
                 ${PROFILE_OPT} \
                 --cli-input-json "file:///${route_spec_file}" \
                 --query route.metadata.uid --output text )

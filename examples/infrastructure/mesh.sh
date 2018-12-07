@@ -6,4 +6,12 @@ if [ ! -z "${AWS_PROFILE}" ]; then
     PROFILE_OPT="--profile ${AWS_PROFILE}"
 fi
 
-aws ${PROFILE_OPT} appmesh create-mesh --mesh-name "${MESH_NAME}"
+if [ "$APPMESH_ENDPOINT" = "" ]; then
+    appmesh_cmd="aws appmesh"
+else
+    appmesh_cmd="aws --endpoint-url "${APPMESH_ENDPOINT}" appmesh"
+fi
+
+$appmesh_cmd create-mesh \
+    ${PROFILE_OPT}
+     --mesh-name "${MESH_NAME}"
