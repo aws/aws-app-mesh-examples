@@ -25,7 +25,7 @@ __color-teller__ is a simple http service written in go that is configured to re
 ```
 $ ./servicemesh/deploy.sh
 ```
-
+### ECS
 * Deploy color-teller and color-gateway to ECS
 
 ```
@@ -36,6 +36,20 @@ $ ./ecs/ecs-colorapp.sh
 
 ```
 <ec2-bastion-host>$ curl -s http://colorgateway.${SERVICES_DOMAIN}:9080/color
+```
+
+### EKS
+* Deploy color-teller and color-gateway to EKS
+
+```
+$ ./kubernetes/generate-templates.sh && kubectl apply -f ./kubernetes/colorapp.yaml
+```
+
+* Verify by doing a curl on color-gateway
+
+```
+$ kubectl run -it curler --image=tutum/curl --env="SERVICES_DOMAIN=${SERVICES_DOMAIN}" bash
+root@curler-zzzzzz:/# curl -s --connect-timeout 2 http://colorgateway.${SERVICES_DOMAIN}:9080/color
 ```
 
 ### Development
