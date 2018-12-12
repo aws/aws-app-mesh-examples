@@ -8,6 +8,10 @@ if [ -f meshvars.sh ]; then
     source meshvars.sh
 fi
 
+if [ ! -z "$AWS_PROFILE" ]; then
+    PROFILE_OPT="--profile ${AWS_PROFILE}"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 source $DIR/.region-config.sh
@@ -45,6 +49,7 @@ sanity_check() {
 update_virtual_node() {
     cli_input=$1
     cmd=( aws appmesh update-virtual-node \
+              ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualNode.metadata.uid --output text )
@@ -56,6 +61,7 @@ update_virtual_node() {
 create_virtual_node() {
     cli_input=$1
     cmd=( aws appmesh create-virtual-node \
+              ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualNode.metadata.uid --output text )
@@ -77,6 +83,7 @@ save_virtual_nodes() {
 create_virtual_router() {
     cli_input=$1
     cmd=( aws appmesh create-virtual-router \
+              ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualRouter.metadata.uid --output text )
@@ -88,6 +95,7 @@ create_virtual_router() {
 update_virtual_router() {
     cli_input=$1
     cmd=( aws appmesh update-virtual-router \
+              ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query virtualRouter.metadata.uid --output text )
@@ -108,6 +116,7 @@ save_virtual_routers() {
 create_route() {
     cli_input=$1
     cmd=( aws appmesh create-route \
+              ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query route.metadata.uid --output text )
@@ -119,6 +128,7 @@ create_route() {
 update_route() {
     cli_input=$1
     cmd=( aws appmesh update-route \
+              ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
               --query route.metadata.uid --output text )
