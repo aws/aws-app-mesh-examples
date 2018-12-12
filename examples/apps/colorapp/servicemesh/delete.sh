@@ -9,6 +9,10 @@ source $DIR/.region-config.sh
 
 : ${AWS_DEFAULT_REGION:=$DEFAULT_REGION}
 
+if [ ! -z "$AWS_PROFILE" ]; then
+    PROFILE_OPT="--profile ${AWS_PROFILE}"
+fi
+
 print() {
     printf "[MESH] [$(date)] : %s\n" "$*"
 }
@@ -45,6 +49,7 @@ delete_route() {
     route_name=$1
     virtual_router_name=$2
     aws appmesh delete-route \
+        ${PROFILE_OPT} \
         --mesh-name ${MESH_NAME} \
         --virtual-router-name ${virtual_router_name} \
         --route-name ${route_name} || print "Unable to delete route $route_name under virtual-router $virtual_router_name" "$?"
@@ -54,6 +59,7 @@ delete_virtual_router() {
     virtual_router_name=$1
     print "Deleting virtual-router ${virtual_router_name}"
     aws appmesh delete-virtual-router \
+        ${PROFILE_OPT} \
         --mesh-name ${MESH_NAME} \
         --virtual-router-name ${virtual_router_name} || print "Unable to delete virtual-router $virtual_router_name" "$?"
 }
@@ -62,6 +68,7 @@ delete_virtual_node() {
     virtual_node_name=$1
     print "Deleting virutal-node ${virtual_node_name}"
     aws appmesh delete-virtual-node \
+        ${PROFILE_OPT} \
         --mesh-name ${MESH_NAME} \
         --virtual-node-name ${virtual_node_name} || print "Unable to delete virtual-node $virtual_node_name" "$?"
 }

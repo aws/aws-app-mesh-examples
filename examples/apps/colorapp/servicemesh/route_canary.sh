@@ -8,6 +8,10 @@ if [ -f meshvars.sh ]; then
     source meshvars.sh
 fi
 
+if [ ! -z "$AWS_PROFILE" ]; then
+    PROFILE_OPT="--profile ${AWS_PROFILE}"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 UPDATE_ROUTES_DIR="${DIR}/config/update_routes/"
 
@@ -46,6 +50,7 @@ sanity_check() {
 update_route() {
     route_spec_file=$1
     cmd=( aws appmesh update-route --mesh-name "${MESH_NAME}" \
+                ${PROFILE_OPT} \
                 --cli-input-json "file:///${route_spec_file}" \
                 --query route.metadata.uid --output text )
     print "${cmd[@]}"
