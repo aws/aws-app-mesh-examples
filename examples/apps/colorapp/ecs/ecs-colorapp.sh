@@ -12,7 +12,7 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     --parameter-overrides \
     EnvironmentName="${ENVIRONMENT_NAME}" \
     EnvoyImage="${ENVOY_IMAGE}" \
-    AppMeshXdsEndpoint="${APPMESH_XDS_ENDPOINT}"
+    AppMeshXdsEndpoint="${APPMESH_XDS_ENDPOINT}" \
     ECSServicesDomain="${SERVICES_DOMAIN}" \
     AppMeshMeshName="${MESH_NAME}" \
     ColorGatewayImage="${COLOR_GATEWAY_IMAGE}" \

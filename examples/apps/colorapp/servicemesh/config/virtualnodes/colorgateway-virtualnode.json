@@ -14,7 +14,8 @@
             }
         },
         "backends": [
-            "colorteller@@SERVICES_DOMAIN@@"
+            "colorteller@@SERVICES_DOMAIN@@",
+            "tcpecho@@SERVICES_DOMAIN@@"
         ]
     },
     "virtualNodeName": "colorgateway-vn"
