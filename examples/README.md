@@ -3,6 +3,7 @@
 ## Prerequisites
 * Install latest [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/installing.html).
 
+* Build and push the colorteller and gateway images using deploy.sh from within /examples/apps/colorapp/src/
 * Configure aws-cli to support Appmesh APIs
 
 ```
@@ -20,8 +21,8 @@ export KEY_PAIR_NAME=<key-pair to access ec2 instances where apps are running>
 export ENVOY_IMAGE="111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.8.0.2-beta"
 export CLUSTER_SIZE=<number of ec2 instances to spin up to join cluster
 export SERVICES_DOMAIN=<domain under which services will be discovered, e.g. "default.svc.cluster.local">
-export COLOR_GATEWAY_IMAGE=<image location for colorapp's gateway>
-export COLOR_TELLER_IMAGE=<image location for colorapp's teller>
+export COLOR_GATEWAY_IMAGE=<image location for colorapp's gateway, e.g. "123.dkr.ecr.amazonaws.com/gateway:latest">
+export COLOR_TELLER_IMAGE=<image location for colorapp's teller, e.g. "123.dkr.ecr.amazonaws.com/colorteller:latest">
 ```
 
 ## Infrastructure
