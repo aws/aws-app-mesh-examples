@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
+	"net"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -96,16 +99,69 @@ func getColorFromColorTeller() (string, error) {
 	return color, nil
 }
 
+func getTcpEchoEndpoint() (string, error) {
+	tcpEchoEndpoint := os.Getenv("TCP_ECHO_ENDPOINT")
+	if tcpEchoEndpoint == "" {
+		return "", errors.New("TCP_ECHO_ENDPOINT is not set")
+	}
+	return tcpEchoEndpoint, nil
+}
+
+func tcpEchoHandler(writer http.ResponseWriter, request *http.Request) {
+	endpoint, err := getTcpEchoEndpoint()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "tcpecho endpoint is not set")
+		return
+	}
+
+	log.Printf("Dialing tcp endpoint %s", endpoint)
+	conn, err := net.Dial("tcp", endpoint)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Dial failed, err:%s", err.Error())
+		return
+	}
+	defer conn.Close()
+
+	strEcho := "Hello from gateway"
+	log.Printf("Writing '%s'", strEcho)
+	_, err = fmt.Fprintf(conn, strEcho)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Write to server failed, err:%s", err.Error())
+		return
+	}
+
+	reply, err := bufio.NewReader(conn).ReadString('\n')
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Read from server failed, err:%s", err.Error())
+		return
+	}
+
+	fmt.Fprintf(writer, "Response from tcpecho server: %s", reply)
+}
+
 func main() {
-	log.Println("starting server, listening on port " + getServerPort())
+	log.Println("Sleeping for 60s to allow Envoy to bootstrap")
+	time.Sleep(60 * time.Second)
+	log.Println("Starting server, listening on port " + getServerPort())
 	stats = make(map[string]float64)
 	colorTellerEndpoint, err := getColorTellerEndpoint()
 	if err != nil {
 		log.Fatalln(err)
 	}
+	tcpEchoEndpoint, err := getTcpEchoEndpoint()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	log.Println("using color-teller at " + colorTellerEndpoint)
+	log.Println("Using color-teller at " + colorTellerEndpoint)
+	log.Println("Using tcp-echo at " + tcpEchoEndpoint)
+
 	http.HandleFunc("/color", getColorHandler)
 	http.HandleFunc("/color/clear", clearColorStatsHandler)
+	http.HandleFunc("/tcpecho", tcpEchoHandler)
 	log.Fatal(http.ListenAndServe(":"+getServerPort(), nil))
 }

@@ -13,6 +13,11 @@ Parameters:
     Type: String
     Description: Envoy image to use
 
+  AppMeshXdsEndpoint:
+    Type: String
+    Description: App Mesh XDS Endpoint Override
+    Default: ""
+
   EnvoyLogLevel:
     Type: String
     Default: debug
@@ -115,6 +120,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -225,6 +232,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -335,6 +344,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -445,6 +456,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-black-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -539,6 +552,8 @@ Resources:
               Value: "9080"
             - Name: "COLOR_TELLER_ENDPOINT"
               Value: !Sub "colorteller.${ECSServicesDomain}:9080"
+            - Name: "TCP_ECHO_ENDPOINT"
+              Value: !Sub "tcpecho.${ECSServicesDomain}:2701"
         - Name: envoy
           Image: { Ref: EnvoyImage }
           Essential: true
@@ -555,6 +570,8 @@ Resources:
               Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorgateway-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
+            - Name: "APPMESH_XDS_ENDPOINT"
+              Value: { Ref: AppMeshXdsEndpoint }
         - Name: "proxyinit"
           Image: { Ref: SideCarRouterManagerImage }
           Essential: false
@@ -615,15 +632,10 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Name: "app"
-          Image: "plavignotte/continuous-curl"
+          Image: "tstrohmeier/alpine-infinite-curl"
           Essential: true
-          Environment:
-            - Name: "LOOP"
-              Value: "5"
-            - Name: "DEBUG"
-              Value: "0"
           Command:
-            - !Sub "http://colorgateway.${ECSServicesDomain}:9080/color"
+            - !Sub "-h http://colorgateway.${ECSServicesDomain}:9080/color"
           LogConfiguration:
             LogDriver: "awslogs"
             Options:
@@ -637,3 +649,71 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       NetworkMode: "awsvpc"
       Memory: 256
+
+  ### tcpecho.default.svc.cluster.local
+  TcpEchoServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "tcpecho"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  TcpEchoService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': TcpEchoServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: TcpEchoTaskDefinition }
+
+  TcpEchoTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+        - Name: "app"
+          Image: "cjimti/go-echo"
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: { Ref: "AWS::Region" }
+              awslogs-stream-prefix: "tcpecho-app"
+          PortMappings:
+            - ContainerPort: 2701
+              HostPort: 2701
+              Protocol: "tcp"
+          Environment:
+            - Name: "TCP_PORT"
+              Value: "2701"
+            - Name: "NODE_NAME"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/tcpecho-vn"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      TaskRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+

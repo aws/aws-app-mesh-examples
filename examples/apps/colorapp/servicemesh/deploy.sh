@@ -18,6 +18,12 @@ source $DIR/.region-config.sh
 
 : ${AWS_DEFAULT_REGION:=$DEFAULT_REGION}
 
+if [ "$APPMESH_ENDPOINT" = "" ]; then
+    appmesh_cmd="aws appmesh"
+else
+    appmesh_cmd="aws --endpoint-url "${APPMESH_ENDPOINT}" appmesh"
+fi
+
 print() {
     printf "[MESH] [$(date)] : %s\n" "$*"
 }
@@ -48,7 +54,7 @@ sanity_check() {
 
 update_virtual_node() {
     cli_input=$1
-    cmd=( aws appmesh update-virtual-node \
+    cmd=( $appmesh_cmd update-virtual-node \
               ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
@@ -60,7 +66,7 @@ update_virtual_node() {
 
 create_virtual_node() {
     cli_input=$1
-    cmd=( aws appmesh create-virtual-node \
+    cmd=( $appmesh_cmd create-virtual-node \
               ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
@@ -82,7 +88,7 @@ save_virtual_nodes() {
 
 create_virtual_router() {
     cli_input=$1
-    cmd=( aws appmesh create-virtual-router \
+    cmd=( $appmesh_cmd create-virtual-router \
               ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
@@ -94,7 +100,7 @@ create_virtual_router() {
 
 update_virtual_router() {
     cli_input=$1
-    cmd=( aws appmesh update-virtual-router \
+    cmd=( $appmesh_cmd update-virtual-router \
               ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
@@ -115,7 +121,7 @@ save_virtual_routers() {
 
 create_route() {
     cli_input=$1
-    cmd=( aws appmesh create-route \
+    cmd=( $appmesh_cmd create-route \
               ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \
@@ -127,7 +133,7 @@ create_route() {
 
 update_route() {
     cli_input=$1
-    cmd=( aws appmesh update-route \
+    cmd=( $appmesh_cmd update-route \
               ${PROFILE_OPT} \
               --mesh-name "${MESH_NAME}" \
               --cli-input-json "${cli_input}" \

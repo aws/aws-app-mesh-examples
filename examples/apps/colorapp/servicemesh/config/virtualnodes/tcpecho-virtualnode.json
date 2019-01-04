@@ -1,0 +1,18 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 2701,
+                    "protocol": "tcp"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "serviceName": "tcpecho@@SERVICES_DOMAIN@@"
+            }
+        }
+    },
+    "virtualNodeName": "tcpecho-vn"
+}
