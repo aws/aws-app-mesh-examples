@@ -13,5 +13,5 @@ else
 fi
 
 $appmesh_cmd create-mesh \
-    ${PROFILE_OPT}
+    ${PROFILE_OPT} \
      --mesh-name "${MESH_NAME}"
