@@ -37,7 +37,7 @@ $ ./infrastructure/vpc.sh create-stack
 * Setup Mesh
 
 ```
-$ ./infrastructure/mesh.sh create-mesh
+$ ./infrastructure/mesh.sh 
 ```
 
 * Setup ECS Cluster (Optional if using ECS)
