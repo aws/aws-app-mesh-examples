@@ -28,12 +28,19 @@ func getColor() string {
 	return defaultColor
 }
 
-func handler(writer http.ResponseWriter, request *http.Request) {
+func colorHandler(writer http.ResponseWriter, request *http.Request) {
+	log.Println("color requested, responding with", getColor())
 	fmt.Fprint(writer, getColor())
+}
+
+func pingHandler(writer http.ResponseWriter, request *http.Request) {
+	log.Println("ping requested, reponding with HTTP 200")
+	writer.WriteHeader(http.StatusOK)
 }
 
 func main() {
 	log.Println("starting server, listening on port " + getServerPort())
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", colorHandler)
+	http.HandleFunc("/ping", pingHandler)
 	http.ListenAndServe(":"+getServerPort(), nil)
 }
