@@ -44,11 +44,11 @@ Parameters:
 
 Resources:
 
-  ### colorteller.default.svc.cluster.local
-  ColorTellerServiceDiscoveryRecord:
+  ### colorteller-white.default.svc.cluster.local
+  ColorTellerWhiteServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
-      Name: "colorteller"
+      Name: "colorteller-white"
       DnsConfig:
         NamespaceId:
           'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
@@ -58,7 +58,7 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  ColorTellerService:
+  ColorTellerWhiteService:
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster:
@@ -70,7 +70,7 @@ Resources:
       LaunchType: EC2
       ServiceRegistries:
         - RegistryArn:
-            'Fn::GetAtt': ColorTellerServiceDiscoveryRecord.Arn
+            'Fn::GetAtt': ColorTellerWhiteServiceDiscoveryRecord.Arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -79,9 +79,9 @@ Resources:
           Subnets: 
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      TaskDefinition: { Ref: ColorTellerTaskDefinition }
+      TaskDefinition: { Ref: ColorTellerWhiteTaskDefinition }
 
-  ColorTellerTaskDefinition:
+  ColorTellerWhiteTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       ContainerDefinitions:
@@ -94,7 +94,7 @@ Resources:
               awslogs-group:
                 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
               awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-app"
+              awslogs-stream-prefix: "colorteller-white-app"
           PortMappings:
             - ContainerPort: 9080
               HostPort: 9080
@@ -114,10 +114,10 @@ Resources:
               awslogs-group:
                 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup" 
               awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-envoy"
+              awslogs-stream-prefix: "colorteller-white-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-vn"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-white-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
             - Name: "APPMESH_XDS_ENDPOINT"
@@ -131,7 +131,7 @@ Resources:
               awslogs-group:
                 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
               awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-proxyinit"
+              awslogs-stream-prefix: "colorteller-white-proxyinit"
           LinuxParameters:
             Capabilities:
               Add:
