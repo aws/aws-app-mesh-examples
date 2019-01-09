@@ -6,20 +6,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 )
 
 const defaultPort = "8080"
+const maxColors = 1000
 
-var stats map[string]float64
-var total float64
+var colors [maxColors]string
+var colorsIdx int
+var colorsMutext = &sync.Mutex{}
 
 func getServerPort() string {
 	port := os.Getenv("SERVER_PORT")
@@ -45,6 +47,11 @@ func getColorHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte("500 - Unexpected Error"))
 		return
 	}
+
+	colorsMutext.Lock()
+	defer colorsMutext.Unlock()
+
+	addColor(color)
 	statsJson, err := json.Marshal(getRatios())
 	if err != nil {
 		fmt.Fprintf(writer, `{"color":"%s", "error":"%s"}`, color, err)
@@ -53,22 +60,43 @@ func getColorHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, `{"color":"%s", "stats": %s}`, color, statsJson)
 }
 
+func addColor(color string) {
+	colors[colorsIdx] = color
+
+	colorsIdx += 1
+	if colorsIdx >= maxColors {
+		colorsIdx = 0
+	}
+}
+
 func getRatios() map[string]float64 {
-	ratios := make(map[string]float64)
-	for k, v := range stats {
-		if total == 0 {
-			ratios[k] = 1
-		} else {
-			ratios[k] = math.Round(v*100/total) / 100
+	counts := make(map[string]int)
+	var total = 0
+
+	for _, c := range colors {
+		if c != "" {
+			counts[c] += 1
+			total += 1
 		}
+	}
+
+	ratios := make(map[string]float64)
+	for k, v := range counts {
+		ratios[k] = float64(v) / float64(total)
 	}
 
 	return ratios
 }
 
 func clearColorStatsHandler(writer http.ResponseWriter, request *http.Request) {
-	total = 0
-	stats = make(map[string]float64)
+	colorsMutext.Lock()
+	defer colorsMutext.Unlock()
+
+	colorsIdx = 0
+	for i, _ := range colors {
+		colors[i] = ""
+	}
+
 	fmt.Fprint(writer, "cleared")
 }
 
@@ -94,8 +122,6 @@ func getColorFromColorTeller() (string, error) {
 		return "-n/a-", errors.New("Empty response from colorTeller")
 	}
 
-	total += 1
-	stats[color] += 1
 	return color, nil
 }
 
@@ -146,8 +172,9 @@ func tcpEchoHandler(writer http.ResponseWriter, request *http.Request) {
 func main() {
 	log.Println("Sleeping for 60s to allow Envoy to bootstrap")
 	time.Sleep(60 * time.Second)
+
 	log.Println("Starting server, listening on port " + getServerPort())
-	stats = make(map[string]float64)
+
 	colorTellerEndpoint, err := getColorTellerEndpoint()
 	if err != nil {
 		log.Fatalln(err)
