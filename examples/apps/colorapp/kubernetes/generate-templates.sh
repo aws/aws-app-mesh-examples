@@ -44,6 +44,8 @@ spec:
               value: "9080"
             - name: "COLOR_TELLER_ENDPOINT"
               value: "colorteller.${SERVICES_DOMAIN}:9080"
+            - name: "TCP_ECHO_ENDPOINT"
+              value: "tcpecho.${SERVICES_DOMAIN}:2701"
         - name: envoy
           image: "${ENVOY_IMAGE}"
           securityContext:
@@ -76,7 +78,77 @@ spec:
             - name: "APPMESH_EGRESS_IGNORED_IP"
               value: "169.254.169.254"
 ---
-
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcpecho
+  labels:
+    app: tcpecho
+spec:
+  ports:
+  - port: 2701
+    name: http
+  selector:
+    app: tcpecho
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcpecho
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcpecho
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: tcpecho
+        version: v1
+    spec:
+      containers:
+        - name: tcpecho
+          image: "cjimti/go-echo"
+          ports:
+            - containerPort: 2701
+          env:
+            - name: "TCP_PORT"
+              value: "2701"
+            - name: "NODE_NAME"
+              value: "mesh/${MESH_NAME}/virtualNode/tcpecho-vn"
+        - name: envoy
+          image: "${ENVOY_IMAGE}"
+          securityContext:
+            runAsUser: 1337
+          env:
+            - name: "APPMESH_VIRTUAL_NODE_NAME"
+              value: "mesh/${MESH_NAME}/virtualNode/tcpecho-vn"
+            - name: "ENVOY_LOG_LEVEL"
+              value: "debug"
+            - name: "AWS_REGION"
+              value: "${AWS_REGION}"
+      initContainers:
+        - name: proxyinit
+          image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: "APPMESH_START_ENABLED"
+              value: "1"
+            - name: "APPMESH_IGNORE_UID"
+              value: "1337"
+            - name: "APPMESH_ENVOY_INGRESS_PORT"
+              value: "15000"
+            - name: "APPMESH_ENVOY_EGRESS_PORT"
+              value: "15001"
+            - name: "APPMESH_APP_PORTS"
+              value: "9080"
+            - name: "APPMESH_EGRESS_IGNORED_IP"
+              value: "169.254.169.254"
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -376,4 +448,25 @@ spec:
               value: "9080"
             - name: "APPMESH_EGRESS_IGNORED_IP"
               value: "169.254.169.254"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tester-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tester-app
+  template:
+    metadata:
+      labels:
+        app: tester-app
+    spec:
+      containers:
+        - name: tester-app
+          image: "tstrohmeier/alpine-infinite-curl"
+          env:
+            - name: "HOST"
+              value: "http://colorgateway.${SERVICES_DOMAIN}:9080/color"
 ---
