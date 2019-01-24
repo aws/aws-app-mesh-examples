@@ -199,6 +199,7 @@ Resources:
 
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: EKSCluster
     Properties:
       DesiredCapacity: !Ref NodeAutoScalingGroupMaxSize
       LaunchConfigurationName: !Ref NodeLaunchConfig
@@ -246,3 +247,6 @@ Resources:
                      --resource NodeGroup  \
                      --region ${AWS::Region}
 
+Outputs:
+  NodeInstanceRole:
+    Value: !GetAtt NodeInstanceRole.Arn
