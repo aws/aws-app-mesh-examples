@@ -31,7 +31,7 @@ Before we can start playing with mesh examples we need to setup infrastructure p
 * Setup VPC
 
 ```
-$ ./infrastructure/vpc.sh create-stack
+$ ./infrastructure/vpc.sh
 ```
 
 * Setup Mesh
@@ -43,13 +43,13 @@ $ ./infrastructure/mesh.sh
 * Setup ECS Cluster (Optional if using ECS)
 
 ```
-$ ./infrastructure/ecs-cluster.sh create-stack
+$ ./infrastructure/ecs-cluster.sh
 ```
 
 * Setup EKS Cluster (Optional if using EKS). Note that there are more steps to use Kubernetes cluster that are not covered here. Please follow [EKS Getting Started Guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html).
 
 ```
-$ ./infrastructure/eks-cluster.sh create-stack
+$ ./infrastructure/eks-cluster.sh
 ```
 
 ## Apps
@@ -57,7 +57,7 @@ Once infrastructure is in place you can deploy applications and configure mesh. 
 
 To add new app, create a directory under apps and follow the setup as in colorapp
 
-### Building Docker Images
+## Building Docker Images
 
 In Elastic Container Registry, created two new repositories:
  - colorteller

@@ -10,7 +10,7 @@ $ curl -s http://colorgateway.default.svc.cluster.local:9080/color
 
 ... after many such calls ...
 $ curl -s http://colorgateway.default.svc.cluster.local:9080/color
-{"color":"blue", "stats": {"black":0.164119601328904,"blue":0.823920265780731,"red":0.011960132890366}}
+{"color":"blue", "stats": {"black":0.16,"blue":0.82,"red":0.01}}
 ```
 
 color-gateway app runs as a service in ECS, optionally exposed via external load-balancer (ALB). Each task in gateway is configured with the endpoint of color-teller service that it communicates with via Envoy that is configured by AWS App Mesh.
