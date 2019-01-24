@@ -44,6 +44,8 @@ spec:
               value: "9080"
             - name: "COLOR_TELLER_ENDPOINT"
               value: "colorteller.${SERVICES_DOMAIN}:9080"
+            - name: "TCP_ECHO_ENDPOINT"
+              value: "tcpecho.${SERVICES_DOMAIN}:2701"
         - name: envoy
           image: "${ENVOY_IMAGE}"
           securityContext:
@@ -377,3 +379,46 @@ spec:
             - name: "APPMESH_EGRESS_IGNORED_IP"
               value: "169.254.169.254"
 ---
+
+# TcpEcho
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcpecho
+  labels:
+    app: tcpecho
+spec:
+  ports:
+  - port: 2701
+    name: tcpecho
+  selector:
+    app: tcpecho
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcpecho
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcpecho
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: tcpecho
+        version: v1
+    spec:
+      containers:
+        - name: tcpecho
+          image: cjimti/go-echo
+          ports:
+            - containerPort: 2701
+          env:
+            - name: "TCP_PORT"
+              value: "2701"
+            - name: "NODE_NAME"
+              value: "mesh/${MESH_NAME}/virtualNode/tcpecho-vn"
+---
+CONFIG_EOF
