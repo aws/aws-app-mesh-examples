@@ -1,0 +1,32 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "worker-fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-{{ .Values.Worker.Component }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  replicas: {{ default 1 .Values.Worker.Replicas }}
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: worker
+        image: "{{ .Values.Worker.Image }}:{{ .Values.Worker.ImageTag }}"
+        imagePullPolicy: Always
+        env:
+        - name: DATABASE_HOST
+          value: "database.default.svc.cluster.local"
+        - name: DATABASE_PORT
+          value: "{{ .Values.Database.ServicePort }}"
+        - name: QUEUE_HOST
+          value: "queue.default.svc.cluster.local"
+        - name: QUEUE_PORT
+          value: "{{ .Values.Queue.ServicePort }}"

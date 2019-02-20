@@ -1,0 +1,26 @@
+{
+  "name": "@subfuzion/worker",
+  "version": "1.0.7",
+  "description": "Voting app worker service",
+  "author": "Tony Pujals <tony@subfuzion.com> (https://twitter.com/subfuzion)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aws-samples/voting-app.git"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "test": "mocha --ui tdd"
+  },
+  "engines": {
+    "node": ">=v8.0.0"
+  },
+  "dependencies": {
+    "@subfuzion/database": "1.2.4",
+    "aws-xray-sdk-core": "git+http://git@github.com/awssandra/aws-xray-node-sdk-core-experimental",
+    "queue": "git+http://git@github.com/awssandra/subfuzion-queue-xray"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
+  }
+}

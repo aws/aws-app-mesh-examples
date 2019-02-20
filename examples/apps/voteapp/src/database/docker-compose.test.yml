@@ -1,0 +1,20 @@
+version: '2.2'
+
+networks:
+  test_net:
+    driver: bridge
+
+services:
+
+  sut:
+    build: .
+    command: npm test
+    networks:
+      - test_net
+    depends_on:
+      - database
+
+  database:
+    image: mongo:3.6
+    networks:
+      - test_net

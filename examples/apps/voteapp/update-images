@@ -1,0 +1,44 @@
+#!/bin/sh -e
+
+TAG=$(git describe --abbrev=0 --tags)
+
+packages=(
+    "cw-agent"
+    "database-proxy"
+    "reports"
+    "votes"
+    "web"
+#    "queue-proxy"
+#    "worker"
+    "vote"
+)
+
+# always build v2 version of reports
+version="${TAG}-2"
+img=subfuzion/vote-reports:$version
+docker build --build-arg VERSION=$version -t $img src/reports
+docker push $img
+
+# exit if only v2 option was passed
+[ "$1" = "v2" ] && exit
+
+i=0
+total=${#packages[@]}
+for pkg in ${packages[@]}; do
+    ((i++))
+    image=subfuzion/vote
+
+    # naming 'vote' pkg => 'subfuzion/vote-vote' would be weird
+    # it's the client, so just want "subfuzion/vote"
+    if [ $pkg != "vote" ]; then
+        image=$image-$pkg
+    fi
+    printf "\nBuilding image $i of $total: $image ...\n"
+    docker build -t $image:latest src/$pkg
+
+    docker tag $image $image:$TAG
+    printf "Successfully tagged $image:$TAG\n"
+
+    docker push $image:latest
+    docker push $image:$TAG
+done

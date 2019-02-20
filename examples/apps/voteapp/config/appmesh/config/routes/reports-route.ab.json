@@ -1,0 +1,25 @@
+{
+    "routeName": "reports-route-v2",
+    "spec": {
+        "httpRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "reports-vn",
+                        "weight": 50
+                    },
+                    {
+                        "virtualNode": "reports-vn-v2",
+                        "weight": 50
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/"
+            }
+        }
+    },
+    "virtualRouterName": "reports-vr"
+}
+
+

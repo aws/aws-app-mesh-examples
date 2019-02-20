@@ -1,0 +1,22 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 9080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "serviceName": "web.default.svc.cluster.local"
+            }
+        },
+        "backends": [
+            "votes.default.svc.cluster.local",
+            "reports.default.svc.cluster.local"
+        ]
+    },
+    "virtualNodeName": "web-vn"
+}

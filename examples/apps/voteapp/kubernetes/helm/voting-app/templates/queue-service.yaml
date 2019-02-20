@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: queue
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    component: "{{ .Release.Name }}-{{ .Values.Queue.Component }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  selector:
+    app: queue
+  ports:
+  - port: {{ .Values.Queue.ServicePort }}
+    targetPort: {{ .Values.Queue.ContainerPortName }}

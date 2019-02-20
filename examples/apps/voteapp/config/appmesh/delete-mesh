@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# vim:syn=sh:ts=4:sw=4:et:ai
+
+required_env=(
+    AWS_REGION
+)
+
+shopt -s expand_aliases
+alias mesh="aws --region $AWS_REGION appmesh"
+
+print() {
+    printf "[MESH] %s\n" "$*"
+}
+
+err() {
+    msg="Error: $1"
+    print $msg
+    code=${2:-"1"}
+    exit $code
+}
+
+usage() {
+    msg=$1
+    [ -z "$msg" ] || printf "Error: $msg\n"
+    printf "Usage: delete-mesh <meshname>\n"
+    exit 1
+}
+
+check_env() {
+    for i in "${required_env[@]}"; do
+        echo "$i=${!i}"
+        [ -z "${!i}" ] && err "$i must be set"
+    done
+}
+
+check_args() {
+    meshname=$1
+    [ -z "$meshname" ] && usage "missing argument: meshname"
+}
+
+
+list_virtual_nodes() {
+    meshname=$1
+    mesh list-virtual-nodes --mesh-name $meshname | jq -r '.virtualNodes[].virtualNodeName'
+}
+
+list_virtual_routers() {
+    meshname=$1
+    mesh list-virtual-routers --mesh-name $meshname | jq -r '.virtualRouters[].virtualRouterName'
+}
+
+list_routes() {
+    meshname=$1
+    vr=$2
+    mesh list-routes --mesh-name $meshname --virtual-router-name $vr | jq -r '.routes[].routeName'
+}
+
+delete_route() {
+    meshname=$1
+    vr=$2
+    route=$3
+    print "delete route: $route"
+    mesh delete-route --mesh-name $meshname --virtual-router-name $vr --route-name $route 1>/dev/null
+}
+
+delete_routes() {
+    meshname=$1
+    vr=$2
+    routes=$3
+    for r in ${routes[@]}; do
+        delete_route $meshname $vr $r
+    done
+}
+
+delete_virtual_router() {
+    meshname=$1
+    vr=$2
+    print "delete virtual router: $vr"
+    mesh delete-virtual-router --mesh-name $meshname --virtual-router-name $vr 1>/dev/null
+}
+
+delete_virtual_routers() {
+    meshname=$1
+    for vr in $(list_virtual_routers $meshname); do
+        routes=$(list_routes $meshname $vr)
+        delete_routes $meshname $vr $routes
+        delete_virtual_router $meshname $vr
+    done
+}
+
+delete_virtual_node() {
+    meshname=$1
+    vn=$2
+    print "delete virtual node: $vn"
+    mesh delete-virtual-node --mesh-name $meshname --virtual-node-name $vn 1>/dev/null
+}
+
+delete_virtual_nodes() {
+    meshname=$1
+    for vn in $(list_virtual_nodes $meshname); do
+        delete_virtual_node $meshname $vn
+    done
+}
+
+delete_mesh() {
+    meshname=$1
+    mesh delete-mesh --mesh-name $meshname
+}
+
+main() {
+    check_env
+
+    meshname=$1
+    check_args $meshname
+
+    delete_virtual_routers $meshname
+    delete_virtual_nodes $meshname
+    delete_mesh $meshname
+}
+
+main $@

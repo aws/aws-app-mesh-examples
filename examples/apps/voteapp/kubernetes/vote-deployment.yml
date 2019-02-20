@@ -1,0 +1,30 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: vote-deployment
+  labels:
+    app: vote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote
+  template:
+    metadata:
+      labels:
+        app: vote
+    spec:
+      containers:
+        - name: vote
+          image: subfuzion/vote-api
+          ports:
+          - containerPort: 3000
+          env:
+          - name: DATABASE_HOST
+            value: "database.default.svc.cluster.local"
+          - name: DATABASE_PORT
+            value: "27017"
+          - name: QUEUE_HOST
+            value: "queue.default.svc.cluster.local"
+          - name: QUEUE_PORT
+            value: "6379"

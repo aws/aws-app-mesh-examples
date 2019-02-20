@@ -1,0 +1,20 @@
+version: '2.2'
+
+networks:
+  test_net:
+    driver: bridge
+
+services:
+
+  sut:
+    build: .
+    command: npm test
+    networks:
+      - test_net
+    depends_on:
+      - queue
+
+  queue:
+    image: redis:3.2
+    networks:
+      - test_net

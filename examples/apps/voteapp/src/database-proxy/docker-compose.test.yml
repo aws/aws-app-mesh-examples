@@ -1,0 +1,33 @@
+version: '2.2'
+
+networks:
+  test_net:
+    driver: bridge
+
+services:
+
+  sut:
+    image: database-proxy
+    entrypoint: node_modules/mocha/bin/mocha --ui tdd test/test.js 
+    environment:
+      - DATABASE_NAME=test_db
+    networks:
+      - test_net
+    depends_on:
+      - database-proxy
+
+  database-proxy:
+    build: .
+    image: database-proxy
+    environment:
+      - DATABASE_NAME=test_db
+    networks:
+      - test_net
+    depends_on:
+      - database
+
+  database:
+    image: mongo:3.6
+    networks:
+      - test_net
+

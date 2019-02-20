@@ -1,0 +1,1078 @@
+Description: >
+  This template deploys the voteapp application.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Environment name that joins all the stacks
+    
+  AppMeshMeshName:
+    Type: String
+    Description: Name of mesh
+    Default: default
+    
+  ECSServicesDomain:
+    Type: String
+    Description: DNS namespace used by services e.g. default.svc.cluster.local
+    Default: default.svc.cluster.local
+
+  SideCarRouterManagerImage:
+    Type: String
+    Description: Sidecar router manager that sets up networking for transparent proxy
+    Default: "111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager"
+
+  EnvoyImage:
+    Type: String
+    Description: Envoy image to use
+    Default: "111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.8.0.2-beta"
+
+  EnvoyLogLevel:
+    Type: String
+    Default: debug
+
+  VoteDatabaseHttpProxyImage:
+    Type: String
+    Description: Vote App Database HTTP Proxy image
+    Default: "subfuzion/vote-database-proxy:1.0.19"
+
+  VoteDatabaseImage:
+    Type: String
+    Description: Vote App Database image
+    Default: "mongo:3.6"
+
+  VoteVotesImage:
+    Type: String
+    Description: Vote App Votes image
+    Default: "subfuzion/vote-votes:1.0.19"
+
+  VoteReportsImage:
+    Type: String
+    Description: Vote App Reports image
+    Default: "subfuzion/vote-reports:1.0.19"
+  
+  VoteReportsV2Image:
+    Type: String
+    Description: Vote App Reports v2 image
+    Default: "subfuzion/vote-reports:1.0.19-2"
+
+  VoteWebImage:
+    Type: String
+    Description: Vote App Web image
+    Default: "subfuzion/vote-web:1.0.19"
+  
+  CloudWatchAgentImage:
+    Type: String
+    Description: CloudWatch Agent image
+    Default: "subfuzion/vote-cw-agent:1.0.19"
+
+  XRayImageUrl:
+    Type: String
+    Default: amazon/aws-xray-daemon
+    Description: The url of a docker image that contains the X-Ray daemon that will
+                 handle the traffic for this service
+  PrometheusWebImage:
+    Type: String
+    Description: Prometheus Web image
+    Default: "986516506659.dkr.ecr.us-west-2.amazonaws.com/prometheusrepo:latest"
+
+  StatsExporterWebImage:
+    Type: String
+    Description: StatsExporter Web image
+    Default: "986516506659.dkr.ecr.us-west-2.amazonaws.com/statsexporterrepo:latest"
+
+  GrafanaWebImage:
+    Type: String
+    Description: Grafana Web image
+    Default: "grafana/grafana:latest"
+
+  AppMeshEgressIgnoredIpCsv:
+    Type: String
+    Default: 169.254.170.2,169.254.169.254
+
+  Path:
+    Type: String
+    Default: "*"
+    Description: A path on the public load balancer that this service
+                 should be connected to. Use * to send all load balancer
+                 traffic to this service.
+
+Resources:
+
+  ### ==================================
+  ### database.voteapp.svc.cluster.local
+  ### ==================================
+  DatabaseServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "database"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  DatabaseService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': DatabaseServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets: 
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: DatabaseTaskDefinition }
+
+  DatabaseTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      TaskRoleArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRole"
+      Volumes:
+        - Name: "envoy-xray-tracing-config"
+          Host:
+            SourcePath: "/home/ec2-user/xray-tracing.yaml"
+      ContainerDefinitions:
+        - Name: app
+          Image: { Ref: VoteDatabaseHttpProxyImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: { Ref: "AWS::Region" }
+              awslogs-stream-prefix: database
+          Environment:
+            - Name: "PORT"
+              Value: "9080"
+            - Name: "DATABASE_URI"
+              Value: "mongodb://localhost:27017/voting"
+        - Name: mongo
+          Image: !Ref 'VoteDatabaseImage'
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: database
+        - Name: xray-daemon
+          Essential: false
+          Cpu: 32
+          Memory: 64
+          Image: !Ref "XRayImageUrl"
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          Environment:
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: database
+        - Name: envoy
+          Image: { Ref: EnvoyImage }
+          Essential: true
+          User: "1337"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: database
+          MountPoints:
+            - SourceVolume: "envoy-xray-tracing-config"
+              ContainerPath: "/tmp/xray-tracing.yaml"
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/database-vn"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: { Ref: EnvoyLogLevel }
+            - Name: "ENVOY_TRACING_CFG_FILE"
+              Value: "/tmp/xray-tracing.yaml"
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+        - Name: proxyinit
+          Image: { Ref: SideCarRouterManagerImage }
+          Essential: false
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: database
+          LinuxParameters:
+            Capabilities:
+              Add:
+                - "NET_ADMIN"
+          Environment:
+            - Name: "APPMESH_START_ENABLED"
+              Value: "1"
+            - Name: "APPMESH_USE_TPROXY"
+              Value: "0"
+            - Name: "APPMESH_IGNORE_UID"
+              Value: "1337"
+            - Name: "APPMESH_ENVOY_INGRESS_PORT"
+              Value: "15000"
+            - Name: "APPMESH_ENVOY_EGRESS_PORT"
+              Value: "15001"
+            - Name: "APPMESH_APP_PORTS"
+              Value: "9080"
+            - Name: "APPMESH_EGRESS_IGNORED_IP"
+              Value: { Ref: AppMeshEgressIgnoredIpCsv }
+        - Name: cloudwatch-agent
+          Image: !Ref CloudWatchAgentImage
+          Essential: false
+          Cpu: 100
+          Memory: 128
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: database
+          Environment:
+            - Name: DOWNSTREAM_SERVICE_NAME
+              Value: database
+            - Name: ENVOY_ADMIN_HOST
+              Value: "localhost:9901"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+
+
+  ### =================================
+  ### votes.voteapp.svc.cluster.local
+  ### =================================
+  VotesServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "votes"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  VotesService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': VotesServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets: 
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: VotesTaskDefinition }
+
+  VotesTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      TaskRoleArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRole"
+      Volumes:
+        - Name: "envoy-xray-tracing-config"
+          Host:
+            SourcePath: "/home/ec2-user/xray-tracing.yaml"
+      ContainerDefinitions:
+        - Name: app
+          Image: { Ref: VoteVotesImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: votes
+          Environment:
+            - Name: "PORT"
+              Value: "9080"
+            - Name: "DATABASE_PROXY_URI"
+              Value: !Sub "http://database.${ECSServicesDomain}:9080"
+        - Name: xray-daemon
+          Essential: false
+          Cpu: 32
+          Memory: 64
+          Image: !Ref 'XRayImageUrl'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          Environment:
+            - Name: "AWS_REGION"
+              Value: !Ref 'AWS::Region'
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: 
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: votes
+        - Name: envoy
+          Image: { Ref: EnvoyImage }
+          Essential: true
+          User: "1337"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup" 
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: votes
+          MountPoints:
+            - SourceVolume: "envoy-xray-tracing-config"
+              ContainerPath: "/tmp/xray-tracing.yaml"
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/votes-vn"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: { Ref: EnvoyLogLevel }
+            - Name: "ENVOY_TRACING_CFG_FILE"
+              Value: "/tmp/xray-tracing.yaml"
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+        - Name: proxyinit
+          Image: { Ref: SideCarRouterManagerImage }
+          Essential: false
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: votes
+          LinuxParameters:
+            Capabilities:
+              Add:
+                - "NET_ADMIN"
+          Environment:
+            - Name: "APPMESH_START_ENABLED"
+              Value: "1"
+            - Name: "APPMESH_USE_TPROXY"
+              Value: "0"
+            - Name: "APPMESH_IGNORE_UID"
+              Value: "1337"
+            - Name: "APPMESH_ENVOY_INGRESS_PORT"
+              Value: "15000"
+            - Name: "APPMESH_ENVOY_EGRESS_PORT"
+              Value: "15001"
+            - Name: "APPMESH_APP_PORTS"
+              Value: "9080"
+            - Name: "APPMESH_EGRESS_IGNORED_IP"
+              Value: { Ref: AppMeshEgressIgnoredIpCsv }
+        - Name: cloudwatch-agent
+          Image: !Ref CloudWatchAgentImage
+          Essential: false
+          Cpu: 100
+          Memory: 128
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: votes
+          Environment:
+            - Name: DOWNSTREAM_SERVICE_NAME
+              Value: votes
+            - Name: ENVOY_ADMIN_HOST
+              Value: "localhost:9901"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+
+
+  ### =================================
+  ### reports.voteapp.svc.cluster.local
+  ### =================================
+  ReportsServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "reports"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  ReportsService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': ReportsServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: ReportsTaskDefinition }
+
+  ReportsTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      TaskRoleArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRole"
+      Volumes:
+        - Name: "envoy-xray-tracing-config"
+          Host:
+            SourcePath: "/home/ec2-user/xray-tracing.yaml"
+      ContainerDefinitions:
+        - Name: app
+          Image: { Ref: VoteReportsImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: { Ref: "AWS::Region" }
+              awslogs-stream-prefix: reports
+          Environment:
+            - Name: "PORT"
+              Value: "9080"
+            - Name: "DATABASE_PROXY_URI"
+              Value: !Sub "http://database.${ECSServicesDomain}:9080"
+        - Name: xray-daemon
+          Essential: false
+          Cpu: 32
+          Memory: 64
+          Image: !Ref 'XRayImageUrl'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          Environment:
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports
+        - Name: envoy
+          Image: { Ref: EnvoyImage }
+          Essential: true
+          User: "1337"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports
+          MountPoints:
+            - SourceVolume: "envoy-xray-tracing-config"
+              ContainerPath: "/tmp/xray-tracing.yaml"
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/reports-vn"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: { Ref: EnvoyLogLevel }
+            - Name: "ENVOY_TRACING_CFG_FILE"
+              Value: "/tmp/xray-tracing.yaml"
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+        - Name: proxyinit
+          Image: { Ref: SideCarRouterManagerImage }
+          Essential: false
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports
+          LinuxParameters:
+            Capabilities:
+              Add:
+                - "NET_ADMIN"
+          Environment:
+            - Name: "APPMESH_START_ENABLED"
+              Value: "1"
+            - Name: "APPMESH_USE_TPROXY"
+              Value: "0"
+            - Name: "APPMESH_IGNORE_UID"
+              Value: "1337"
+            - Name: "APPMESH_ENVOY_INGRESS_PORT"
+              Value: "15000"
+            - Name: "APPMESH_ENVOY_EGRESS_PORT"
+              Value: "15001"
+            - Name: "APPMESH_APP_PORTS"
+              Value: "9080"
+            - Name: "APPMESH_EGRESS_IGNORED_IP"
+              Value: { Ref: AppMeshEgressIgnoredIpCsv }
+        - Name: cloudwatch-agent
+          Image: !Ref CloudWatchAgentImage
+          Essential: false
+          Cpu: 100
+          Memory: 128
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports
+          Environment:
+            - Name: DOWNSTREAM_SERVICE_NAME
+              Value: reports
+            - Name: ENVOY_ADMIN_HOST
+              Value: "localhost:9901"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+
+
+  ### =================================
+  ### reports-v2.voteapp.svc.cluster.local
+  ### =================================
+  ReportsV2ServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "reports-v2"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  ReportsV2Service:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': ReportsV2ServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: ReportsV2TaskDefinition }
+
+  ReportsV2TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      TaskRoleArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRole"
+      Volumes:
+        - Name: "envoy-xray-tracing-config"
+          Host:
+            SourcePath: "/home/ec2-user/xray-tracing.yaml"
+      ContainerDefinitions:
+        - Name: app
+          Image: { Ref: VoteReportsV2Image }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports-v2
+          Environment:
+            - Name: "VERSION"
+              Value: "2"
+            - Name: "PORT"
+              Value: "9080"
+            - Name: "DATABASE_PROXY_URI"
+              Value: !Sub "http://database.${ECSServicesDomain}:9080"
+        - Name: xray-daemon
+          Essential: false
+          Cpu: 32
+          Memory: 64
+          Image: !Ref 'XRayImageUrl'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          Environment:
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports-v2
+        - Name: envoy
+          Image: { Ref: EnvoyImage }
+          Essential: true
+          User: "1337"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports-v2
+          MountPoints:
+            - SourceVolume: "envoy-xray-tracing-config"
+              ContainerPath: "/tmp/xray-tracing.yaml"
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/reports-vn-v2"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: { Ref: EnvoyLogLevel }
+            - Name: "ENVOY_TRACING_CFG_FILE"
+              Value: "/tmp/xray-tracing.yaml"
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+        - Name: proxyinit
+          Image: { Ref: SideCarRouterManagerImage }
+          Essential: false
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: reports-v2
+          LinuxParameters:
+            Capabilities:
+              Add:
+                - "NET_ADMIN"
+          Environment:
+            - Name: "APPMESH_START_ENABLED"
+              Value: "1"
+            - Name: "APPMESH_USE_TPROXY"
+              Value: "0"
+            - Name: "APPMESH_IGNORE_UID"
+              Value: "1337"
+            - Name: "APPMESH_ENVOY_INGRESS_PORT"
+              Value: "15000"
+            - Name: "APPMESH_ENVOY_EGRESS_PORT"
+              Value: "15001"
+            - Name: "APPMESH_APP_PORTS"
+              Value: "9080"
+            - Name: "APPMESH_EGRESS_IGNORED_IP"
+              Value: { Ref: AppMeshEgressIgnoredIpCsv }
+        - Name: cloudwatch-agent
+          Image: !Ref CloudWatchAgentImage
+          Essential: false
+          Cpu: 100
+          Memory: 128
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: reports-v2
+          Environment:
+            - Name: DOWNSTREAM_SERVICE_NAME
+              Value: reports-v2
+            - Name: ENVOY_ADMIN_HOST
+              Value: "localhost:9901"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+
+
+  ### =================================
+  ### web.voteapp.svc.cluster.local
+  ### =================================
+  WebServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "web"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  WebService:
+    Type: 'AWS::ECS::Service'
+    DependsOn:
+      - WebLoadBalancerRule
+      - PrometheusLoadBalancerRule
+      - GrafanaLoadBalancerRule
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': WebServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: WebTaskDefinition }
+      LoadBalancers:
+        - ContainerName: app
+          ContainerPort: 9080
+          TargetGroupArn: !Ref 'WebTargetGroup'
+
+  WebTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      TaskRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRole"
+      Volumes:
+        - Name: "envoy-xray-tracing-config"
+          Host: 
+            SourcePath: "/home/ec2-user/xray-tracing.yaml"
+      ContainerDefinitions:
+        - Name: app
+          Image: { Ref: VoteWebImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: web
+          Environment:
+            - Name: "PORT"
+              Value: "9080"
+            - Name: "VOTES_URI"
+              Value: !Sub "http://votes.${ECSServicesDomain}:9080"
+            - Name: "REPORTS_URI"
+              Value: !Sub "http://reports.${ECSServicesDomain}:9080"
+          PortMappings:
+            - ContainerPort: 9080
+        - Name: xray-daemon
+          Essential: false
+          Cpu: 32
+          Memory: 64
+          Image: !Ref 'XRayImageUrl'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          Environment:
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: web
+        - Name: envoy
+          Image: { Ref: EnvoyImage }
+          Essential: true
+          User: "1337"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: web
+          MountPoints: 
+            - SourceVolume: "envoy-xray-tracing-config"
+              ContainerPath: "/tmp/xray-tracing.yaml" 
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/web-vn"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: { Ref: EnvoyLogLevel }
+            - Name: "ENVOY_TRACING_CFG_FILE"
+              Value: "/tmp/xray-tracing.yaml"
+            - Name: "AWS_REGION"
+              Value: !Ref "AWS::Region"
+        - Name: proxyinit
+          Image: { Ref: SideCarRouterManagerImage }
+          Essential: false
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: web
+          LinuxParameters:
+            Capabilities:
+              Add:
+                - "NET_ADMIN"
+          Environment:
+            - Name: "APPMESH_START_ENABLED"
+              Value: "1"
+            - Name: "APPMESH_USE_TPROXY"
+              Value: "0"
+            - Name: "APPMESH_IGNORE_UID"
+              Value: "1337"
+            - Name: "APPMESH_ENVOY_INGRESS_PORT"
+              Value: "15000"
+            - Name: "APPMESH_ENVOY_EGRESS_PORT"
+              Value: "15001"
+            - Name: "APPMESH_APP_PORTS"
+              Value: "9080"
+            - Name: "APPMESH_EGRESS_IGNORED_IP"
+              Value: { Ref: AppMeshEgressIgnoredIpCsv }
+        - Name: prometheus
+          Image: { Ref: PrometheusWebImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: web
+          PortMappings:
+            - ContainerPort: 9090
+        - Name: stats-exporter
+          Image: { Ref: StatsExporterWebImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: web
+          PortMappings:
+            - ContainerPort: 9099
+        - Name: grafana
+          Image: { Ref: GrafanaWebImage }
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: { Ref: "AWS::Region" }
+              awslogs-stream-prefix: web
+          PortMappings:
+            - ContainerPort: 3000
+        - Name: cloudwatch-agent
+          Image: !Ref CloudWatchAgentImage
+          Essential: false
+          Cpu: 100
+          Memory: 128
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: web
+          Environment:
+            - Name: DOWNSTREAM_SERVICE_NAME
+              Value: web
+            - Name: ENVOY_ADMIN_HOST
+              Value: "localhost:9901"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      NetworkMode: "awsvpc"
+      Memory: 256
+
+  ### =================================
+
+  # Web load balancer resources
+  WebTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      Name: !Join ['-', [!Ref 'EnvironmentName', 'web']]
+      Name: !Sub "${EnvironmentName}-web"
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 30
+      VpcId:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+  
+  ## Create a rule on the load balancer for routing traffic to the target group
+  ## Listener is created in infrastructure/ecs-cluster.yaml
+  WebLoadBalancerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref 'WebTargetGroup'
+          Type: 'forward'
+      Conditions:
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicListener"
+      Priority: 1
+
+  # Prometheus load balancer resources
+  PrometheusTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 300
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 10
+      TargetType: ip
+      Name: !Sub "${EnvironmentName}-prometheus-1"
+      Port: 9090
+      Protocol: HTTP
+      UnhealthyThresholdCount: 10
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 30
+      VpcId:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+    
+  PrometheusLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref 'PrometheusTargetGroup'
+          Type: 'forward'
+      LoadBalancerArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicLoadBalancer"
+      Port: 9090
+      Protocol: HTTP
+
+  ## Create a rule on the load balancer for routing traffic to the target group
+  PrometheusLoadBalancerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref 'PrometheusTargetGroup'
+          Type: 'forward'
+      Conditions:
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref 'PrometheusLoadBalancerListener'
+      Priority: 1
+
+  # Grafana load balancer resources
+  GrafanaTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 300
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 10
+      TargetType: ip
+      Name: !Sub "${EnvironmentName}-grafana-1"
+      Port: 3000
+      Protocol: HTTP
+      UnhealthyThresholdCount: 10
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 30
+      VpcId:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+
+  GrafanaLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref 'GrafanaTargetGroup'
+          Type: 'forward'
+      LoadBalancerArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicLoadBalancer"
+      Port: 3000
+      Protocol: HTTP
+  
+  ## Create a rule on the load balancer for routing traffic to the target group
+  GrafanaLoadBalancerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref 'GrafanaTargetGroup'
+          Type: 'forward'
+      Conditions:
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: !Ref 'GrafanaLoadBalancerListener'
+      Priority: 1
