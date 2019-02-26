@@ -18,7 +18,7 @@
         ],
         "serviceDiscovery": {
             "dns": {
-                "serviceName": "colorteller-black@@SERVICES_DOMAIN@@"
+                "hostname": "colorteller-black@@SERVICES_DOMAIN@@"
             }
         }
     },

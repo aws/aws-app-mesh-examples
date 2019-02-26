@@ -10,12 +10,20 @@
         ],
         "serviceDiscovery": {
             "dns": {
-                "serviceName": "colorgateway@@SERVICES_DOMAIN@@"
+                "hostname": "colorgateway@@SERVICES_DOMAIN@@"
             }
         },
         "backends": [
-            "colorteller@@SERVICES_DOMAIN@@",
-            "tcpecho@@SERVICES_DOMAIN@@"
+            {
+                "virtualService": {
+                    "virtualServiceName": "colorteller@@SERVICES_DOMAIN@@"
+                }
+            },
+            {
+                "virtualService": {
+                    "virtualServiceName": "tcpecho@@SERVICES_DOMAIN@@"
+                }
+            }
         ]
     },
     "virtualNodeName": "colorgateway-vn"

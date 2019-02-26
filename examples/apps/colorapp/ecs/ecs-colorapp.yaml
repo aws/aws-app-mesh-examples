@@ -45,7 +45,7 @@ Parameters:
 Resources:
 
   ### colorteller.default.svc.cluster.local
-  ColorTellerServiceDiscoveryRecord:
+  ColorTellerWhiteServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller"
@@ -58,7 +58,7 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  ColorTellerService:
+  ColorTellerWhiteService:
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster:
@@ -70,7 +70,7 @@ Resources:
       LaunchType: EC2
       ServiceRegistries:
         - RegistryArn:
-            'Fn::GetAtt': ColorTellerServiceDiscoveryRecord.Arn
+            'Fn::GetAtt': ColorTellerWhiteServiceDiscoveryRecord.Arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -79,9 +79,9 @@ Resources:
           Subnets: 
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      TaskDefinition: { Ref: ColorTellerTaskDefinition }
+      TaskDefinition: { Ref: ColorTellerWhiteTaskDefinition }
 
-  ColorTellerTaskDefinition:
+  ColorTellerWhiteTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       ContainerDefinitions:
@@ -117,7 +117,7 @@ Resources:
               awslogs-stream-prefix: "colorteller-envoy"
           Environment:
             - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-vn"
+              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-white-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: { Ref: EnvoyLogLevel }
             - Name: "APPMESH_XDS_ENDPOINT"

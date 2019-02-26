@@ -51,6 +51,15 @@ sanity_check() {
     fi
 }
 
+delete_virtual_service() {
+    virtual_service_name=$1
+    print "Deleting virutal-service ${virtual_service_name}"
+    $appmesh_cmd delete-virtual-service \
+        ${PROFILE_OPT} \
+        --mesh-name ${MESH_NAME} \
+        --virtual-service-name ${virtual_service_name} || print "Unable to delete virtual-service $virtual_service_name" "$?"
+}
+
 delete_route() {
     route_name=$1
     virtual_router_name=$2
@@ -81,6 +90,13 @@ delete_virtual_node() {
 
 main() {
     sanity_check
+
+    #delete virtual-services
+    for f in $(ls "${DIR}/config/virtualservices/")
+    do
+        virtual_service_name=$(cat ${DIR}/config/virtualservices/${f} | jq -r ".virtualServiceName" | sed "s/@@SERVICES_DOMAIN@@/.${SERVICES_DOMAIN}/g")
+        delete_virtual_service "${virtual_service_name}"
+    done
 
     #delete routes
     for f in $(ls "${DIR}/config/routes/")

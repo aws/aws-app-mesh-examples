@@ -1,8 +1,5 @@
 {
     "spec": {
-        "serviceNames": [
-            "colorteller@@SERVICES_DOMAIN@@"
-        ]
     },
     "virtualRouterName": "colorteller-vr"
 }

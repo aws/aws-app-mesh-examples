@@ -152,11 +152,45 @@ save_routes() {
     done
 }
 
+create_virtual_service() {
+    cli_input=$1
+    cmd=( $appmesh_cmd create-virtual-service \
+              ${PROFILE_OPT} \
+              --mesh-name "${MESH_NAME}" \
+              --cli-input-json "${cli_input}" \
+              --query virtualService.metadata.uid --output text )
+    print "${cmd[@]}"
+    uid=$("${cmd[@]}") || err "Unable to save virtual service" "$?"
+    print "--> ${uid}"
+}
+
+update_virtual_service() {
+    cli_input=$1
+    cmd=( $appmesh_cmd update-virtual-service \
+              ${PROFILE_OPT} \
+              --mesh-name "${MESH_NAME}" \
+              --cli-input-json "${cli_input}" \
+              --query virtualService.metadata.uid --output text )
+    print "${cmd[@]}"
+    uid=$("${cmd[@]}") || create_virtual_service "${cli_input}"
+    print "--> ${uid}"
+}
+
+save_virtual_services() {
+    print "Creating virtual services"
+    print "========================"
+    for service in $(ls ${DIR}/config/virtualservices); do
+      cli_input=$(cat ${DIR}/config/virtualservices/${service} | sed "s/@@SERVICES_DOMAIN@@/.${SERVICES_DOMAIN}/g")
+      update_virtual_service "${cli_input}"
+    done
+}
+
 main() {
     sanity_check
     save_virtual_nodes
     save_virtual_routers
     save_routes
+    save_virtual_services
 }
 
 main
