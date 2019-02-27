@@ -127,7 +127,7 @@ spec:
             runAsUser: 1337
           env:
             - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "mesh/${MESH_NAME}/virtualNode/colorteller-vn"
+              value: "mesh/${MESH_NAME}/virtualNode/colorteller-white-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
