@@ -1,8 +1,0 @@
-{
-    "spec": {
-        "serviceNames": [
-            "votes.default.svc.cluster.local"
-        ]
-    },
-    "virtualRouterName": "votes-vr"
-}

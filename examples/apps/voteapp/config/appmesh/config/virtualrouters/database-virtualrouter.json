@@ -1,8 +1,0 @@
-{
-    "spec": {
-        "serviceNames": [
-            "database.default.svc.cluster.local"
-        ]
-    },
-    "virtualRouterName": "database-vr"
-}
