@@ -6,7 +6,15 @@
                 "weightedTargets": [
                     {
                         "virtualNode": "colorteller-vn",
-                        "weight": 1
+                        "weight": 30
+                    },
+                    {
+                        "virtualNode": "colorteller-black-vn",
+                        "weight": 30
+                    },
+                    {
+                        "virtualNode": "colorteller-blue-vn",
+                        "weight": 40
                     }
                 ]
             },
