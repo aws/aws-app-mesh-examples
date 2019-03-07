@@ -1,5 +1,13 @@
 {
     "spec": {
+        "listeners": [
+            { 
+                "portMapping": {
+                    "port": 9080, 
+                    "protocol": "http"
+                }   
+            }
+        ]
     },
     "virtualRouterName": "colorgateway-vr"
 }
