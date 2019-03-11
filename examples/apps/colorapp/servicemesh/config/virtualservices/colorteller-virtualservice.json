@@ -1,0 +1,10 @@
+{
+    "spec": {
+        "provider": {
+            "virtualRouter": {
+                "virtualRouterName": "colorteller-vr"
+            }
+        }
+    },
+    "virtualServiceName": "colorteller@@SERVICES_DOMAIN@@"
+}

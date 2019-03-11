@@ -8,6 +8,17 @@ else
     appmesh_cmd="aws --endpoint-url "${APPMESH_ENDPOINT}" appmesh"
 fi
 
+virtual_services=($($appmesh_cmd list-virtual-services \
+    --mesh-name "${MESH_NAME}" \
+    | jq -r ".virtualServices[].virtualServiceName"))
+
+for virtual_service_name in ${virtual_services[@]}
+do
+    $appmesh_cmd delete-virtual-service \
+        --mesh-name "${MESH_NAME}" \
+        --virtual-service-name "${virtual_service_name}" || echo "Unable to delete virtual-service $virtual_service_name $?"
+done
+
 virtual_routers=($($appmesh_cmd list-virtual-routers \
     --mesh-name "${MESH_NAME}" \
     | jq -r ".virtualRouters[].virtualRouterName"))

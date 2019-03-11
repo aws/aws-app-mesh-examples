@@ -1,7 +1,12 @@
 {
     "spec": {
-        "serviceNames": [
-            "colorteller@@SERVICES_DOMAIN@@"
+        "listeners": [
+            { 
+                "portMapping": {
+                    "port": 9080, 
+                    "protocol": "http"
+                }   
+            }
         ]
     },
     "virtualRouterName": "colorteller-vr"

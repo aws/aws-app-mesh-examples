@@ -1,0 +1,10 @@
+{
+    "spec": {
+        "provider": {
+            "virtualNode": {
+                "virtualNodeName": "tcpecho-vn"
+            }
+        }
+    },
+    "virtualServiceName": "tcpecho@@SERVICES_DOMAIN@@"
+}

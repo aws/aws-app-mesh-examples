@@ -18,9 +18,9 @@
         ],
         "serviceDiscovery": {
             "dns": {
-                "serviceName": "colorteller@@SERVICES_DOMAIN@@"
+                "hostname": "colorteller@@SERVICES_DOMAIN@@"
             }
         }
     },
-    "virtualNodeName": "colorteller-vn"
+    "virtualNodeName": "colorteller-white-vn"
 }
