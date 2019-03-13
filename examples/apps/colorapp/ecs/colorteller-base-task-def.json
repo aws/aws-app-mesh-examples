@@ -23,11 +23,7 @@
           {
               "name": "EgressIgnoredIPs",
               "value": "169.254.170.2,169.254.169.254"
-          },
-          {
-              "name": "EgressIgnoredPorts",
-              "value": "443"
-          } 
+          }
       ]
   },
   "containerDefinitions": [
@@ -70,6 +66,7 @@
     {
       "name": "envoy",
       "image": $ENVOY_IMAGE,
+      "user": "1337",
       "essential": true,
       "environment": [
         {
