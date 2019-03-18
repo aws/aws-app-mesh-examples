@@ -90,8 +90,20 @@ Resources:
         Fn::Base64:
           !Sub |
             #!/bin/bash -x
+
+            # cloudformation support - use to signal cloudformation when finished
             yum install -y aws-cfn-bootstrap
+
+            # docker support - add ec2-user to docker group
             usermod -a -G docker ec2-user
+
+            # golang support - use to build colorteller app
+            amazon-linux-extras install -y golang1.11
+            mkdir -p ~/go ~/go/bin ~/go/pkg ~/go/src/github.com/awslabs
+            go install github.com/awslabs/aws-app-mesh-examples/examples/apps/colorapp/src/colorteller/...
+            sudo mv ~/go/bin/colorteller /usr/local/bin
+            # TODO set up systemd servicd instead
+            SERVER_PORT=9080 COLOR=blue nohup /usr/local/bin/colorteller &
 
             # run Envoy proxy container
             docker run -d --net=host \
@@ -113,13 +125,7 @@ Resources:
               -e !Sub "APPMESH_EGRESS_IGNORED_IP=${AppMeshEgressIgnoredIpCsv}" \
               { Ref: EnvoyImage }
 
-            # run ColorTeller container
-            docker run -d --net=host -p 9080:9080 \
-              -e "SERVER_PORT=9080" \
-              -e "COLOR=blue" \
-              { Ref ColorTellerImage }
-
-            # Notify CloudFormation that the instance is up and ready
+            # notify CloudFormation that the instance is up and ready
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource EC2Instance
 
   ### colorteller-blue.default.svc.cluster.local
