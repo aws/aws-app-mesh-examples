@@ -20,21 +20,26 @@ ecs_service_log_group=($(echo $stack_output \
 envoy_log_level="debug"
 
 # Color Gateway Task Definition
+envoy_container_json=$(jq -n \
+    --arg ENVOY_IMAGE $ENVOY_IMAGE \
+    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorgateway-vn" \
+    --arg APPMESH_XDS_ENDPOINT "${APPMESH_XDS_ENDPOINT}" \
+    --arg ENVOY_LOG_LEVEL $envoy_log_level \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorgateway-envoy" \
+    -f "${DIR}/envoy-container.json")
 task_def_json=$(jq -n \
-    --arg NAME "ColorGateway" \
+    --arg NAME "$ENVIRONMENT_NAME-ColorGateway" \
     --arg COLOR_TELLER_ENDPOINT "colorteller.$SERVICES_DOMAIN:9080" \
     --arg TCP_ECHO_ENDPOINT "tcpecho.$SERVICES_DOMAIN:2701" \
     --arg APP_IMAGE $COLOR_GATEWAY_IMAGE \
-    --arg ENVOY_IMAGE $ENVOY_IMAGE \
-    --arg APPMESH_XDS_ENDPOINT "${APPMESH_XDS_ENDPOINT}" \
-    --arg ENVOY_LOG_LEVEL $envoy_log_level \
     --arg AWS_REGION $AWS_REGION \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
     --arg AWS_LOG_STREAM_PREFIX_APP "colorgateway-app" \
-    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorgateway-envoy" \
-    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorgateway-vn" \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
+    --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     -f "${DIR}/colorgateway-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -43,20 +48,25 @@ colorgateway_task_def_arn=($(echo $task_def \
     | jq -r '.taskDefinition | .taskDefinitionArn'))
 
 # Color Teller White Task Definition
-task_def_json=$(jq -n \
-    --arg NAME "ColorTellerWhite" \
-    --arg COLOR "white" \
-    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
+envoy_container_json=$(jq -n \
     --arg ENVOY_IMAGE $ENVOY_IMAGE \
+    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-white-vn" \
     --arg APPMESH_XDS_ENDPOINT "${APPMESH_XDS_ENDPOINT}" \
     --arg ENVOY_LOG_LEVEL $envoy_log_level \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-white-envoy" \
+    -f "${DIR}/envoy-container.json")
+task_def_json=$(jq -n \
+    --arg NAME "$ENVIRONMENT_NAME-ColorTellerWhite" \
+    --arg COLOR "white" \
+    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
     --arg AWS_LOG_STREAM_PREFIX_APP "colorteller-white-app" \
-    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-white-envoy" \
-    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-white-vn" \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
+    --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -65,20 +75,25 @@ colorteller_white_task_def_arn=($(echo $task_def \
     | jq -r '.taskDefinition | .taskDefinitionArn'))
 
 # Color Teller Red Task Definition
-task_def_json=$(jq -n \
-    --arg NAME "ColorTellerRed" \
-    --arg COLOR "red" \
-    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
+envoy_container_json=$(jq -n \
     --arg ENVOY_IMAGE $ENVOY_IMAGE \
+    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-red-vn" \
     --arg APPMESH_XDS_ENDPOINT "${APPMESH_XDS_ENDPOINT}" \
     --arg ENVOY_LOG_LEVEL $envoy_log_level \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-red-envoy" \
+    -f "${DIR}/envoy-container.json")
+task_def_json=$(jq -n \
+    --arg NAME "$ENVIRONMENT_NAME-ColorTellerRed" \
+    --arg COLOR "red" \
+    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
     --arg AWS_LOG_STREAM_PREFIX_APP "colorteller-red-app" \
-    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-red-envoy" \
-    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-red-vn" \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
+    --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -87,20 +102,25 @@ colorteller_red_task_def_arn=($(echo $task_def \
     | jq -r '.taskDefinition | .taskDefinitionArn'))
 
 # Color Teller Blue Task Definition
-task_def_json=$(jq -n \
-    --arg NAME "ColorTellerBlue" \
-    --arg COLOR "blue" \
-    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
+envoy_container_json=$(jq -n \
     --arg ENVOY_IMAGE $ENVOY_IMAGE \
+    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-blue-vn" \
     --arg APPMESH_XDS_ENDPOINT "${APPMESH_XDS_ENDPOINT}" \
     --arg ENVOY_LOG_LEVEL $envoy_log_level \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-blue-envoy" \
+    -f "${DIR}/envoy-container.json")
+task_def_json=$(jq -n \
+    --arg NAME "$ENVIRONMENT_NAME-ColorTellerBlue" \
+    --arg COLOR "blue" \
+    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
     --arg AWS_LOG_STREAM_PREFIX_APP "colorteller-blue-app" \
-    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-blue-envoy" \
-    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-blue-vn" \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
+    --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -109,20 +129,25 @@ colorteller_blue_task_def_arn=($(echo $task_def \
     | jq -r '.taskDefinition | .taskDefinitionArn'))
 
 # Color Teller Black Task Definition
-task_def_json=$(jq -n \
-    --arg NAME "ColorTellerBlack" \
-    --arg COLOR "black" \
-    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
+envoy_container_json=$(jq -n \
     --arg ENVOY_IMAGE $ENVOY_IMAGE \
+    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-black-vn" \
     --arg APPMESH_XDS_ENDPOINT "${APPMESH_XDS_ENDPOINT}" \
     --arg ENVOY_LOG_LEVEL $envoy_log_level \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-black-envoy" \
+    -f "${DIR}/envoy-container.json")
+task_def_json=$(jq -n \
+    --arg NAME "$ENVIRONMENT_NAME-ColorTellerBlack" \
+    --arg COLOR "black" \
+    --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
     --arg AWS_LOG_STREAM_PREFIX_APP "colorteller-black-app" \
-    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-black-envoy" \
-    --arg VIRTUAL_NODE "mesh/$MESH_NAME/virtualNode/colorteller-black-vn" \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
+    --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \

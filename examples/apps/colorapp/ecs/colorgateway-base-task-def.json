@@ -1,30 +1,30 @@
 {
   "family": $NAME,
   "proxyConfiguration":{
-      "type": "APPMESH",
-      "containerName": "envoy",
-      "properties": [
-          {
-              "name": "IgnoredUID",
-              "value": "1337"
-          },
-          {
-              "name": "ProxyIngressPort",
-              "value": "15000"
-          },
-          {
-              "name": "ProxyEgressPort",
-              "value": "15001"
-          },
-          {
-              "name": "AppPorts",
-              "value": "9080"
-          },
-          {
-              "name": "EgressIgnoredIPs",
-              "value": "169.254.170.2,169.254.169.254"
-          }
-      ]
+    "type": "APPMESH",
+    "containerName": "envoy",
+    "properties": [
+      {
+        "name": "IgnoredUID",
+        "value": "1337"
+      },
+      {
+        "name": "ProxyIngressPort",
+        "value": "15000"
+      },
+      {
+        "name": "ProxyEgressPort",
+        "value": "15001"
+      },
+      {
+        "name": "AppPorts",
+        "value": "9080"
+      },
+      {
+        "name": "EgressIgnoredIPs",
+        "value": "169.254.170.2,169.254.169.254"
+      }
+    ]
   },
   "containerDefinitions": [
     {
@@ -67,43 +67,7 @@
         }
       ]
     },
-    {
-      "name": "envoy",
-      "image": $ENVOY_IMAGE,
-      "user": "1337",
-      "essential": true,
-      "environment": [
-        {
-          "name": "APPMESH_VIRTUAL_NODE_NAME",
-          "value": $VIRTUAL_NODE
-        },
-        {
-          "name": "ENVOY_LOG_LEVEL",
-          "value": $ENVOY_LOG_LEVEL
-        },
-        {
-          "name": "APPMESH_XDS_ENDPOINT",
-          "value": $APPMESH_XDS_ENDPOINT
-        }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": $ECS_SERVICE_LOG_GROUP,
-          "awslogs-region": $AWS_REGION,
-          "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX_ENVOY
-        }
-      },
-      "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "echo hello"
-        ],
-        "interval": 5,
-        "timeout": 2,
-        "retries": 3
-      }
-    }
+    $ENVOY_CONTAINER_JSON
   ],
   "taskRoleArn": $TASK_ROLE_ARN,
   "executionRoleArn": $EXECUTION_ROLE_ARN,

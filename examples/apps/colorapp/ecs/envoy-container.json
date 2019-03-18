@@ -1,0 +1,54 @@
+{
+  "name": "envoy",
+  "image": $ENVOY_IMAGE,
+  "user": "1337",
+  "essential": true,
+  "portMappings": [
+    {
+      "containerPort": 9901,
+      "hostPort": 9901,
+      "protocol": "tcp"
+    },
+    {
+      "containerPort": 15000,
+      "hostPort": 15000,
+      "protocol": "tcp"
+    },
+    {
+      "containerPort": 15001,
+      "hostPort": 15001,
+      "protocol": "tcp"
+    }
+  ],
+  "environment": [
+    {
+      "name": "APPMESH_VIRTUAL_NODE_NAME",
+      "value": $VIRTUAL_NODE
+    },
+    {
+      "name": "ENVOY_LOG_LEVEL",
+      "value": $ENVOY_LOG_LEVEL
+    },
+    {
+      "name": "APPMESH_XDS_ENDPOINT",
+      "value": $APPMESH_XDS_ENDPOINT
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+      "awslogs-group": $ECS_SERVICE_LOG_GROUP,
+      "awslogs-region": $AWS_REGION,
+      "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX_ENVOY
+    }
+  },
+  "healthCheck": {
+    "command": [
+      "CMD-SHELL",
+      "curl -f http://localhost:9901/server_info || exit 1"
+    ],
+    "interval": 5,
+    "timeout": 2,
+    "retries": 3
+  }
+}
