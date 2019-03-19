@@ -12,10 +12,12 @@ Parameters:
     Type: String
     Default: c4.large
 
-  ECSAMI:
+  EC2AMI:
     Description: The Amazon Machine Image ID used for the cluster, leave it as the default value to get the latest AMI
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+#    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+#    Default: ami-08e689a423405d7f6 amzn2-ami-hvm-2.0.20190313-x86_64-ebs
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -24,7 +26,7 @@ Parameters:
   SideCarRouterManagerImage:
     Type: String
     Description: Sidecar router manager that sets up networking for transparent proxy
-    Default: "111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager"
+    Default: "subfuzion/aws-appmesh-proxy-route-manager:latest"
 
   EnvoyImage:
     Type: String
@@ -60,7 +62,7 @@ Resources:
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Enable SSH access via port 22
+      GroupDescription: Allow connections on specified ports
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
       SecurityGroupIngress:
@@ -68,15 +70,19 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9080
+          ToPort: 9080
+          CidrIp: 0.0.0.0/0
 
   # EC2 instance for running Docker containers
   EC2Instance:
     Type: AWS::EC2::Instance
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT15M
+        Timeout: PT10M
     Properties:
-      ImageId: !Ref ECSAMI
+      ImageId: !Ref EC2AMI
       InstanceType: !Ref InstanceType
       SecurityGroupIds:
         - !Ref EC2SecurityGroup
@@ -91,42 +97,45 @@ Resources:
           !Sub |
             #!/bin/bash -x
 
-            # cloudformation support - use to signal cloudformation when finished
+            # CloudFormation support - use to signal cloudformation when finished
             yum install -y aws-cfn-bootstrap
-
-            # docker support - add ec2-user to docker group
-            usermod -a -G docker ec2-user
 
             # golang support - use to build colorteller app
             amazon-linux-extras install -y golang1.11
-            mkdir -p ~/go ~/go/bin ~/go/pkg ~/go/src/github.com/awslabs
-            go install github.com/awslabs/aws-app-mesh-examples/examples/apps/colorapp/src/colorteller/...
+            mkdir -p ~/go ~/go/bin ~/go/pkg ~/go/src/github.com/aws
+            GOPATH=~/go go get github.com/aws/aws-app-mesh-examples/examples/apps/colorapp/src/colorteller/
             sudo mv ~/go/bin/colorteller /usr/local/bin
             # TODO set up systemd servicd instead
-            SERVER_PORT=9080 COLOR=blue nohup /usr/local/bin/colorteller &
+            SERVER_PORT=9080 COLOR=blue /usr/local/bin/colorteller &
 
-            # run Envoy proxy container
-            docker run -d --net=host \
-              --user "1337" \
-              -e !Sub "APPMESH_VIRTUAL_NODE_NAME=mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn" \
-              -e !Sub "ENVOY_LOG_LEVEL=${EnvoyLogLevel}" \
-              -e !Sub "APPMESH_XDS_ENDPOINT=${AppMeshXdsEndpoint}" \
-              { Ref: EnvoyImage }
+            # Docker support - add ec2-user to docker group
+            amazon-linux-extras install -y docker
+            systemctl start docker
+            usermod -a -G docker ec2-user
 
             # run proxy init container
             docker run -d --net=host \
               --privileged \
-              --cap-add NET_ADMIN
+              --cap-add NET_ADMIN \
               -e "APPMESH_START_ENABLED=1" \
               -e "APPMESH_IGNORE_UID=1337" \
               -e "APPMESH_ENVOY_INGRESS_PORT=15000" \
               -e "APPMESH_ENVOY_EGRESS_PORT=15001" \
               -e "APPMESH_APP_PORTS=9080" \
-              -e !Sub "APPMESH_EGRESS_IGNORED_IP=${AppMeshEgressIgnoredIpCsv}" \
-              { Ref: EnvoyImage }
+              -e "APPMESH_EGRESS_IGNORED_IP=${AppMeshEgressIgnoredIpCsv}" \
+              ${SideCarRouterManagerImage}
 
-            # notify CloudFormation that the instance is up and ready
-            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource EC2Instance
+            # run Envoy proxy container
+            docker run -d --net=host \
+              --user "1337" \
+              -e "APPMESH_VIRTUAL_NODE_NAME=mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn" \
+              -e "ENVOY_LOG_LEVEL=${EnvoyLogLevel}" \
+              -e "APPMESH_XDS_ENDPOINT=${AppMeshXdsEndpoint}" \
+              ${EnvoyImage}
+
+            # TODO: send failure exit code, but for now leave the instance up for debugging (/var/log/cloud-init-output.log)
+            # notify CloudFormation that the instance is up
+            /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource EC2Instance
 
   ### colorteller-blue.default.svc.cluster.local
   ColorTellerBlueServiceDiscoveryRecord:
