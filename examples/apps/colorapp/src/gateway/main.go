@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -82,7 +83,8 @@ func getRatios() map[string]float64 {
 
 	ratios := make(map[string]float64)
 	for k, v := range counts {
-		ratios[k] = float64(v) / float64(total)
+		ratio := float64(v) / float64(total)
+		ratios[k] = math.Round(ratio*100) / 100
 	}
 
 	return ratios
