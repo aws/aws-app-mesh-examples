@@ -45,6 +45,10 @@
         {
           "name": "SERVER_PORT",
           "value": "9080"
+        },
+        {
+          "name": "STAGE",
+          "value": $STAGE
         }
       ],
       "logConfiguration": {
@@ -63,7 +67,8 @@
         }
       ]
     },
-    $ENVOY_CONTAINER_JSON
+    $ENVOY_CONTAINER_JSON,
+    $XRAY_CONTAINER_JSON
   ],
   "taskRoleArn": $TASK_ROLE_ARN,
   "executionRoleArn": $EXECUTION_ROLE_ARN,

@@ -14,10 +14,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/pkg/errors"
 )
 
 const defaultPort = "8080"
+const defaultStage = "default"
 const maxColors = 1000
 
 var colors [maxColors]string
@@ -33,6 +35,15 @@ func getServerPort() string {
 	return defaultPort
 }
 
+func getStage() string {
+	stage := os.Getenv("STAGE")
+	if stage != "" {
+		return stage
+	}
+
+	return defaultStage
+}
+
 func getColorTellerEndpoint() (string, error) {
 	colorTellerEndpoint := os.Getenv("COLOR_TELLER_ENDPOINT")
 	if colorTellerEndpoint == "" {
@@ -41,8 +52,10 @@ func getColorTellerEndpoint() (string, error) {
 	return colorTellerEndpoint, nil
 }
 
-func getColorHandler(writer http.ResponseWriter, request *http.Request) {
-	color, err := getColorFromColorTeller()
+type colorHandler struct{}
+
+func (h *colorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	color, err := getColorFromColorTeller(request)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		writer.Write([]byte("500 - Unexpected Error"))
@@ -90,25 +103,33 @@ func getRatios() map[string]float64 {
 	return ratios
 }
 
-func clearColorStatsHandler(writer http.ResponseWriter, request *http.Request) {
+type clearColorStatsHandler struct{}
+
+func (h *clearColorStatsHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	colorsMutext.Lock()
 	defer colorsMutext.Unlock()
 
 	colorsIdx = 0
-	for i, _ := range colors {
+	for i := range colors {
 		colors[i] = ""
 	}
 
 	fmt.Fprint(writer, "cleared")
 }
 
-func getColorFromColorTeller() (string, error) {
+func getColorFromColorTeller(request *http.Request) (string, error) {
 	colorTellerEndpoint, err := getColorTellerEndpoint()
 	if err != nil {
 		return "-n/a-", err
 	}
 
-	resp, err := http.Get(fmt.Sprintf("http://%s", colorTellerEndpoint))
+	client := xray.Client(&http.Client{})
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", colorTellerEndpoint), nil)
+	if err != nil {
+		return "-n/a-", err
+	}
+
+	resp, err := client.Do(req.WithContext(request.Context()))
 	if err != nil {
 		return "-n/a-", err
 	}
@@ -127,7 +148,7 @@ func getColorFromColorTeller() (string, error) {
 	return color, nil
 }
 
-func getTcpEchoEndpoint() (string, error) {
+func getTCPEchoEndpoint() (string, error) {
 	tcpEchoEndpoint := os.Getenv("TCP_ECHO_ENDPOINT")
 	if tcpEchoEndpoint == "" {
 		return "", errors.New("TCP_ECHO_ENDPOINT is not set")
@@ -135,8 +156,10 @@ func getTcpEchoEndpoint() (string, error) {
 	return tcpEchoEndpoint, nil
 }
 
-func tcpEchoHandler(writer http.ResponseWriter, request *http.Request) {
-	endpoint, err := getTcpEchoEndpoint()
+type tcpEchoHandler struct{}
+
+func (h *tcpEchoHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	endpoint, err := getTCPEchoEndpoint()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "tcpecho endpoint is not set")
@@ -181,7 +204,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	tcpEchoEndpoint, err := getTcpEchoEndpoint()
+	tcpEchoEndpoint, err := getTCPEchoEndpoint()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -189,8 +212,10 @@ func main() {
 	log.Println("Using color-teller at " + colorTellerEndpoint)
 	log.Println("Using tcp-echo at " + tcpEchoEndpoint)
 
-	http.HandleFunc("/color", getColorHandler)
-	http.HandleFunc("/color/clear", clearColorStatsHandler)
-	http.HandleFunc("/tcpecho", tcpEchoHandler)
+	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-gateway", getStage()))
+
+	http.Handle("/color", xray.Handler(xraySegmentNamer, &colorHandler{}))
+	http.Handle("/color/clear", xray.Handler(xraySegmentNamer, &clearColorStatsHandler{}))
+	http.Handle("/tcpecho", xray.Handler(xraySegmentNamer, &tcpEchoHandler{}))
 	log.Fatal(http.ListenAndServe(":"+getServerPort(), nil))
 }

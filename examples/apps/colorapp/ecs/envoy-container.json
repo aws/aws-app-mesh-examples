@@ -32,6 +32,14 @@
     {
       "name": "APPMESH_XDS_ENDPOINT",
       "value": $APPMESH_XDS_ENDPOINT
+    },
+    {
+      "name": "ENABLE_ENVOY_XRAY_TRACING",
+      "value": "1"
+    },
+    {
+      "name": "ENABLE_ENVOY_STATS_TAGS",
+      "value": "1"
     }
   ],
   "logConfiguration": {
