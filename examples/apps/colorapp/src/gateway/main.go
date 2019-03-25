@@ -6,124 +6,65 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net"
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/pkg/errors"
 )
 
-const defaultPort = "8080"
-const defaultStage = "default"
-const maxColors = 1000
-
-var colors [maxColors]string
-var colorsIdx int
-var colorsMutext = &sync.Mutex{}
-
-func getServerPort() string {
-	port := os.Getenv("SERVER_PORT")
-	if port != "" {
-		return port
-	}
-
-	return defaultPort
+// colorHandler serves /color
+type colorHandler struct {
+	config *RuntimeConfig
+	store  Store
 }
 
-func getStage() string {
-	stage := os.Getenv("STAGE")
-	if stage != "" {
-		return stage
-	}
+func (h *colorHandler) getColor(writer http.ResponseWriter, request *http.Request) {
+	resp := make(map[string]interface{})
 
-	return defaultStage
-}
-
-func getColorTellerEndpoint() (string, error) {
-	colorTellerEndpoint := os.Getenv("COLOR_TELLER_ENDPOINT")
-	if colorTellerEndpoint == "" {
-		return "", errors.New("COLOR_TELLER_ENDPOINT is not set")
-	}
-	return colorTellerEndpoint, nil
-}
-
-type colorHandler struct{}
-
-func (h *colorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	color, err := getColorFromColorTeller(request)
+	color, err := h.getColorFromColorTeller(request)
 	if err != nil {
+		resp["error"] = err.Error()
+		h.printResponse(writer, resp)
+		return
+	}
+
+	resp["color"] = color
+
+	err = h.store.AddColor(color)
+	if err != nil {
+		resp["error"] = err.Error()
+		h.printResponse(writer, resp)
+		return
+	}
+
+	colorStats, err := h.store.GetStats()
+	if err != nil {
+		resp["error"] = err.Error()
+		h.printResponse(writer, resp)
+		return
+	}
+
+	resp["stats"] = colorStats
+	h.printResponse(writer, resp)
+}
+
+func (h *colorHandler) printResponse(writer http.ResponseWriter, resp map[string]interface{}) {
+	respJSON, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		log.Printf("Error:%s", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		writer.Write([]byte("500 - Unexpected Error"))
 		return
 	}
-
-	colorsMutext.Lock()
-	defer colorsMutext.Unlock()
-
-	addColor(color)
-	statsJson, err := json.Marshal(getRatios())
-	if err != nil {
-		fmt.Fprintf(writer, `{"color":"%s", "error":"%s"}`, color, err)
-		return
-	}
-	fmt.Fprintf(writer, `{"color":"%s", "stats": %s}`, color, statsJson)
+	fmt.Fprintf(writer, `%s`, respJSON)
 }
 
-func addColor(color string) {
-	colors[colorsIdx] = color
-
-	colorsIdx += 1
-	if colorsIdx >= maxColors {
-		colorsIdx = 0
-	}
-}
-
-func getRatios() map[string]float64 {
-	counts := make(map[string]int)
-	var total = 0
-
-	for _, c := range colors {
-		if c != "" {
-			counts[c] += 1
-			total += 1
-		}
-	}
-
-	ratios := make(map[string]float64)
-	for k, v := range counts {
-		ratio := float64(v) / float64(total)
-		ratios[k] = math.Round(ratio*100) / 100
-	}
-
-	return ratios
-}
-
-type clearColorStatsHandler struct{}
-
-func (h *clearColorStatsHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	colorsMutext.Lock()
-	defer colorsMutext.Unlock()
-
-	colorsIdx = 0
-	for i := range colors {
-		colors[i] = ""
-	}
-
-	fmt.Fprint(writer, "cleared")
-}
-
-func getColorFromColorTeller(request *http.Request) (string, error) {
-	colorTellerEndpoint, err := getColorTellerEndpoint()
-	if err != nil {
-		return "-n/a-", err
-	}
-
+func (h *colorHandler) getColorFromColorTeller(request *http.Request) (string, error) {
 	client := xray.Client(&http.Client{})
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", colorTellerEndpoint), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s", h.config.colorTellerEndpoint), nil)
 	if err != nil {
 		return "-n/a-", err
 	}
@@ -147,26 +88,40 @@ func getColorFromColorTeller(request *http.Request) (string, error) {
 	return color, nil
 }
 
-func getTCPEchoEndpoint() (string, error) {
-	tcpEchoEndpoint := os.Getenv("TCP_ECHO_ENDPOINT")
-	if tcpEchoEndpoint == "" {
-		return "", errors.New("TCP_ECHO_ENDPOINT is not set")
-	}
-	return tcpEchoEndpoint, nil
-}
-
-type tcpEchoHandler struct{}
-
-func (h *tcpEchoHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	endpoint, err := getTCPEchoEndpoint()
+func (h *colorHandler) clearStats(writer http.ResponseWriter, request *http.Request) {
+	err := h.store.ClearStats()
 	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "tcpecho endpoint is not set")
+		resp := make(map[string]interface{})
+		resp["error"] = err.Error()
+		h.printResponse(writer, resp)
 		return
 	}
 
-	log.Printf("Dialing tcp endpoint %s", endpoint)
-	conn, err := net.Dial("tcp", endpoint)
+	h.printStats(writer, request)
+}
+
+func (h *colorHandler) printStats(writer http.ResponseWriter, request *http.Request) {
+	resp := make(map[string]interface{})
+
+	colorStats, err := h.store.GetStats()
+	if err != nil {
+		resp["error"] = err.Error()
+		h.printResponse(writer, resp)
+		return
+	}
+
+	resp["stats"] = colorStats
+	h.printResponse(writer, resp)
+}
+
+// tcpEchoHandler handles /tcpecho requests by forwarding to TCP_ECHO_ENDPOINT
+type tcpEchoHandler struct {
+	config *RuntimeConfig
+}
+
+func (h *tcpEchoHandler) echo(writer http.ResponseWriter, request *http.Request) {
+	log.Printf("Dialing tcp endpoint %s", h.config.tcpEchoEndpoint)
+	conn, err := net.Dial("tcp", h.config.tcpEchoEndpoint)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Dial failed, err:%s", err.Error())
@@ -201,25 +156,35 @@ func (h *pingHandler) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 }
 
 func main() {
-	log.Println("Starting server, listening on port " + getServerPort())
+	config := NewRuntimeConfig()
 
-	colorTellerEndpoint, err := getColorTellerEndpoint()
-	if err != nil {
-		log.Fatalln(err)
+	xray.Configure(xray.Config{
+		LogLevel:  "warn",
+		LogFormat: "[%Level] [%Time] %Msg%n",
+	})
+
+	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-gateway", config.stage))
+
+	var store Store
+	redisEndpoint := os.Getenv("REDIS_ENDPOINT")
+	if redisEndpoint == "" {
+		log.Printf("REDIS_ENDPOINT is not specified, using in-memory store")
+		store = NewLocalStore()
+	} else {
+		log.Printf("REDIS_ENDPOINT is specified [%s], using redis store", redisEndpoint)
+		store = NewRedisStore(redisEndpoint)
 	}
-	tcpEchoEndpoint, err := getTCPEchoEndpoint()
-	if err != nil {
-		log.Fatalln(err)
+
+	colorHandler := &colorHandler{
+		config: config,
+		store:  store,
 	}
+	http.Handle("/color", xray.Handler(xraySegmentNamer, http.HandlerFunc(colorHandler.getColor)))
+	http.Handle("/color/clear", xray.Handler(xraySegmentNamer, http.HandlerFunc(colorHandler.clearStats)))
+	http.Handle("/color/stats", xray.Handler(xraySegmentNamer, http.HandlerFunc(colorHandler.printStats)))
 
-	log.Println("Using color-teller at " + colorTellerEndpoint)
-	log.Println("Using tcp-echo at " + tcpEchoEndpoint)
+	tcpEchoHandler := &tcpEchoHandler{config: config}
+	http.Handle("/tcpecho", xray.Handler(xraySegmentNamer, http.HandlerFunc(tcpEchoHandler.echo)))
 
-	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-gateway", getStage()))
-
-	http.Handle("/color", xray.Handler(xraySegmentNamer, &colorHandler{}))
-	http.Handle("/color/clear", xray.Handler(xraySegmentNamer, &clearColorStatsHandler{}))
-	http.Handle("/tcpecho", xray.Handler(xraySegmentNamer, &tcpEchoHandler{}))
-	http.Handle("/ping", xray.Handler(xraySegmentNamer, &pingHandler{}))
-	log.Fatal(http.ListenAndServe(":"+getServerPort(), nil))
+	log.Fatal(http.ListenAndServe(":"+config.serverPort, nil))
 }

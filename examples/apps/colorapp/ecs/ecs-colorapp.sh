@@ -25,5 +25,5 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     ColorTellerRedTaskDefinition="${colorteller_red_task_def_arn}" \
     ColorTellerBlueTaskDefinition="${colorteller_blue_task_def_arn}" \
     ColorTellerBlackTaskDefinition="${colorteller_black_task_def_arn}" \
+    RedisTaskDefinition="${redis_task_def_arn}" \
     DeployTester="${DEPLOY_TESTER}"
-
