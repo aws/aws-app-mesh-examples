@@ -3,6 +3,13 @@
   "image": $ENVOY_IMAGE,
   "user": "1337",
   "essential": true,
+  "ulimits": [
+    {
+      "name": "nofile",
+      "hardLimit": 15000,
+      "softLimit": 15000
+    }
+  ],
   "portMappings": [
     {
       "containerPort": 9901,
