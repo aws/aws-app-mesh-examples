@@ -18,7 +18,7 @@
       },
       {
         "name": "AppPorts",
-        "value": "9080"
+        "value": "6379"
       },
       {
         "name": "EgressIgnoredIPs",
@@ -29,33 +29,11 @@
   "containerDefinitions": [
     {
       "name": "app",
-      "image": $APP_IMAGE,
+      "image": "redis",
       "portMappings": [
         {
-          "containerPort": 9080,
+          "containerPort": 6379,
           "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {
-          "name": "SERVER_PORT",
-          "value": "9080"
-        },
-        {
-          "name": "COLOR_TELLER_ENDPOINT",
-          "value": $COLOR_TELLER_ENDPOINT
-        },
-        {
-          "name": "TCP_ECHO_ENDPOINT",
-          "value": $TCP_ECHO_ENDPOINT
-        },
-        {
-          "name": "REDIS_ENDPOINT",
-          "value": $REDIS_ENDPOINT
-        },
-        {
-          "name": "STAGE",
-          "value": $STAGE
         }
       ],
       "logConfiguration": {
@@ -65,7 +43,7 @@
           "awslogs-region": $AWS_REGION,
           "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX_APP
         }
-      },  
+      },
       "essential": true,
       "dependsOn": [
         {

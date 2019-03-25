@@ -39,6 +39,10 @@ Parameters:
                  should be connected to. Use * to send all load balancer
                  traffic to this service.
 
+  RedisTaskDefinition:
+    Type: String
+    Description: Task definition for Redis Service
+
   DeployTester:
     Type: String
     Default: false
@@ -225,7 +229,7 @@ Resources:
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
-      DesiredCount: 1
+      DesiredCount: 5
       LaunchType: EC2
       ServiceRegistries:
         - RegistryArn:
@@ -384,12 +388,11 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 6
-      HealthCheckPath: /color
+      HealthCheckPath: /ping
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
-      Name: !Sub "${EnvironmentName}-web"
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
@@ -423,9 +426,45 @@ Resources:
       ListenerArn: !Ref PublicLoadBalancerListener
       Priority: 1
 
+  ### redis.default.svc.cluster.local
+  RedisServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "redis"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  RedisService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': RedisServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: RedisTaskDefinition }
+
 Outputs: 
 
   ColorAppEndpoint:
     Description: Public endpoint for Color App service
     Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
-

@@ -177,10 +177,63 @@ Resources:
           VirtualNode:
             VirtualNodeName: tcpecho-vn
 
+  RedisVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: redis-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 6379
+              Protocol: tcp
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "redis.${ServicesDomain}"
+
+  RedisVirtualRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualRouterName: redis-vr
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 6379
+              Protocol: tcp
+
+  RedisRoute:
+    Type: AWS::AppMesh::Route
+    DependsOn:
+      - RedisVirtualRouter
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualRouterName: redis-vr
+      RouteName: redis-route
+      Spec:
+        TcpRoute:
+          Action:
+            WeightedTargets:
+              - VirtualNode: redis-vn
+                Weight: 1
+
+  RedisVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    DependsOn:
+      - RedisVirtualRouter
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualServiceName: !Sub "redis.${ServicesDomain}"
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: redis-vr
+
   ColorGatewayVirtualNode:
     Type: AWS::AppMesh::VirtualNode
     DependsOn:
       - ColorTellerVirtualService
+      - RedisVirtualService
       - TcpEchoVirtualService
     Properties:
       MeshName: !Ref AppMeshMeshName
@@ -196,5 +249,7 @@ Resources:
         Backends:
           - VirtualService:
               VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+          - VirtualService:
+              VirtualServiceName: !Sub "redis.${ServicesDomain}"
           - VirtualService:
               VirtualServiceName: !Sub "tcpecho.${ServicesDomain}"

@@ -106,6 +106,7 @@ task_def_json=$(jq -n \
     --arg STAGE "$APPMESH_STAGE" \
     --arg COLOR_TELLER_ENDPOINT "colorteller.$SERVICES_DOMAIN:9080" \
     --arg TCP_ECHO_ENDPOINT "tcpecho.$SERVICES_DOMAIN:2701" \
+    --arg REDIS_ENDPOINT "redis.$SERVICES_DOMAIN:6379" \
     --arg APP_IMAGE $COLOR_GATEWAY_IMAGE \
     --arg AWS_REGION $AWS_DEFAULT_REGION \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
@@ -144,4 +145,23 @@ colorteller_blue_task_def_arn=($(echo $task_def \
 generate_sidecars "colorteller-black"
 generate_color_teller_task_def "black"
 colorteller_black_task_def_arn=($(echo $task_def \
+    | jq -r '.taskDefinition | .taskDefinitionArn'))
+
+# Redis Task Definition
+generate_sidecars "redis"
+task_def_json=$(jq -n \
+    --arg NAME "$ENVIRONMENT_NAME-Redis" \
+    --arg AWS_REGION $AWS_REGION \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_LOG_STREAM_PREFIX_APP "redis-app" \
+    --arg TASK_ROLE_ARN $task_role_arn \
+    --arg EXECUTION_ROLE_ARN $execution_role_arn \
+    --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
+    --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
+    --argjson STATSD_CONTAINER_JSON "${statsd_container_json}" \
+    -f "${DIR}/redis-base-task-def.json")
+task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
+    ecs register-task-definition \
+    --cli-input-json "$task_def_json")
+redis_task_def_arn=($(echo $task_def \
     | jq -r '.taskDefinition | .taskDefinitionArn'))

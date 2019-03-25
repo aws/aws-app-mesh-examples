@@ -13,49 +13,60 @@ const defaultPort = "8080"
 const defaultColor = "black"
 const defaultStage = "default"
 
-func getServerPort() string {
-	port := os.Getenv("SERVER_PORT")
-	if port != "" {
-		return port
-	}
-
-	return defaultPort
+type runtimeConfig struct {
+	stage      string
+	serverPort string
+	color      string
 }
 
-func getColor() string {
-	color := os.Getenv("COLOR")
-	if color != "" {
-		return color
-	}
-
-	return defaultColor
+type handler struct {
+	config *runtimeConfig
 }
 
-func getStage() string {
-	stage := os.Getenv("STAGE")
-	if stage != "" {
-		return stage
-	}
-
-	return defaultStage
+func (h *handler) getColor(writer http.ResponseWriter, request *http.Request) {
+	log.Println("color requested, responding with", h.config.color)
+	fmt.Fprint(writer, h.config.color)
 }
 
-type colorHandler struct{}
-func (h *colorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	log.Println("color requested, responding with", getColor())
-	fmt.Fprint(writer, getColor())
-}
-
-type pingHandler struct{}
-func (h *pingHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (h *handler) ping(writer http.ResponseWriter, request *http.Request) {
 	log.Println("ping requested, reponding with HTTP 200")
 	writer.WriteHeader(http.StatusOK)
 }
 
+func newRuntimeConfig() *runtimeConfig {
+	config := &runtimeConfig{}
+
+	config.stage = os.Getenv("STAGE")
+	if config.stage == "" {
+		config.stage = defaultStage
+	}
+
+	config.serverPort = os.Getenv("SERVER_PORT")
+	if config.serverPort == "" {
+		config.serverPort = defaultPort
+	}
+
+	config.color = os.Getenv("COLOR")
+	if config.color == "" {
+		config.color = defaultColor
+	}
+
+	log.Printf("Config initialized to %s", config)
+
+	return config
+}
+
 func main() {
-	log.Println("starting server, listening on port " + getServerPort())
-	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-colorteller-%s", getStage(), getColor()))
-	http.Handle("/", xray.Handler(xraySegmentNamer, &colorHandler{}))
-	http.Handle("/ping", xray.Handler(xraySegmentNamer, &pingHandler{}))
-	http.ListenAndServe(":"+getServerPort(), nil)
+	config := newRuntimeConfig()
+
+	xray.Configure(xray.Config{
+		LogLevel:  "warn",
+		LogFormat: "[%Level] [%Time] %Msg%n",
+	})
+	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-colorteller-%s", config.stage, config.color))
+	handler := &handler{config: config}
+	http.Handle("/", xray.Handler(xraySegmentNamer, http.HandlerFunc(handler.getColor)))
+	http.Handle("/ping", xray.Handler(xraySegmentNamer, http.HandlerFunc(handler.ping)))
+
+	http.ListenAndServe(":"+config.serverPort, nil)
 }
