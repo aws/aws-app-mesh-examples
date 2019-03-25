@@ -12,7 +12,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/pkg/errors"
@@ -195,9 +194,6 @@ func (h *tcpEchoHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 }
 
 func main() {
-	log.Println("Sleeping for 60s to allow Envoy to bootstrap")
-	time.Sleep(60 * time.Second)
-
 	log.Println("Starting server, listening on port " + getServerPort())
 
 	colorTellerEndpoint, err := getColorTellerEndpoint()
