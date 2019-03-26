@@ -49,6 +49,10 @@
         {
           "name": "TCP_ECHO_ENDPOINT",
           "value": $TCP_ECHO_ENDPOINT
+        },
+        {
+          "name": "STAGE",
+          "value": $STAGE
         }
       ],
       "logConfiguration": {
@@ -67,7 +71,8 @@
         }
       ]
     },
-    $ENVOY_CONTAINER_JSON
+    $ENVOY_CONTAINER_JSON,
+    $XRAY_CONTAINER_JSON
   ],
   "taskRoleArn": $TASK_ROLE_ARN,
   "executionRoleArn": $EXECUTION_ROLE_ARN,

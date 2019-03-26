@@ -29,8 +29,14 @@ envoy_container_json=$(jq -n \
     --arg AWS_REGION $AWS_REGION \
     --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorgateway-envoy" \
     -f "${DIR}/envoy-container.json")
+xray_container_json=$(jq -n \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorgateway-xray" \
+    -f "${DIR}/xray-container.json")
 task_def_json=$(jq -n \
     --arg NAME "$ENVIRONMENT_NAME-ColorGateway" \
+    --arg STAGE "$APPMESH_STAGE" \
     --arg COLOR_TELLER_ENDPOINT "colorteller.$SERVICES_DOMAIN:9080" \
     --arg TCP_ECHO_ENDPOINT "tcpecho.$SERVICES_DOMAIN:2701" \
     --arg APP_IMAGE $COLOR_GATEWAY_IMAGE \
@@ -40,6 +46,7 @@ task_def_json=$(jq -n \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
+    --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
     -f "${DIR}/colorgateway-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -57,8 +64,14 @@ envoy_container_json=$(jq -n \
     --arg AWS_REGION $AWS_REGION \
     --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-white-envoy" \
     -f "${DIR}/envoy-container.json")
+xray_container_json=$(jq -n \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-white-xray" \
+    -f "${DIR}/xray-container.json")
 task_def_json=$(jq -n \
     --arg NAME "$ENVIRONMENT_NAME-ColorTellerWhite" \
+    --arg STAGE "$APPMESH_STAGE" \
     --arg COLOR "white" \
     --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
@@ -67,6 +80,7 @@ task_def_json=$(jq -n \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
+    --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -84,8 +98,14 @@ envoy_container_json=$(jq -n \
     --arg AWS_REGION $AWS_REGION \
     --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-red-envoy" \
     -f "${DIR}/envoy-container.json")
+xray_container_json=$(jq -n \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-red-xray" \
+    -f "${DIR}/xray-container.json")
 task_def_json=$(jq -n \
     --arg NAME "$ENVIRONMENT_NAME-ColorTellerRed" \
+    --arg STAGE "$APPMESH_STAGE" \
     --arg COLOR "red" \
     --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
@@ -94,6 +114,7 @@ task_def_json=$(jq -n \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
+    --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -111,8 +132,14 @@ envoy_container_json=$(jq -n \
     --arg AWS_REGION $AWS_REGION \
     --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-blue-envoy" \
     -f "${DIR}/envoy-container.json")
+xray_container_json=$(jq -n \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-blue-xray" \
+    -f "${DIR}/xray-container.json")    
 task_def_json=$(jq -n \
     --arg NAME "$ENVIRONMENT_NAME-ColorTellerBlue" \
+    --arg STAGE "$APPMESH_STAGE" \
     --arg COLOR "blue" \
     --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
@@ -121,6 +148,7 @@ task_def_json=$(jq -n \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
+    --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
@@ -138,8 +166,14 @@ envoy_container_json=$(jq -n \
     --arg AWS_REGION $AWS_REGION \
     --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-black-envoy" \
     -f "${DIR}/envoy-container.json")
+xray_container_json=$(jq -n \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_REGION \
+    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-black-xray" \
+    -f "${DIR}/xray-container.json")    
 task_def_json=$(jq -n \
     --arg NAME "$ENVIRONMENT_NAME-ColorTellerBlack" \
+    --arg STAGE "$APPMESH_STAGE" \
     --arg COLOR "black" \
     --arg APP_IMAGE $COLOR_TELLER_IMAGE \
     --arg AWS_REGION $AWS_REGION \
@@ -148,6 +182,7 @@ task_def_json=$(jq -n \
     --arg TASK_ROLE_ARN $task_role_arn \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
+    --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ecs register-task-definition \
