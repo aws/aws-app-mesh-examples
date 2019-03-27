@@ -26,7 +26,7 @@ export COLOR_TELLER_IMAGE=<image location for colorapp's teller, e.g. "<youracco
 ```
 
 ## Infrastructure
-Before we can start playing with mesh examples we need to setup infrastructure pieces. Following steps will setup a VPC, Mesh, and ECS or EKS. 
+Before we can start playing with mesh examples we need to setup infrastructure pieces. Following steps will setup a VPC, Mesh, and ECS or EKS.
 
 * Setup VPC
 
@@ -37,7 +37,7 @@ $ ./infrastructure/vpc.sh
 * Setup Mesh
 
 ```
-$ ./infrastructure/mesh.sh 
+$ ./infrastructure/appmesh-mesh.sh
 ```
 
 * Setup ECS Cluster (Optional if using ECS)
