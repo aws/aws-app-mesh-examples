@@ -10,7 +10,7 @@ Learn more at https://aws.amazon.com/app-mesh
 
 ## Availability
 
-Today, AWS App Mesh is generally available. You can use App Mesh with AWS Fargate, Amazon Elastic Container Service (ECS), Amazon Elastic Container Service for Kubernetes (EKS), and Kubernetes on EC2 to better run containerized microservices at scale. App Mesh uses Envoy, an open source proxy, making it compatible with a wide range of AWS partner and open source tools for monitoring microservices.
+Today, AWS App Mesh is generally available for production use. You can use App Mesh with AWS Fargate, Amazon Elastic Container Service (ECS), Amazon Elastic Container Service for Kubernetes (EKS), applications running on Amazon EC2, and Kubernetes on EC2 to better run containerized microservices at scale. App Mesh uses Envoy, an open source proxy, making it compatible with a wide range of AWS partner and open source tools for monitoring microservices.
 
 Learn more at https://aws.amazon.com/app-mesh
 
