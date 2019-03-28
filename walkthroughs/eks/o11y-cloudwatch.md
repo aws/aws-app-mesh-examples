@@ -1,27 +1,17 @@
 # App Mesh with EKS—Observability: CloudWatch
 
-NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available.
+NOTE: Before you start with this part, make sure you've gone through the [base deployment](base.md) of App Mesh with EKS. In other words, the following assumes that an EKS cluster with App Mesh configured is available and the prerequisites (`aws`, `kubectl`, `jq`, etc. installed) are met.
 
-
-First, create an IAM policy as shown below and attach it to the EC2 auto-scaling group of your EKS cluster, see also these [notes](https://eksworkshop.com/logging/prereqs/) for further details. Note that it doesn't matter to which node you attach the following policy as it will propagate automatically throughout the auto-scaling group:
+First, create an IAM policy as defined in [logs-policy.json](logs-policy.json) and attach it to the EC2 auto-scaling group of your EKS cluster. To attach the IAM logs policy via the command line, use:
 
 ```
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "logs:DescribeLogGroups",
-                "logs:DescribeLogStreams",
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-            ],
-            "Resource": "*",
-            "Effect": "Allow"
-        }
-    ]
-}
+$ INSTANCE_PROFILE_PREFIX=$(aws cloudformation describe-stacks | jq -r '.Stacks[].StackName' | grep eksctl-appmeshtest-nodegroup-ng)
+$ INSTANCE_PROFILE_NAME=$(aws iam list-instance-profiles | jq -r '.InstanceProfiles[].InstanceProfileName' | grep $INSTANCE_PROFILE_PREFIX)
+$ ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE_NAME | jq -r '.InstanceProfile.Roles[] | .RoleName')
+$ aws iam put-role-policy \
+      --role-name $ROLE_NAME \
+      --policy-name Worker-Logs-Policy \
+      --policy-document file://./logs-policy.json
 ```
 
 Next, deploy Fluentd as a log forwarder using a `DaemonSet` as defined in the [fluentd.yml](fluentd.yml) manifest:
@@ -29,7 +19,7 @@ Next, deploy Fluentd as a log forwarder using a `DaemonSet` as defined in the [f
 ```
 $ kubectl apply -f fluentd.yml
 
-# validate if the Fluentd daemon set is up and running:
+# validate that the Fluentd pods are up and running:
 $ kubectl -n kube-system get po -l=k8s-app=fluentd-cloudwatch
 NAME                       READY   STATUS    RESTARTS   AGE
 fluentd-cloudwatch-7ls6g   1/1     Running   0          13m
@@ -45,53 +35,6 @@ First, locate the virtual node `colorgateway-appmesh-demo` in the AppMesh consol
 Now, expand the 'Additional configuration' section and enter `/dev/stdout` in the 'HTTP access logs path' as shown in the following:
 
 ![AppMesh console edit virtual node step 1](appmesh-log-1.png)
-
-Check by getting the virtual node configuration via the CLI:
-
-```
-$ aws appmesh describe-virtual-node \
-      --virtual-node-name colorgateway-appmesh-demo \
-      --mesh-name color-mesh \
-      --region us-east-2
-{
-    "virtualNode": {
-        "status": {
-            "status": "ACTIVE"
-        },
-        "meshName": "color-mesh",
-        "virtualNodeName": "colorgateway-appmesh-demo",
-        "spec": {
-            "serviceDiscovery": {
-                "dns": {
-                    "hostname": "colorgateway.appmesh-demo.svc.cluster.local"
-                }
-            },
-            "listeners": [
-                {
-                    "portMapping": {
-                        "protocol": "http",
-                        "port": 9080
-                    }
-                }
-            ],
-            "backends": [
-                {
-                    "virtualService": {
-                        "virtualServiceName": "colorteller.appmesh-demo.svc.cluster.local"
-                    }
-                }
-            ]
-        },
-        "metadata": {
-            "version": 1,
-            "lastUpdatedAt": 1553617729.736,
-            "createdAt": 1553617729.736,
-            "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualNode/colorgateway-appmesh-demo",
-            "uid": "0581b908-5efc-4192-9f44-40cc75d5075e"
-        }
-    }
-}
-```
 
 When you now go to the CloudWatch console you should see something like this:
 
