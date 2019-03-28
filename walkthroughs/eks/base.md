@@ -64,7 +64,7 @@ Next, install the [AWS App Mesh Controller For Kubernetes](https://github.com/aw
 
 ```
 $ git clone https://github.com/aws/aws-app-mesh-controller-for-k8s.git
-$ cd aws-app-mesh-controller-for-k8
+$ cd aws-app-mesh-controller-for-k8s
 
 $ make deploy-k8s-release
 
@@ -102,38 +102,36 @@ Make sure all resources have been created, using the following command:
 $ kubectl -n appmesh-demo \
           get deploy,po,svc,virtualnode.appmesh.k8s.aws,virtualservice.appmesh.k8s.aws
 NAME                                      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-deployment.extensions/colorgateway        1         1         1            1           55m
-deployment.extensions/colorteller         1         1         1            1           55m
-deployment.extensions/colorteller-black   1         1         1            1           55m
-deployment.extensions/colorteller-blue    1         1         1            1           55m
-deployment.extensions/colorteller-red     1         1         1            1           55m
-deployment.extensions/curler              1         1         1            1           6m
+deployment.extensions/colorgateway        1         1         1            1           1m
+deployment.extensions/colorteller         1         1         1            1           1m
+deployment.extensions/colorteller-black   1         1         1            1           1m
+deployment.extensions/colorteller-blue    1         1         1            1           1m
+deployment.extensions/colorteller-red     1         1         1            1           1m
 
 NAME                                     READY   STATUS    RESTARTS   AGE
-pod/colorgateway-795b95fdb-rhnfd         2/2     Running   0          55m
-pod/colorteller-86664b5956-fl64d         2/2     Running   0          55m
-pod/colorteller-black-6787756c7b-5kns9   2/2     Running   0          55m
-pod/colorteller-blue-55d6f99dc6-w6fck    2/2     Running   0          55m
-pod/colorteller-red-578866ffb-lffnn      2/2     Running   0          55m
-pod/curler-5b467f98bb-lmwm9              1/1     Running   1          6m
+pod/colorgateway-cc6464d75-qbznr         2/2     Running   0          1m
+pod/colorteller-86664b5956-zhb44         2/2     Running   0          1m
+pod/colorteller-black-6787756c7b-5sgfq   2/2     Running   0          1m
+pod/colorteller-blue-55d6f99dc6-wltdj    2/2     Running   0          1m
+pod/colorteller-red-578866ffb-rztfc      2/2     Running   0          1m
 
 NAME                        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-service/colorgateway        ClusterIP   10.100.70.193   <none>        9080/TCP   55m
-service/colorteller         ClusterIP   10.100.63.18    <none>        9080/TCP   55m
-service/colorteller-black   ClusterIP   10.100.160.61   <none>        9080/TCP   55m
-service/colorteller-blue    ClusterIP   10.100.201.30   <none>        9080/TCP   55m
-service/colorteller-red     ClusterIP   10.100.70.29    <none>        9080/TCP   55m
+service/colorgateway        ClusterIP   10.100.45.69    <none>        9080/TCP   1m
+service/colorteller         ClusterIP   10.100.186.86   <none>        9080/TCP   1m
+service/colorteller-black   ClusterIP   10.100.52.209   <none>        9080/TCP   1m
+service/colorteller-blue    ClusterIP   10.100.82.44    <none>        9080/TCP   1m
+service/colorteller-red     ClusterIP   10.100.19.144   <none>        9080/TCP   1m
 
 NAME                                            AGE
-virtualnode.appmesh.k8s.aws/colorgateway        55m
-virtualnode.appmesh.k8s.aws/colorteller         55m
-virtualnode.appmesh.k8s.aws/colorteller-black   55m
-virtualnode.appmesh.k8s.aws/colorteller-blue    55m
-virtualnode.appmesh.k8s.aws/colorteller-red     55m
+virtualnode.appmesh.k8s.aws/colorgateway        1m
+virtualnode.appmesh.k8s.aws/colorteller         1m
+virtualnode.appmesh.k8s.aws/colorteller-black   1m
+virtualnode.appmesh.k8s.aws/colorteller-blue    1m
+virtualnode.appmesh.k8s.aws/colorteller-red     1m
 
-NAME                                                                         AGE
-virtualservice.appmesh.k8s.aws/colorgateway.appmesh-demo.svc.cluster.local   55m
-virtualservice.appmesh.k8s.aws/colorteller.appmesh-demo.svc.cluster.local    55m
+NAME                                                       AGE
+virtualservice.appmesh.k8s.aws/colorgateway.appmesh-demo   1m
+virtualservice.appmesh.k8s.aws/colorteller.appmesh-demo    1m
 ```
 
 Now, validate the mesh creation using the `aws` CLI:
@@ -221,10 +219,10 @@ With this you're done concerning the base deployment. You can now move on to day
 
 ## Clean-up
 
-The AWS App Mesh Controller For Kubernetes performs automatic clean-up of the mesh and its dependent resources (virtual nodes, services, etc.) when deleting the demo namespace like so:
+The AWS App Mesh Controller For Kubernetes performs clean-up of the mesh and its dependent resources (virtual nodes, services, etc.) when deleting the demo namespace and the mesh custom resource like so:
 
 ```
-$ kubectl delete ns appmesh-demo 
+$ kubectl delete ns appmesh-demo && kubectl delete mesh color-mesh
 ```
 
 Finally, get rid of the EKS cluster to free all compute, networking, and storage resources, using:
