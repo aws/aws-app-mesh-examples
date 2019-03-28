@@ -4,43 +4,33 @@ Parameters:
     Type: String
     Description: Environment name that joins all the stacks
 
-  SideCarRouterManagerImage:
-    Type: String
-    Description: Sidecar router manager that sets up networking for transparent proxy
-    Default: "111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager"
-
-  EnvoyImage:
-    Type: String
-    Description: Envoy image to use
-
-  AppMeshXdsEndpoint:
-    Type: String
-    Description: App Mesh XDS Endpoint Override
-    Default: ""
-
-  EnvoyLogLevel:
-    Type: String
-    Default: debug
-
-  ColorTellerImage:
-    Type: String
-    Description: Color Teller app image
-    
-  ColorGatewayImage:
-    Type: String
-    Description: Color Gateway app image
-
   AppMeshMeshName:
     Type: String
     Description: Name of mesh
 
-  AppMeshEgressIgnoredIpCsv:
-    Type: String
-    Default: 169.254.170.2,169.254.169.254
-
   ECSServicesDomain:
     Type: String
     Description: DNS namespace used by services e.g. default.svc.cluster.local
+
+  ColorGatewayTaskDefinition:
+    Type: String
+    Description: Task definition for ColorGateway Service
+
+  ColorTellerWhiteTaskDefinition:
+    Type: String
+    Description: Task definition for ColorTeller White Service
+
+  ColorTellerRedTaskDefinition:
+    Type: String
+    Description: Task definition for ColorTeller Red Service
+
+  ColorTellerBlueTaskDefinition:
+    Type: String
+    Description: Task definition for ColorTeller Blue Service
+
+  ColorTellerBlackTaskDefinition:
+    Type: String
+    Description: Task definition for ColorTeller Black Service
 
 Resources:
 
@@ -81,81 +71,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerWhiteTaskDefinition }
 
-  ColorTellerWhiteTaskDefinition:
-    Type: 'AWS::ECS::TaskDefinition'
-    Properties:
-      ContainerDefinitions:
-        - Name: "app"
-          Image: { Ref: ColorTellerImage }
-          Essential: true
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-app"
-          PortMappings:
-            - ContainerPort: 9080
-              HostPort: 9080
-              Protocol: "tcp"
-          Environment:
-            - Name: "SERVER_PORT"
-              Value: "9080"
-            - Name: "COLOR"
-              Value: "white"
-        - Name: envoy
-          Image: { Ref: EnvoyImage }
-          Essential: true
-          User: "1337"
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup" 
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-envoy"
-          Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-white-vn"
-            - Name: "ENVOY_LOG_LEVEL"
-              Value: { Ref: EnvoyLogLevel }
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: { Ref: AppMeshXdsEndpoint }
-        - Name: "proxyinit"
-          Image: { Ref: SideCarRouterManagerImage }
-          Essential: false
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-proxyinit"
-          LinuxParameters:
-            Capabilities:
-              Add:
-                - "NET_ADMIN"
-          Environment:
-            - Name: "APPMESH_START_ENABLED"
-              Value: "1"
-            - Name: "APPMESH_IGNORE_UID"
-              Value: "1337"
-            - Name: "APPMESH_ENVOY_INGRESS_PORT"
-              Value: "15000"
-            - Name: "APPMESH_ENVOY_EGRESS_PORT"
-              Value: "15001"
-            - Name: "APPMESH_APP_PORTS"
-              Value: "9080"
-            - Name: "APPMESH_EGRESS_IGNORED_IP"
-              Value: { Ref: AppMeshEgressIgnoredIpCsv }
-      ExecutionRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      TaskRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      NetworkMode: "awsvpc"
-      Memory: 256
-
   ### colorteller-blue.default.svc.cluster.local
   ColorTellerBlueServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
@@ -192,81 +107,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerBlueTaskDefinition }
-
-  ColorTellerBlueTaskDefinition:
-    Type: 'AWS::ECS::TaskDefinition'
-    Properties:
-      ContainerDefinitions:
-        - Name: "app"
-          Image: { Ref: ColorTellerImage }
-          Essential: true
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-blue-app"
-          PortMappings:
-            - ContainerPort: 9080
-              HostPort: 9080
-              Protocol: "tcp"
-          Environment:
-            - Name: "SERVER_PORT"
-              Value: "9080"
-            - Name: "COLOR"
-              Value: "blue"
-        - Name: envoy
-          Image: { Ref: EnvoyImage }
-          Essential: true
-          User: "1337"
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-blue-envoy"
-          Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn"
-            - Name: "ENVOY_LOG_LEVEL"
-              Value: { Ref: EnvoyLogLevel }
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: { Ref: AppMeshXdsEndpoint }
-        - Name: "proxyinit"
-          Image: { Ref: SideCarRouterManagerImage }
-          Essential: false
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-blue-proxyinit"
-          LinuxParameters:
-            Capabilities:
-              Add:
-                - "NET_ADMIN"
-          Environment:
-            - Name: "APPMESH_START_ENABLED"
-              Value: "1"
-            - Name: "APPMESH_IGNORE_UID"
-              Value: "1337"
-            - Name: "APPMESH_ENVOY_INGRESS_PORT"
-              Value: "15000"
-            - Name: "APPMESH_ENVOY_EGRESS_PORT"
-              Value: "15001"
-            - Name: "APPMESH_APP_PORTS"
-              Value: "9080"
-            - Name: "APPMESH_EGRESS_IGNORED_IP"
-              Value: { Ref: AppMeshEgressIgnoredIpCsv }
-      ExecutionRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      TaskRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      NetworkMode: "awsvpc"
-      Memory: 256
 
   ### colorteller-red.default.svc.cluster.local
   ColorTellerRedServiceDiscoveryRecord:
@@ -305,81 +145,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerRedTaskDefinition }
 
-  ColorTellerRedTaskDefinition:
-    Type: 'AWS::ECS::TaskDefinition'
-    Properties:
-      ContainerDefinitions:
-        - Name: "app"
-          Image: { Ref: ColorTellerImage }
-          Essential: true
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-red-app"
-          PortMappings:
-            - ContainerPort: 9080
-              HostPort: 9080
-              Protocol: "tcp"
-          Environment:
-            - Name: "SERVER_PORT"
-              Value: "9080"
-            - Name: "COLOR"
-              Value: "red"
-        - Name: envoy
-          Image: { Ref: EnvoyImage }
-          Essential: true
-          User: "1337"
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-red-envoy"
-          Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn"
-            - Name: "ENVOY_LOG_LEVEL"
-              Value: { Ref: EnvoyLogLevel }
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: { Ref: AppMeshXdsEndpoint }
-        - Name: "proxyinit"
-          Image: { Ref: SideCarRouterManagerImage }
-          Essential: false
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-red-proxyinit"
-          LinuxParameters:
-            Capabilities:
-              Add:
-                - "NET_ADMIN"
-          Environment:
-            - Name: "APPMESH_START_ENABLED"
-              Value: "1"
-            - Name: "APPMESH_IGNORE_UID"
-              Value: "1337"
-            - Name: "APPMESH_ENVOY_INGRESS_PORT"
-              Value: "15000"
-            - Name: "APPMESH_ENVOY_EGRESS_PORT"
-              Value: "15001"
-            - Name: "APPMESH_APP_PORTS"
-              Value: "9080"
-            - Name: "APPMESH_EGRESS_IGNORED_IP"
-              Value: { Ref: AppMeshEgressIgnoredIpCsv }
-      ExecutionRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      TaskRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      NetworkMode: "awsvpc"
-      Memory: 256
-
   ### colorteller-black.default.svc.cluster.local
   ColorTellerBlackServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
@@ -417,81 +182,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerBlackTaskDefinition }
 
-  ColorTellerBlackTaskDefinition:
-    Type: 'AWS::ECS::TaskDefinition'
-    Properties:
-      ContainerDefinitions:
-        - Name: "app"
-          Image: { Ref: ColorTellerImage }
-          Essential: true
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-black-app"
-          PortMappings:
-            - ContainerPort: 9080
-              HostPort: 9080
-              Protocol: "tcp"
-          Environment:
-            - Name: "SERVER_PORT"
-              Value: "9080"
-            - Name: "COLOR"
-              Value: "black"
-        - Name: envoy
-          Image: { Ref: EnvoyImage }
-          Essential: true
-          User: "1337"
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-black-envoy"
-          Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorteller-black-vn"
-            - Name: "ENVOY_LOG_LEVEL"
-              Value: { Ref: EnvoyLogLevel }
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: { Ref: AppMeshXdsEndpoint }
-        - Name: "proxyinit"
-          Image: { Ref: SideCarRouterManagerImage }
-          Essential: false
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorteller-black-proxyinit"
-          LinuxParameters:
-            Capabilities:
-              Add:
-                - "NET_ADMIN"
-          Environment:
-            - Name: "APPMESH_START_ENABLED"
-              Value: "1"
-            - Name: "APPMESH_IGNORE_UID"
-              Value: "1337"
-            - Name: "APPMESH_ENVOY_INGRESS_PORT"
-              Value: "15000"
-            - Name: "APPMESH_ENVOY_EGRESS_PORT"
-              Value: "15001"
-            - Name: "APPMESH_APP_PORTS"
-              Value: "9080"
-            - Name: "APPMESH_EGRESS_IGNORED_IP"
-              Value: { Ref: AppMeshEgressIgnoredIpCsv }
-      ExecutionRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      TaskRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      NetworkMode: "awsvpc"
-      Memory: 256
-
   ### colorgateway.default.svc.cluster.local
   ColorGatewayServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
@@ -528,83 +218,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorGatewayTaskDefinition }
-
-  ColorGatewayTaskDefinition:
-    Type: 'AWS::ECS::TaskDefinition'
-    Properties:
-      ContainerDefinitions:
-        - Name: "app"
-          Image: { Ref: ColorGatewayImage }
-          Essential: true
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorgateway-app"
-          PortMappings:
-            - ContainerPort: 9080
-              HostPort: 9080
-              Protocol: "tcp"
-          Environment:
-            - Name: "SERVER_PORT"
-              Value: "9080"
-            - Name: "COLOR_TELLER_ENDPOINT"
-              Value: !Sub "colorteller.${ECSServicesDomain}:9080"
-            - Name: "TCP_ECHO_ENDPOINT"
-              Value: !Sub "tcpecho.${ECSServicesDomain}:2701"
-        - Name: envoy
-          Image: { Ref: EnvoyImage }
-          Essential: true
-          User: "1337"
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorgateway-envoy"
-          Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
-              Value: !Sub "mesh/${AppMeshMeshName}/virtualNode/colorgateway-vn"
-            - Name: "ENVOY_LOG_LEVEL"
-              Value: { Ref: EnvoyLogLevel }
-            - Name: "APPMESH_XDS_ENDPOINT"
-              Value: { Ref: AppMeshXdsEndpoint }
-        - Name: "proxyinit"
-          Image: { Ref: SideCarRouterManagerImage }
-          Essential: false
-          LogConfiguration:
-            LogDriver: "awslogs"
-            Options:
-              awslogs-group:
-                'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: { Ref: "AWS::Region" }
-              awslogs-stream-prefix: "colorgateway-proxyinit"
-          LinuxParameters:
-            Capabilities:
-              Add:
-                - "NET_ADMIN"
-          Environment:
-            - Name: "APPMESH_START_ENABLED"
-              Value: "1"
-            - Name: "APPMESH_IGNORE_UID"
-              Value: "1337"
-            - Name: "APPMESH_ENVOY_INGRESS_PORT"
-              Value: "15000"
-            - Name: "APPMESH_ENVOY_EGRESS_PORT"
-              Value: "15001"
-            - Name: "APPMESH_APP_PORTS"
-              Value: "9080"
-            - Name: "APPMESH_EGRESS_IGNORED_IP"
-              Value: { Ref: AppMeshEgressIgnoredIpCsv }
-      ExecutionRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      TaskRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      NetworkMode: "awsvpc"
-      Memory: 256
 
   ### tester
   TesterService:
@@ -716,4 +329,3 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       NetworkMode: "awsvpc"
       Memory: 256
-

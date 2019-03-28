@@ -30,19 +30,10 @@ Parameters:
     Type: String
     Description: "Domain name registerd under Route-53 that will be used for Service Discovery"
 
-Mappings:
-
-  # Source: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
-  AWSRegionToECSAmi:
-    eu-west-1:
-      AMI: ami-0627e141ce928067c
-    us-east-1:
-      AMI: ami-045f1b3f87ed83659
-    us-east-2:
-      AMI: ami-0307f7ccf6ea35750
-    us-west-2:
-      AMI: ami-01b70aea4161476b7
-
+  ECSAmi:
+    Description: AMI ID
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: "/aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id"
 
 Resources:
 
@@ -95,7 +86,7 @@ Resources:
   ECSLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      ImageId:  !FindInMap [AWSRegionToECSAmi, !Ref "AWS::Region", AMI]
+      ImageId: !Ref ECSAmi
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       SecurityGroups:
@@ -338,6 +329,7 @@ Resources:
         }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role

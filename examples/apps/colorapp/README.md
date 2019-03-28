@@ -23,7 +23,7 @@ __color-teller__ is a simple http service written in go that is configured to re
 * Setup virtual-nodes, virtual-router and routes for color-app
 
 ```
-$ ./servicemesh/deploy.sh
+$ ./servicemesh/appmesh-colorapp.sh
 ```
 ### ECS
 * Deploy color-teller and color-gateway to ECS

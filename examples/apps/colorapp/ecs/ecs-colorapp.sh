@@ -1,8 +1,11 @@
 #!/bin/bash
 
-set -ex 
+set -ex
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+# Creating Task Definitions
+source ${DIR}/create-task-defs.sh
 
 aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     cloudformation deploy \
@@ -11,9 +14,10 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     --template-file "${DIR}/ecs-colorapp.yaml"  \
     --parameter-overrides \
     EnvironmentName="${ENVIRONMENT_NAME}" \
-    EnvoyImage="${ENVOY_IMAGE}" \
-    AppMeshXdsEndpoint="${APPMESH_XDS_ENDPOINT}" \
     ECSServicesDomain="${SERVICES_DOMAIN}" \
     AppMeshMeshName="${MESH_NAME}" \
-    ColorGatewayImage="${COLOR_GATEWAY_IMAGE}" \
-    ColorTellerImage="${COLOR_TELLER_IMAGE}"
+    ColorGatewayTaskDefinition="${colorgateway_task_def_arn}" \
+    ColorTellerWhiteTaskDefinition="${colorteller_white_task_def_arn}" \
+    ColorTellerRedTaskDefinition="${colorteller_red_task_def_arn}" \
+    ColorTellerBlueTaskDefinition="${colorteller_blue_task_def_arn}" \
+    ColorTellerBlackTaskDefinition="${colorteller_black_task_def_arn}"
