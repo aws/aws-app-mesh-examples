@@ -14,10 +14,10 @@ $ aws iam put-role-policy \
       --policy-document file://./logs-policy.json
 ```
 
-Next, deploy Fluentd as a log forwarder using a `DaemonSet` as defined in the [fluentd.yml](fluentd.yml) manifest:
+Next, deploy Fluentd as a log forwarder using a `DaemonSet` as defined in the [fluentd.yaml](fluentd.yaml) manifest:
 
 ```
-$ kubectl apply -f fluentd.yml
+$ kubectl apply -f fluentd.yaml
 
 # validate that the Fluentd pods are up and running:
 $ kubectl -n kube-system get po -l=k8s-app=fluentd-cloudwatch
