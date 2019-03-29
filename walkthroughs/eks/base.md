@@ -92,7 +92,7 @@ We use the [colorapp](https://github.com/awslabs/aws-app-mesh-examples/tree/mast
 Install the example application from the location where you checked out the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s):
 
 ```
-$ cd aws-app-mesh-controller-for-k8
+$ cd aws-app-mesh-controller-for-k8s
 $ make example
 ```
 
