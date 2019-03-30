@@ -4,7 +4,7 @@ set -ex
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
+aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     cloudformation deploy \
     --stack-name "${ENVIRONMENT_NAME}-ecs-cluster" \
     --capabilities CAPABILITY_IAM \

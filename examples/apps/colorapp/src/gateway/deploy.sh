@@ -13,8 +13,8 @@ docker build -t $COLOR_GATEWAY_IMAGE .
 
 # push
 if [ -z $AWS_PROFILE  ]; then
-    $(aws ecr get-login --no-include-email --region $AWS_REGION)
+    $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
 else
-    $(aws ecr get-login --no-include-email --region $AWS_REGION --profile $AWS_PROFILE)
+    $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION --profile $AWS_PROFILE)
 fi
 docker push $COLOR_GATEWAY_IMAGE

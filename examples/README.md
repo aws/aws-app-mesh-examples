@@ -8,8 +8,7 @@
 
 ```
 export AWS_PROFILE=<aws-profile for aws-cli>
-export AWS_REGION=<aws-region for aws-cli>
-export AWS_DEFAULT_REGION="$AWS_REGION"
+export AWS_DEFAULT_REGION=<aws-region for aws-cli>
 ```
 
 * Export the following environment variables
