@@ -1,0 +1,60 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: meshes.appmesh.k8s.aws
+spec:
+  group: appmesh.k8s.aws
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+    - name: v1alpha1
+      served: true
+      storage: false
+  version: v1beta1
+  scope: Cluster
+  names:
+    plural: meshes
+    singular: mesh
+    kind: Mesh
+    categories:
+      - all
+      - appmesh
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            serviceDiscoveryType:
+              type: string
+              enum:
+                - dns
+        status:
+          properties:
+            meshArn:
+              type: string
+            conditions:
+              type: array
+              items:
+                type: object
+                required:
+                  - type
+                properties:
+                  type:
+                    type: string
+                    enum:
+                      - MeshActive
+                  status:
+                    type: string
+                    enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                  lastTransitionTime:
+                    type: string
+                  reason:
+                    type: string
+                  message:
+                    type: string

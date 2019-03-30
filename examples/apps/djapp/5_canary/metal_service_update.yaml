@@ -1,0 +1,20 @@
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualService
+metadata:
+  name: metal.prod.svc.cluster.local
+  namespace: prod
+spec:
+  meshName: dj-app
+  virtualRouter:
+    name: metal-router
+  routes:
+    - name: metal-route
+      http:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeName: metal-v1
+              weight: 50
+            - virtualNodeName: metal-v2
+              weight: 50

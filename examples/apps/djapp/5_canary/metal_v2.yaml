@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metal
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: metal
+        version: v2
+    spec:
+      containers:
+        - name: metal
+          image: "672518094988.dkr.ecr.us-west-2.amazonaws.com/hello-world:v1.0"
+          ports:
+            - containerPort: 9080
+          env:
+            - name: "HW_RESPONSE"
+              value: "[\"Megadeth (Los Angeles, California)\",\"Judas Priest (West Bromwich, England)\"]"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-v2
+  labels:
+    app: metal
+    version: v2
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: metal
+    version: v2
+
+
+---
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualNode
+metadata:
+  name: metal-v2
+  namespace: prod
+spec:
+  meshName: dj-app
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostName: metal-v2.prod.svc.cluster.local
