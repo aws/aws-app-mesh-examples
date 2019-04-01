@@ -9,7 +9,7 @@ In order to successfully carry out the base deployment:
 - Make sure to have newest [AWS CLI](https://aws.amazon.com/cli/) installed, that is, version `1.16.124` or above.
 - Make sure to have `kubectl` [installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/), at least version `1.11` or above.
 - Make sure that to have `jq` [installed](https://stedolan.github.io/jq/download/).
-- Install [eksctl](https://eksctl.io/), for example, on macOS with `brew tap weaveworks/tap` and `brew install weaveworks/tap/eksctl`, and make sure it's on at least on version `0.1.25`.
+- Install [eksctl](https://eksctl.io/), for example, on macOS with `brew tap weaveworks/tap` and `brew install weaveworks/tap/eksctl`, and make sure it's on at least on version `0.1.26`.
 
 Note that this walkthrough assumes throughout to operate in the `us-east-2` region.
 
@@ -20,7 +20,7 @@ Create an EKS cluster with `eksctl` using the following command:
 ```
 $ eksctl create cluster \
 --name appmeshtest \
---version 1.11 \
+--version 1.12 \
 --nodes-min 2 \
 --nodes-max 3 \
 --nodes 2 \
