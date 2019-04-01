@@ -1,3 +1,4 @@
+echo
 echo Remove Injector and App Mesh Controller components
 echo
 
@@ -9,6 +10,7 @@ kubectl delete -f 3_add_crds/controller-deployment.yaml
 kubectl delete secret aws-app-mesh-inject -nappmesh-inject
 kubectl delete -f 2_create_injector/inject.yaml
 
+echo
 echo Remove k8s DJ App Deployments and Services
 echo
 
@@ -26,6 +28,7 @@ kubectl delete service -nprod jazz-v1
 kubectl delete service -nprod jazz-v2
 kubectl delete service -nprod jazz
 
+echo
 echo Remove k8s App Mesh resources
 echo
 
