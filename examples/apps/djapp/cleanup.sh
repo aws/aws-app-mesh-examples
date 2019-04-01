@@ -1,19 +1,33 @@
-cd 2_create_injector
-./delete.sh
-cd ..
-kubectl delete -nprod -f  5_canary/
-kubectl delete -nprod -f 4_create_initial_mesh_components/
+echo Remove Injector and App Mesh Controller components
+echo
 
-sleep 5
-
-kubectl delete -f 3_add_crds/controller-deployment.yaml
 kubectl delete -f 3_add_crds/virtual-service-definition.yaml
 kubectl delete -f 3_add_crds/virtual-node-definition.yaml
 kubectl delete -f 3_add_crds/mesh-definition.yaml
+kubectl delete -f 3_add_crds/controller-deployment.yaml
 
-sleep 5
+kubectl delete secret aws-app-mesh-inject -nappmesh-inject
+kubectl delete -f 2_create_injector/inject.yaml
 
-kubectl delete -nprod -f 1_create_the_initial_architecture/
+echo Remove k8s DJ App Deployments and Services
+echo
 
-sleep 5
+kubectl delete deployment -nprod dj
+kubectl delete deployment -nprod metal-v1
+kubectl delete deployment -nprod metal-v2
+kubectl delete deployment -nprod jazz-v1
+kubectl delete deployment -nprod jazz-v2
+
+kubectl delete service -nprod dj
+kubectl delete service -nprod metal-v1
+kubectl delete service -nprod metal-v1
+kubectl delete service -nprod metal
+kubectl delete service -nprod jazz-v1
+kubectl delete service -nprod jazz-v2
+kubectl delete service -nprod jazz
+
+echo Remove k8s App Mesh resources
+echo
+
 ./amctl.sh dj-app delete
+kubectl delete ns prod
