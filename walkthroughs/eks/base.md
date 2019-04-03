@@ -9,7 +9,7 @@ In order to successfully carry out the base deployment:
 - Make sure to have newest [AWS CLI](https://aws.amazon.com/cli/) installed, that is, version `1.16.124` or above.
 - Make sure to have `kubectl` [installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/), at least version `1.11` or above.
 - Make sure that to have `jq` [installed](https://stedolan.github.io/jq/download/).
-- Install [eksctl](https://eksctl.io/), for example, on macOS with `brew tap weaveworks/tap` and `brew install weaveworks/tap/eksctl`, and make sure it's on at least on version `0.1.25`.
+- Install [eksctl](https://eksctl.io/), for example, on macOS with `brew tap weaveworks/tap` and `brew install weaveworks/tap/eksctl`, and make sure it's on at least on version `0.1.26`.
 
 Note that this walkthrough assumes throughout to operate in the `us-east-2` region.
 
@@ -20,7 +20,7 @@ Create an EKS cluster with `eksctl` using the following command:
 ```
 $ eksctl create cluster \
 --name appmeshtest \
---version 1.11 \
+--version 1.12 \
 --nodes-min 2 \
 --nodes-max 3 \
 --nodes 2 \
@@ -42,19 +42,13 @@ $ export KUBECONFIG=~/.kube/eksctl/clusters/appmeshtest
 First, install [App Mesh Inject](https://github.com/awslabs/aws-app-mesh-inject), an API server webhook which injects Envoy containers as sidecars into your application pods:
 
 ```
-$ git clone https://github.com/aws/aws-app-mesh-inject.git
-$ cd aws-app-mesh-inject
-```
-
-Now you have everything in place to deploy the webhook:
-
-```
 $ export MESH_NAME=color-mesh
-$ export MESH_REGION=us-east-2
+$ curl https://raw.githubusercontent.com/aws/aws-app-mesh-inject/v0.1.0/hack/install.sh | bash
+```
 
-$ make deploy
+Validate if the Webhook is up and running:
 
-# validate if the Webhook is up and running:
+```
 $ kubectl -n appmesh-inject get po
 NAME                                  READY   STATUS    RESTARTS   AGE
 aws-app-mesh-inject-c6f55c565-xtnh7   1/1     Running   0          20s
@@ -63,14 +57,12 @@ aws-app-mesh-inject-c6f55c565-xtnh7   1/1     Running   0          20s
 Next, install the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s) along with the custom resources:
 
 ```
-$ git clone https://github.com/aws/aws-app-mesh-controller-for-k8s.git
-$ cd aws-app-mesh-controller-for-k8s
-
-$ make deploy-k8s-release
+$ curl https://raw.githubusercontent.com/aws/aws-app-mesh-controller-for-k8s/v0.1.0/deploy/v0.1.0/all.yaml | kubectl apply -f -
 
 # wait until controller is up and running:
 $ kubectl wait $(kubectl get pods -n appmesh-system -o name) \
           --for=condition=Ready --timeout=30s -n appmesh-system
+pod/app-mesh-controller-65897498cb-kb254 condition met
 ```
 
 Now you're all set, you've provisioned the EKS cluster and set up App Mesh components that automate injection of Envoy and take care of the life cycle management of the mesh resources such as virtual nodes, virtual services, and virtual routes.
@@ -80,7 +72,7 @@ At this point, you also might want to check the custom resources the App Mesh Co
 ```
 $ kubectl api-resources --api-group=appmesh.k8s.aws
 NAME              SHORTNAMES   APIGROUP          NAMESPACED   KIND
-meshes                         appmesh.k8s.aws   true         Mesh
+meshes                         appmesh.k8s.aws   false        Mesh
 virtualnodes                   appmesh.k8s.aws   true         VirtualNode
 virtualservices                appmesh.k8s.aws   true         VirtualService
 ```
@@ -92,7 +84,8 @@ We use the [colorapp](https://github.com/awslabs/aws-app-mesh-examples/tree/mast
 Install the example application from the location where you checked out the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s):
 
 ```
-$ cd aws-app-mesh-controller-for-k8
+$ git clone https://github.com/aws/aws-app-mesh-controller-for-k8s.git
+$ cd aws-app-mesh-controller-for-k8s
 $ make example
 ```
 
