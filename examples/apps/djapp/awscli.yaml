@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: awscli
+spec:
+  template:
+    spec:
+      containers:
+      - name: awscli
+        image: 672518094988.dkr.ecr.us-west-2.amazonaws.com/awscli:v9
+        imagePullPolicy: Always
+        command: ["aws","appmesh","list-meshes","--region","us-west-2"]
+      restartPolicy: Never

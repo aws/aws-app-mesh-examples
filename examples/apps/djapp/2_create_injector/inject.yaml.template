@@ -1,0 +1,125 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-app-mesh-inject-sa
+  namespace: appmesh-inject
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: aws-app-mesh-inject-cr
+rules:
+  - apiGroups: ["*"]
+    resources: ["replicasets"]
+    verbs: ["get"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: aws-app-mesh-inject-binding
+subjects:
+  - kind: ServiceAccount
+    name: aws-app-mesh-inject-sa
+    namespace: appmesh-inject
+    apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: aws-app-mesh-inject-cr
+  apiGroup: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-app-mesh-inject
+  namespace: appmesh-inject
+  labels:
+    name: aws-app-mesh-inject
+spec:
+  ports:
+  - name: webhook
+    port: 443
+    targetPort: 8080
+  selector:
+    name: aws-app-mesh-inject
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: aws-app-mesh-inject
+  namespace: appmesh-inject
+  labels:
+    name: aws-app-mesh-inject
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: aws-app-mesh-inject
+      labels:
+        name: aws-app-mesh-inject
+    spec:
+      serviceAccountName: aws-app-mesh-inject-sa
+      containers:
+        - name: webhook
+          image: ${IMAGE_NAME}
+          env:
+            - name: APPMESH_REGION
+              value: ${MESH_REGION}
+            - name: APPMESH_NAME
+              value: ${MESH_NAME}
+            - name: APPMESH_LOG_LEVEL
+              value: debug
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 500Mi
+              cpu: 300m
+            requests:
+              memory: 500Mi
+              cpu: 300m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/webhook/certs
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTPS
+            initialDelaySeconds: 1
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: aws-app-mesh-inject
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: aws-app-mesh-inject
+webhooks:
+  - name: aws-app-mesh-inject.aws.amazon.com
+    clientConfig:
+      service:
+        name: aws-app-mesh-inject
+        namespace: appmesh-inject
+        path: "/"
+      caBundle: "${CA_BUNDLE}"
+    rules:
+      - operations: ["CREATE","UPDATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+    failurePolicy: Ignore
+    namespaceSelector:
+      matchLabels:
+        appmesh.k8s.aws/sidecarInjectorWebhook: enabled
