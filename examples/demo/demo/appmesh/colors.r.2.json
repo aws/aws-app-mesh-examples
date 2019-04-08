@@ -1,0 +1,27 @@
+{
+  "routeName": "colors-route",
+  "spec": {
+    "httpRoute": {
+      "action": {
+        "weightedTargets": [
+          {
+            "virtualNode": "orange-appmesh-demo",
+            "weight": 5
+          },
+          {
+            "virtualNode": "blue-appmesh-demo",
+            "weight": 5
+          },
+          {
+            "virtualNode": "green-appmesh-demo",
+            "weight": 5
+          }
+        ]
+      },
+      "match": {
+        "prefix": "/"
+      }
+    }
+  },
+  "virtualRouterName": "colors"
+}

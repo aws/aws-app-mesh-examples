@@ -1,0 +1,136 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colors
+  labels:
+    name: colors
+  namespace: appmesh-demo
+spec:
+  ports:
+  - port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue
+  labels:
+    name: blue
+  namespace: appmesh-demo
+spec:
+  ports:
+  - port: 8080
+  selector:
+    name: color
+    color: blue
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue
+  namespace: appmesh-demo
+  annotations:
+    appmesh.k8s.aws/mesh: appmesh-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: color
+      color: blue
+  template:
+    metadata:
+      labels:
+        name: color
+        color: blue
+    spec:
+      containers:
+      - name: color
+        image: 072792469044.dkr.ecr.eu-west-1.amazonaws.com/meshdemo-colors:0.1.1-beta
+        ports:
+        - containerPort: 8080
+        command: ["/main"]
+        args: 
+          - "-color"
+          - "blue"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: green
+  labels:
+    name: green
+  namespace: appmesh-demo
+spec:
+  ports:
+  - port: 8080
+  selector:
+    name: color
+    color: green
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: color-green
+  namespace: appmesh-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: color
+      color: green
+  template:
+    metadata:
+      labels:
+        name: color
+        color: green
+      annotations:
+        appmesh.k8s.aws/virtualNode: "green"
+    spec:
+      containers:
+      - name: color
+        image: 072792469044.dkr.ecr.eu-west-1.amazonaws.com/meshdemo-colors:0.1.1-beta
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orange
+  labels:
+    name: orange
+  namespace: appmesh-demo
+spec:
+  ports:
+  - port: 8080
+  selector:
+    name: color
+    color: orange
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: color-orange
+  namespace: appmesh-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: color
+      color: orange
+  template:
+    metadata:
+      labels:
+        name: color
+        color: orange
+      annotations:
+        appmesh.k8s.aws/virtualNode: "orange"
+    spec:
+      containers:
+      - name: color
+        image: 072792469044.dkr.ecr.eu-west-1.amazonaws.com/meshdemo-colors:0.1.1-beta
+        ports:
+        - containerPort: 8080
+        command: ["/main"]
+        args: 
+          - "-color"
+          - "orange"

@@ -1,0 +1,18 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 8080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "hostname": "orange.appmesh-demo.svc.cluster.local"
+            }
+        }
+    },
+    "virtualNodeName": "orange-appmesh-demo"
+}

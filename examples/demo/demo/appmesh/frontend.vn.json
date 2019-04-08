@@ -1,0 +1,26 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 8080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "hostname": "front-end.appmesh-demo.svc.cluster.local"
+            }
+        },
+
+        "backends": [
+            {
+                "virtualService": {
+                    "virtualServiceName": "colors"
+                }
+            }
+        ]
+    },
+    "virtualNodeName": "front-end-appmesh-demo"
+}

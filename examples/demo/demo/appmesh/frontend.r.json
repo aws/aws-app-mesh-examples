@@ -1,0 +1,19 @@
+{
+    "routeName": "front-end",
+    "spec": {
+        "httpRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "front-end",
+                        "weight": 100
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/"
+            }
+        }
+    },
+    "virtualRouterName": "front-end"
+}
