@@ -29,8 +29,6 @@ kind: Deployment
 metadata:
   name: blue
   namespace: appmesh-demo
-  annotations:
-    appmesh.k8s.aws/mesh: appmesh-demo
 spec:
   replicas: 1
   selector:
@@ -42,6 +40,8 @@ spec:
       labels:
         name: color
         color: blue
+      annotations:
+        appmesh.k8s.aws/mesh: appmesh-demo
     spec:
       containers:
       - name: color
@@ -84,7 +84,7 @@ spec:
         name: color
         color: green
       annotations:
-        appmesh.k8s.aws/virtualNode: "green"
+        appmesh.k8s.aws/mesh: appmesh-demo
     spec:
       containers:
       - name: color
@@ -123,7 +123,7 @@ spec:
         name: color
         color: orange
       annotations:
-        appmesh.k8s.aws/virtualNode: "orange"
+        appmesh.k8s.aws/mesh: appmesh-demo
     spec:
       containers:
       - name: color
