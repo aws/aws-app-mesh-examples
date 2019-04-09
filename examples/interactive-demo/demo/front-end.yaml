@@ -27,6 +27,8 @@ spec:
     metadata:
       labels:
         name: front-end
+      annotations:
+        appmesh.k8s.aws/mesh: appmesh-demo
     spec:
       containers:
       - name: front-end

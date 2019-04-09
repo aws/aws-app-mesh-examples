@@ -15,14 +15,16 @@ appmeshdemo:
 	./deployappmesh.sh
 
 updatecolors:
+	$(eval export MESH_NAME)
 	cd demo/appmesh/ && \
 	./updatecolors.sh
 
-cleandemo:
+cleanappmeshdemo:
 	$(eval export MESH_NAME)
-	kubectl delete -f demo/ns.yaml
 	./demo/appmesh/cleanappmesh.sh
 
 cleank8sdemo:
 	kubectl delete -f demo/ns.yaml
+
+clean: cleank8sdemo cleanappmeshdemo
 

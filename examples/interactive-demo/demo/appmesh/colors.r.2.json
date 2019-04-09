@@ -6,15 +6,15 @@
         "weightedTargets": [
           {
             "virtualNode": "orange-appmesh-demo",
-            "weight": 5
+            "weight": 2
           },
           {
             "virtualNode": "blue-appmesh-demo",
-            "weight": 5
+            "weight": 0
           },
           {
             "virtualNode": "green-appmesh-demo",
-            "weight": 5
+            "weight": 8
           }
         ]
       },

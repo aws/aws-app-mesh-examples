@@ -5,7 +5,7 @@
             "action": {
                 "weightedTargets": [
                     {
-                        "virtualNode": "front-end",
+                        "virtualNode": "appmesh-demo-front-end",
                         "weight": 100
                     }
                 ]

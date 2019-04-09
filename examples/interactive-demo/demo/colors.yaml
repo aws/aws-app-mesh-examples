@@ -70,7 +70,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: color-green
+  name: green
   namespace: appmesh-demo
 spec:
   replicas: 1
@@ -91,6 +91,10 @@ spec:
         image: 072792469044.dkr.ecr.eu-west-1.amazonaws.com/meshdemo-colors:0.1.1-beta
         ports:
         - containerPort: 8080
+        command: ["/main"]
+        args: 
+          - "-color"
+          - "green"
 ---
 apiVersion: v1
 kind: Service
@@ -109,7 +113,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: color-orange
+  name: orange
   namespace: appmesh-demo
 spec:
   replicas: 1

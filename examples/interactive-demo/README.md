@@ -12,10 +12,11 @@ It also provides a frontend to visualize the shifting traffic.
 - [make](http://man7.org/linux/man-pages/man1/make.1.html)
 - [awscli](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 - A running [EKS](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html) cluster
-- [aws-app-mesh-inject](https://github.com/aws/aws-app-mesh-inject#app-mesh-inject) side car injector running
+- [aws-app-mesh-inject](https://github.com/aws/aws-app-mesh-inject#app-mesh-inject) side car injector running in your cluster
+- [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html) configured with the [aws_iam_authenticator](https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html)
 
 ### Install
-
+ 
 **Note: this example will create a new mesh titled**
 ```
 appmesh-demo
@@ -62,7 +63,7 @@ The mesh need to be made aware of your pods and how to route them, so you need t
 $ make appmeshdemo
 ```
 
-After a few minutes the demo front-end should switch from all red to around 50% green and 50% blue.
+After a few minutes the demo front-end should switch from all red to around 80% orange and 20% blue.
 
 ![demo screenshot2](img/screenshot2.png)
 
@@ -77,15 +78,15 @@ $ cat demo/appmesh/colors.r.json
                 "weightedTargets": [
                     {
                         "virtualNode": "orange",
-                        "weight": 0
+                        "weight": 8
                     },
                     {
                         "virtualNode": "blue",
-                        "weight": 5
+                        "weight": 2
                     },
                     {
                         "virtualNode": "green",
-                        "weight": 5
+                        "weight": 0
                     }
                 ]
             },
@@ -98,14 +99,16 @@ $ cat demo/appmesh/colors.r.json
 }
 ```
 
-You can adjust the weights in this file and then run
+You can adjust the weights in the file demo/appmesh/colors.r.2.json and then run
 ```
 $ make updatecolors
 ```
 
 And you should see the traffic distributed evenly across the values you set in the router.
 
+If you did not edit the file you should see 80% green and 20% orange.
+
 You can clean up the entire demo by running
 ```
-$ make cleandemo
+$ make clean
 ```

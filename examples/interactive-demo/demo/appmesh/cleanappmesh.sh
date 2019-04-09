@@ -11,19 +11,19 @@ echo "Deleting colors virtuals router"
 aws appmesh delete-virtual-router --mesh-name ${MESH_NAME} --virtual-router-name colors
 
 echo "Deleting frontend virtual node"
-aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name front-end
+aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name front-end-appmesh-demo
 
-echo "Deleting frontend colors node"
+echo "Deleting colors node"
 aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name colors
 
-echo "Deleting frontend orange node"
-aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name orange
+echo "Deleting orange node"
+aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name orange-appmesh-demo
 
-echo "Deleting frontend blue node"
-aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name blue
+echo "Deleting blue node"
+aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name blue-appmesh-demo
 
-echo "Deleting frontend green node"
-aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name green
+echo "Deleting green node"
+aws appmesh delete-virtual-node --mesh-name ${MESH_NAME} --virtual-node-name green-appmesh-demo
 
 echo "Deleting mesh"
 aws appmesh delete-mesh --mesh-name ${MESH_NAME}
