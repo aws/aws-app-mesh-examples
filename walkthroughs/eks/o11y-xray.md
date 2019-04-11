@@ -13,9 +13,29 @@ $ aws iam attach-role-policy \
       --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 ```
 
-The X-Ray daemon is automatically injected by [App Mesh Inject](https://github.com/awslabs/aws-app-mesh-inject) into your app container, just like Envoy is. See with:
+The X-Ray daemon is automatically injected by [App Mesh Inject](https://github.com/awslabs/aws-app-mesh-inject) into your app container if the `INJECT_XRAY_SIDECAR=true` environment variable is set at time of install. Let's verify that with the following command:
 
 ```
 $ kubectl -n appmesh-demo \
           get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+colorgateway-69cd4fc669-p6qhn        3/3     Running   0          11m
+colorteller-845959f54-4cj5v          3/3     Running   0          11m
+colorteller-black-6cc98458db-pqbv6   3/3     Running   0          11m
+colorteller-blue-88bcffddb-6bmlt     3/3     Running   0          11m
+colorteller-red-6f55b447db-2ht5k     3/3     Running   0          11m
 ```
+
+You see the `3` here in the `READY` column? That means there are three containers running in each of the pods: the app container itself, Envoy as part of the App Mesh data plane, and the X-Ray agent feeding the traces to the X-Ray service.
+
+As a result we can now see the overall [service map](https://docs.aws.amazon.com/xray/latest/devguide/xray-console.html#xray-console-servicemap) rendering the wiring of the services: 
+
+![X-Ray console: service map view](xray-service-map.png)
+
+And, drilling down deeper, we can see the [traces](https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-traces), representing service invocations along the request path:
+
+![X-Ray console: traces overview](xray-traces-0.png)
+
+The detailed view of a trace:
+
+![X-Ray console: traces detailed view](xray-traces-0.png)
