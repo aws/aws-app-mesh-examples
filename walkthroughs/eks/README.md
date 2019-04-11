@@ -4,4 +4,4 @@ In this walkthrough we will be setting up AWS App Mesh with Amazon Elastic Conta
 
 * [Base deployment](base.md)
 * Observability: [CloudWatch](o11y-cloudwatch.md)
-* TBD
+* Observability: [X-Ray](o11y-xray.md)
