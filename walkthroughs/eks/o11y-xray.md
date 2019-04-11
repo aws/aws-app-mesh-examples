@@ -38,4 +38,4 @@ And, drilling down deeper, we can see the [traces](https://docs.aws.amazon.com/x
 
 The detailed view of a trace:
 
-![X-Ray console: traces detailed view](xray-traces-0.png)
+![X-Ray console: traces detailed view](xray-traces-1.png)
