@@ -43,7 +43,10 @@ First, install [App Mesh Inject](https://github.com/awslabs/aws-app-mesh-inject)
 
 ```
 $ export MESH_NAME=color-mesh
-$ curl https://raw.githubusercontent.com/aws/aws-app-mesh-inject/v0.1.0/hack/install.sh | bash
+$ export INJECT_XRAY_SIDECAR=true
+$ export ENABLE_STATS_TAGS=true
+$ export MESH_REGION=us-east-2
+$ curl https://raw.githubusercontent.com/aws/aws-app-mesh-inject/v0.1.3/hack/install.sh | bash
 ```
 
 Validate if the Webhook is up and running:
