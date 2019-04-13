@@ -159,7 +159,6 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
   
-
   PrivateRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -239,3 +238,4 @@ Outputs:
     Value: !Ref VpcCIDR
     Export:
       Name: !Sub "${EnvironmentName}:VpcCIDR"
+
