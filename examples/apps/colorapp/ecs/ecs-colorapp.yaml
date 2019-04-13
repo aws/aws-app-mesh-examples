@@ -32,6 +32,13 @@ Parameters:
     Type: String
     Description: Task definition for ColorTeller Black Service
 
+  Path:
+    Type: String
+    Default: "*"
+    Description: A path on the public load balancer that this service
+                 should be connected to. Use * to send all load balancer
+                 traffic to this service.
+
 Resources:
 
   ### colorteller.default.svc.cluster.local
@@ -198,6 +205,8 @@ Resources:
 
   ColorGatewayService:
     Type: 'AWS::ECS::Service'
+    DependsOn:
+      - WebLoadBalancerRule
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
@@ -218,6 +227,10 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorGatewayTaskDefinition }
+      LoadBalancers:
+        - ContainerName: app
+          ContainerPort: 9080
+          TargetGroupArn: !Ref WebTargetGroup
 
   ### tester
   TesterService:
@@ -329,3 +342,47 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       NetworkMode: "awsvpc"
       Memory: 256
+
+  WebTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      Name: !Join ['-', [!Ref 'EnvironmentName', 'web']]
+      Name: !Sub "${EnvironmentName}-web"
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 30
+      VpcId:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+  
+  WebLoadBalancerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref 'WebTargetGroup'
+          Type: 'forward'
+      Conditions:
+        - Field: path-pattern
+          Values: [!Ref 'Path']
+      ListenerArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicListener"
+      Priority: 1
+
+Outputs: 
+
+  PublicHTTP:
+    Description: Public endpoint for Color App service
+    Value:
+      'Fn::ImportValue': !Sub "${EnvironmentName}:PublicHTTP"
+    Export:
+        Name: !Sub "${EnvironmentName}:ColorAppEndpoint"
+
+
