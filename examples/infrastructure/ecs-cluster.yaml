@@ -31,9 +31,14 @@ Parameters:
     Description: "Domain name registerd under Route-53 that will be used for Service Discovery"
 
   ECSAmi:
-    Description: AMI ID
+    Description: ECS AMI ID
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: "/aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id"
+
+  EC2Ami:
+    Description: EC2 AMI ID
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 
 Resources:
 
@@ -360,6 +365,32 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
       Name: { Ref: ECSServicesDomain }
 
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: !Ref EC2Ami
+      KeyName: !Ref KeyName
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - !Ref BastionSecurityGroup
+      SubnetId: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1"
+      Tags: 
+        - Key: Name
+          Value: bastion-host
+
 Outputs:
 
   Cluster:
@@ -405,3 +436,9 @@ Outputs:
     Value: { "Fn::GetAtt": TaskIamRole.Arn }
     Export:
       Name: !Sub "${EnvironmentName}:TaskIamRoleArn"
+
+  BastionIP:
+    Description: Public IP for ssh access to bastion host
+    Value:
+      'Fn::GetAtt': [ BastionHost, PublicIp ]
+
