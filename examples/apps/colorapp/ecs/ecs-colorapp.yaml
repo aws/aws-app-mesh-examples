@@ -32,7 +32,7 @@ Parameters:
     Type: String
     Description: Task definition for ColorTeller Black Service
 
-  Path:
+  LoadBalancerPath:
     Type: String
     Default: "*"
     Description: A path on the public load balancer that this service
@@ -359,7 +359,7 @@ Resources:
       UnhealthyThresholdCount: 2
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
-          Value: 30
+          Value: 120
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
   
@@ -371,7 +371,7 @@ Resources:
           Type: 'forward'
       Conditions:
         - Field: path-pattern
-          Values: [!Ref 'Path']
+          Values: [!Ref 'LoadBalancerPath']
       ListenerArn: 
         'Fn::ImportValue': !Sub "${EnvironmentName}:PublicListener"
       Priority: 1
