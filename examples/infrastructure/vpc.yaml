@@ -201,55 +201,6 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable2
       SubnetId: !Ref PrivateSubnet2
 
-  PublicLoadBalancerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Access to the public facing load balancer
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-          - CidrIp: 0.0.0.0/0
-            IpProtocol: -1
-
-  PublicLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Scheme: internet-facing
-      LoadBalancerAttributes:
-        - Key: idle_timeout.timeout_seconds
-          Value: '30'
-      Subnets:
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
-      SecurityGroups: [!Ref 'PublicLoadBalancerSG']
-
-  # Initial placeholder target group to drop traffic; actual target group
-  # creation is deferred to a later application stack
-  PlaceholderTargetGroupPublic:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 6
-      HealthCheckPath: /
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      Name: !Sub "${EnvironmentName}-drop-1"
-      Port: 80
-      Protocol: HTTP
-      UnhealthyThresholdCount: 2
-      VpcId: !Ref VPC
-
-  PublicLoadBalancerListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    DependsOn:
-      - PublicLoadBalancer
-    Properties:
-      DefaultActions:
-        - TargetGroupArn: !Ref 'PlaceholderTargetGroupPublic'
-          Type: 'forward'
-      LoadBalancerArn: !Ref 'PublicLoadBalancer'
-      Port: 80
-      Protocol: HTTP
-
 Outputs: 
 
   VPC: 
@@ -287,23 +238,4 @@ Outputs:
     Value: !Ref VpcCIDR
     Export:
       Name: !Sub "${EnvironmentName}:VpcCIDR"
-
-  PublicLoadBalancer:
-    Description: The ARN of the public load balancer
-    Value: !Ref PublicLoadBalancer
-    Export:
-      Name: !Sub "${EnvironmentName}:PublicLoadBalancer"
-
-  PublicListener:
-    Description: The ARN of the public load balancer's Listener
-    Value: !Ref PublicLoadBalancerListener
-    Export:
-      Name: !Sub "${EnvironmentName}:PublicListener"
-
-  PublicHTTP:
-    Description: Public load balancer base HTTP URL for service endpoints
-    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
-    Export:
-      Name: !Sub "${EnvironmentName}:PublicHTTP"
-
 

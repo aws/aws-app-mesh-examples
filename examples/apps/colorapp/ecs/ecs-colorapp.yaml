@@ -343,6 +343,29 @@ Resources:
       NetworkMode: "awsvpc"
       Memory: 256
 
+  PublicLoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the public facing load balancer
+      VpcId:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+      SecurityGroupIngress:
+          - CidrIp: 0.0.0.0/0
+            IpProtocol: -1
+
+  # public ALB for color gateway
+  PublicLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '30'
+      Subnets:
+        - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1" }  
+        - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet2" }  
+      SecurityGroups: [!Ref 'PublicLoadBalancerSG']
+
   WebTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -363,26 +386,33 @@ Resources:
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
   
+  PublicLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn:
+      - PublicLoadBalancer
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref WebTargetGroup
+          Type: 'forward'
+      LoadBalancerArn: !Ref 'PublicLoadBalancer'
+      Port: 80
+      Protocol: HTTP
+
   WebLoadBalancerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       Actions:
-        - TargetGroupArn: !Ref 'WebTargetGroup'
+        - TargetGroupArn: !Ref WebTargetGroup
           Type: 'forward'
       Conditions:
         - Field: path-pattern
           Values: [!Ref 'LoadBalancerPath']
-      ListenerArn: 
-        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicListener"
+      ListenerArn: !Ref PublicLoadBalancerListener
       Priority: 1
 
 Outputs: 
 
-  PublicHTTP:
+  ColorAppEndpoint:
     Description: Public endpoint for Color App service
-    Value:
-      'Fn::ImportValue': !Sub "${EnvironmentName}:PublicHTTP"
-    Export:
-        Name: !Sub "${EnvironmentName}:ColorAppEndpoint"
-
+    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
 
