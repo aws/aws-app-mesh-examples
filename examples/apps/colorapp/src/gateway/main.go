@@ -193,6 +193,13 @@ func (h *tcpEchoHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 	fmt.Fprintf(writer, "Response from tcpecho server: %s", reply)
 }
 
+type pingHandler struct{}
+
+func (h *pingHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	log.Println("ping requested, reponding with HTTP 200")
+	writer.WriteHeader(http.StatusOK)
+}
+
 func main() {
 	log.Println("Starting server, listening on port " + getServerPort())
 
@@ -213,5 +220,6 @@ func main() {
 	http.Handle("/color", xray.Handler(xraySegmentNamer, &colorHandler{}))
 	http.Handle("/color/clear", xray.Handler(xraySegmentNamer, &clearColorStatsHandler{}))
 	http.Handle("/tcpecho", xray.Handler(xraySegmentNamer, &tcpEchoHandler{}))
+	http.Handle("/ping", xray.Handler(xraySegmentNamer, &pingHandler{}))
 	log.Fatal(http.ListenAndServe(":"+getServerPort(), nil))
 }
