@@ -1,0 +1,29 @@
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualNode
+metadata:
+  name: metal
+  namespace: prod
+spec:
+  meshName: dj-app
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostName: metal.prod.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualNode
+metadata:
+  name: jazz
+  namespace: prod
+spec:
+  meshName: dj-app
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostName: jazz.prod.svc.cluster.local

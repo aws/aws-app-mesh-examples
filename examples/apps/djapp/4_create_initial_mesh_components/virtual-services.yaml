@@ -1,0 +1,38 @@
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualService
+metadata:
+  name: jazz.prod.svc.cluster.local
+  namespace: prod
+spec:
+  meshName: dj-app
+  virtualRouter:
+    name: jazz-router
+  routes:
+    - name: jazz-route
+      http:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeName: jazz-v1
+              weight: 100
+
+---
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualService
+metadata:
+  name: metal.prod.svc.cluster.local
+  namespace: prod
+spec:
+  meshName: dj-app
+  virtualRouter:
+    name: metal-router
+  routes:
+    - name: metal-route
+      http:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeName: metal-v1
+              weight: 100
