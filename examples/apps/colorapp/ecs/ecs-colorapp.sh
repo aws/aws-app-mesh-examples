@@ -7,7 +7,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Creating Task Definitions
 source ${DIR}/create-task-defs.sh
 
-aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
+aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     cloudformation deploy \
     --stack-name "${ENVIRONMENT_NAME}-ecs-colorapp" \
     --capabilities CAPABILITY_IAM \

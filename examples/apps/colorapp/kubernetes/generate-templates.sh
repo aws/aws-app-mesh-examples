@@ -56,7 +56,7 @@ spec:
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
-              value: "${AWS_REGION}"
+              value: "${AWS_DEFAULT_REGION}"
       initContainers:
         - name: proxyinit
           image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
@@ -131,7 +131,7 @@ spec:
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
-              value: ${AWS_REGION}
+              value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
           image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
@@ -207,7 +207,7 @@ spec:
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
-              value: ${AWS_REGION}
+              value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
           image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
@@ -282,7 +282,7 @@ spec:
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
-              value: ${AWS_REGION}
+              value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
           image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
@@ -357,7 +357,7 @@ spec:
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
-              value: ${AWS_REGION}
+              value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
           image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager

@@ -60,7 +60,7 @@
   "healthCheck": {
     "command": [
       "CMD-SHELL",
-      "curl -f http://localhost:9901/server_info || exit 1"
+      "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE"
     ],
     "interval": 5,
     "timeout": 2,
