@@ -47,17 +47,9 @@ spec:
                         enum:
                           - tcp
                           - http
-                          - grpc
-                          - http2
-                          - https
             serviceDiscovery:
               type: object
               properties:
-                cloudMap:
-                  type: object
-                  properties:
-                    cloudMapServiceName:
-                      type: string
                 dns:
                   type: object
                   properties:
