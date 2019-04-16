@@ -375,7 +375,6 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
-      Name: !Join ['-', [!Ref 'EnvironmentName', 'web']]
       Name: !Sub "${EnvironmentName}-web"
       Port: 80
       Protocol: HTTP
