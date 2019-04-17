@@ -8,10 +8,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # will deploy the TesterService, which perpetually invokes /color to generate history
 : "${DEPLOY_TESTER:='false'}"
 
-
-echo "DEPLOY_TESTER=${DEPLOY_TESTER}"
-exit
-
 # Creating Task Definitions
 source ${DIR}/create-task-defs.sh
 
