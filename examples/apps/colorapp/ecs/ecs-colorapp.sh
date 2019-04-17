@@ -6,7 +6,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 # ecs-colorapp.yaml expects "true" or "false" (default is "false")
 # will deploy the TesterService, which perpetually invokes /color to generate history
-: "${DEPLOY_TESTER:='false'}"
+: "${DEPLOY_TESTER:=false}"
 
 # Creating Task Definitions
 source ${DIR}/create-task-defs.sh
