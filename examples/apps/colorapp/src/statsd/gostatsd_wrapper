@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+CONFIG_FILE="/tmp/cloudwatch_config.toml"
+
+cat << CONFIG_EOF > "${CONFIG_FILE}"
+[cloudwatch]
+    namespace = "${CLOUDWATCH_NAMESPACE:-Statsd}"
+CONFIG_EOF
+
+exec /bin/gostatsd --backends cloudwatch --config-path ${CONFIG_FILE}

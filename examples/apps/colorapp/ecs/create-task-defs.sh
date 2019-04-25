@@ -9,6 +9,11 @@ if [ -z "${ENVOY_IMAGE}" ]; then
     exit 1
 fi
 
+if [ -z "${STATSD_IMAGE}" ]; then
+    echo "STATSD_IMAGE environment is not defined"
+    exit 1
+fi
+
 if [ -z "${COLOR_GATEWAY_IMAGE}" ]; then
     echo "COLOR_GATEWAY_IMAGE environment is not defined"
     exit 1
@@ -33,6 +38,16 @@ ecs_service_log_group=($(echo $stack_output \
     | jq -r 'select(.OutputKey == "ECSServiceLogGroup") | .OutputValue'))
 
 envoy_log_level="debug"
+
+generate_statsd_container_json() {
+    app_name=$1
+    statsd_container_json=$(jq -n \
+    --arg STATSD_IMAGE $STATSD_IMAGE \
+    --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
+    --arg AWS_REGION $AWS_DEFAULT_REGION \
+    --arg AWS_LOG_STREAM_PREFIX "${app_name}-statsd" \
+    -f "${DIR}/statsd-container.json")
+}
 
 generate_xray_container_json() {
     app_name=$1
@@ -60,6 +75,7 @@ generate_sidecars() {
     app_name=$1
     generate_envoy_container_json ${app_name}
     generate_xray_container_json ${app_name}
+    generate_statsd_container_json ${app_name}
 }
 
 generate_color_teller_task_def() {
@@ -76,6 +92,7 @@ generate_color_teller_task_def() {
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
+    --argjson STATSD_CONTAINER_JSON "${statsd_container_json}" \
     -f "${DIR}/colorteller-base-task-def.json")
     task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     ecs register-task-definition \
@@ -97,6 +114,7 @@ task_def_json=$(jq -n \
     --arg EXECUTION_ROLE_ARN $execution_role_arn \
     --argjson ENVOY_CONTAINER_JSON "${envoy_container_json}" \
     --argjson XRAY_CONTAINER_JSON "${xray_container_json}" \
+    --argjson STATSD_CONTAINER_JSON "${statsd_container_json}" \
     -f "${DIR}/colorgateway-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     ecs register-task-definition \

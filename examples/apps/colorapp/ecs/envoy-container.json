@@ -13,17 +13,14 @@
   "portMappings": [
     {
       "containerPort": 9901,
-      "hostPort": 9901,
       "protocol": "tcp"
     },
     {
       "containerPort": 15000,
-      "hostPort": 15000,
       "protocol": "tcp"
     },
     {
       "containerPort": 15001,
-      "hostPort": 15001,
       "protocol": "tcp"
     }
   ],
@@ -47,6 +44,10 @@
     {
       "name": "ENABLE_ENVOY_STATS_TAGS",
       "value": "1"
+    },
+    {
+      "name": "ENABLE_ENVOY_DOG_STATSD",
+      "value": "1"
     }
   ],
   "logConfiguration": {
@@ -54,7 +55,7 @@
     "options": {
       "awslogs-group": $ECS_SERVICE_LOG_GROUP,
       "awslogs-region": $AWS_REGION,
-      "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX_ENVOY
+      "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX
     }
   },
   "healthCheck": {
