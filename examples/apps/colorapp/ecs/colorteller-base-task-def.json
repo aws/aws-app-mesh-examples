@@ -33,7 +33,6 @@
       "portMappings": [
         {
           "containerPort": 9080,
-          "hostPort": 9080,
           "protocol": "tcp"
         }
       ],
@@ -68,7 +67,8 @@
       ]
     },
     $ENVOY_CONTAINER_JSON,
-    $XRAY_CONTAINER_JSON
+    $XRAY_CONTAINER_JSON,
+    $STATSD_CONTAINER_JSON
   ],
   "taskRoleArn": $TASK_ROLE_ARN,
   "executionRoleArn": $EXECUTION_ROLE_ARN,
