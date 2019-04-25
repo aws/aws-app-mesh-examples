@@ -22,6 +22,7 @@ export CLUSTER_SIZE=<number of ec2 instances to spin up to join cluster
 export SERVICES_DOMAIN=<domain under which services will be discovered, e.g. "default.svc.cluster.local">
 export COLOR_GATEWAY_IMAGE=<image location for colorapp's gateway, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/gateway:latest" - you need to build this image and use your own ECR repository, see below>
 export COLOR_TELLER_IMAGE=<image location for colorapp's teller, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/colorteller:latest" - you need to build this image and use your own ECR repository, see below>
+export STATSD_IMAGE=<image location for statsd sidecar, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/statsd:latest" - you need to build this image and use your own ECR repository, see below>
 ```
 
 ## Infrastructure
@@ -64,6 +65,9 @@ In Elastic Container Registry, created two new repositories:
 
 Build the docker images as follow:
 ```
+cd apps/colorapp/src/statsd
+./deploy.sh
+cd -
 cd apps/colorapp/src/colorteller/
 ./deploy.sh
 cd -

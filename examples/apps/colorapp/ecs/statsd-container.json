@@ -1,14 +1,22 @@
 {
-  "name": "xray-daemon",
-  "image": "amazon/aws-xray-daemon",
+  "name": "statsd",
+  "image": $STATSD_IMAGE,
   "user": "1337",
   "essential": true,
-  "cpu": 32,
-  "memoryReservation": 256,
   "portMappings": [
     {
-      "containerPort": 2000,
+      "containerPort": 8125,
       "protocol": "udp"
+    }
+  ],
+  "environment": [
+    {
+      "name": "AWS_REGION",
+      "value": $AWS_REGION
+    },
+    {
+      "name": "CLOUDWATCH_NAMESPACE",
+      "value": "ColorApp"
     }
   ],
   "logConfiguration": {

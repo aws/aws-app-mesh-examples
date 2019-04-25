@@ -9,5 +9,6 @@ This software includes third party software subject to the following copyrights:
 - Istio iptables configuration and parameter names from https://github.com/istio/istio - Copyright 2016-2018 Istio Authors, licensed under Apache License 2.0.
 - Docker Alpine Infinite Loop Curl from https://github.com/tstrohmeier/docker-alpine-infinite-curl - Copyright (c) 2018 Donal Byrne & Thomas Strohmeier, licensed under the MIT license.
 - TCP echo server from https://github.com/cjimti/go-echo - Copyright (c) 2018 Craig Johnston, licensed under the MIT license.
+- Statsd to AWS CloudWatch sidecar from https://github.com/atlassian/gostatsd - Copyright (c) 2012 Kamil Kisiel, Copyright @ 2016 - 2017 Atlassian Pty Ltd and others, licensed under the MIT license.
 
 The licenses for these third party components are included in LICENSE
