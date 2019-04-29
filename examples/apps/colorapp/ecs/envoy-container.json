@@ -54,7 +54,7 @@
     "options": {
       "awslogs-group": $ECS_SERVICE_LOG_GROUP,
       "awslogs-region": $AWS_REGION,
-      "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX_ENVOY
+      "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX
     }
   },
   "healthCheck": {
