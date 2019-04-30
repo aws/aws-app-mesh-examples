@@ -1,22 +1,27 @@
 # Overview
-A simple app to show case traffic-routing when used with AWS App Mesh. This app has two services *color-gateway* and *color-teller*. Though below we talk about ECS, it works similarly in EKS.
+The Color App is simple microservice demo to showcase traffic routing when used with [AWS App Mesh]. This app has two services, `gateway` and `colorteller`.
 
-### ColorGateway
-__color-gateway__ is a simple http service written in go that is exposed to external clients and responds to http://service-name:port/color that responds with color retrieved from color-teller and histogram of colors observed at the server that responded so far. For e.g.
+This page provides a summary description of the Color App. For a step-by-step orientation to running this demo with App Mesh, see this [walkthrough].
+
+### The Gateway service
+`gateway` is an HTTP service written in Go intended to provide a simple REST API to external clients of the application. It responds to requests at http://service-name:port/color with a JSON resource that includes the color it retrieves from a `colorteller` service as well as a histogram of all colors observed so far. For example:
 
 ```
 $ curl -s http://colorgateway.default.svc.cluster.local:9080/color
 {"color":"blue", "stats": {"blue":"1"}}
 
-... after many such calls ...
+### after many such calls ...
 $ curl -s http://colorgateway.default.svc.cluster.local:9080/color
 {"color":"blue", "stats": {"black":0.16,"blue":0.82,"red":0.01}}
+
+### the histogram can be reset by invoking /color/clear
+$ curl -s http://colorgateway.default.svc.cluster.local:9080/color/clear
 ```
 
-color-gateway app runs as a service in ECS, optionally exposed via external load-balancer (ALB). Each task in gateway is configured with the endpoint of color-teller service that it communicates with via Envoy that is configured by AWS App Mesh.
+`gateway` runs as a service optionally exposed via an external application load-balancer (ALB). Each running task is able to communicate with the endpoint of the `colorteller` service via an Envoy proxy (running as a task sidecar) that is configured by App Mesh.
 
-### ColorTeller
-__color-teller__ is a simple http service written in go that is configured to return a color. This configuration is provided as environment variable and is run within a task along with Envoy. Multiple versions of this service are deployed each configured to return a specific color. 
+### The Color Teller service
+`colorteller` is a simple service written in Go that is configured to return a specific color. Each deployment of a service that configured to return a different color is meant to provide a simple, visual represention of the deployment of different version releases in real world applications (the color configuration is provided as an environment variable so that it isn't necessary to actually recompile any implementation code). As with `gateway` tasks, each `colorteller` task is deployed with an Envoy proxy running as a sidecar.
 
 ## Setup
 
@@ -25,7 +30,11 @@ __color-teller__ is a simple http service written in go that is configured to re
 ```
 $ ./servicemesh/appmesh-colorapp.sh
 ```
+
 ### ECS
+
+> For detailed, step-by-step instructions, see the [walkthrough].
+
 * Deploy color-teller and color-gateway to ECS
 
 ```
@@ -54,4 +63,9 @@ root@curler-zzzzzz:/# curl -s --connect-timeout 2 http://colorgateway.${SERVICES
 
 ### Development
 
-To change the app code please look into ***src***
+Source code for the application, as well as scripts to build the application and deploy container images to ECR for your account, are all located under `src`.
+
+
+
+[AWS App Mesh]: https://aws.amazon.com/app-mesh/
+[walkthrough]: ../../../walkthroughs/ecs/
