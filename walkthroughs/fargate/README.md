@@ -51,7 +51,7 @@ As part of the original [walkthrough] we pushed the `gateway` and `colorteller` 
 
 #### 1. Update the mesh configuration
 
-Our updated CloudFormation templates are located in [this repo].
+Our updated CloudFormation templates are located in the [repo] under `walkthroughs/fargate`.
 
 This updated mesh configuration adds a new virtual node (`colorteller-green-vn`) and updates the virtual router (`colorteller-vr`) for the `colorteller` virtual service, so that traffic will be distributed between the blue and green virtual nodes at a 2:1 ratio (i.e., the green node will receive one third of the traffic).
 
@@ -225,7 +225,7 @@ In this walkthrough, we rolled out an update from version 1 (blue) of our colort
 [AWS App Mesh]: https://aws.amazon.com/app-mesh/
 [Deploy Images]: https://medium.com/p/de3452846e9d#0d56
 [Fargate]: https://aws.amazon.com/fargate/
+[repo]: https://github.com/aws/aws-app-mesh-examples
 [Sidecar Pattern]: https://www.oreilly.com/library/view/designing-distributed-systems/9781491983638/ch02.html
-[this repo]: https://github.com/subfuzion/appmesh-blog/tree/master/colorapp/fargate
 [walkthrough]: ../walkthrough.md
 [walkthrough prerequisites]: https://medium.com/containers-on-aws/aws-app-mesh-walkthrough-deploy-the-color-app-on-amazon-ecs-de3452846e9d#42cf
