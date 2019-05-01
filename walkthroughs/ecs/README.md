@@ -635,8 +635,7 @@ In this demo, our services ran only on ECS. In the next post in this series, we'
 [Blue-Green deployments]: https://martinfowler.com/bliki/BlueGreenDeployment.html
 [Canary releases]: https://martinfowler.com/bliki/CanaryRelease.html
 [Color App]: https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp
-[Currently available AWS regions for App Mesh]: ./regions.md
-[Deep Dive]: ./deepdive.md
+[Currently available AWS regions for App Mesh]: https://docs.aws.amazon.com/general/latest/gr/rande.html#appmesh_region
 [Elastic Load Balancing]: https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/what-is-load-balancing.html
 [Envoy]: https://www.envoyproxy.io/ 
 [Envoy documentation]: https://www.envoyproxy.io/docs/envoy/latest/
@@ -646,4 +645,3 @@ In this demo, our services ran only on ECS. In the next post in this series, we'
 [jq]: https://stedolan.github.io/jq/
 [NAT Gateways]: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
 [Segment]: https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-segments
-[Walkthrough]: ./walkthrough.md
