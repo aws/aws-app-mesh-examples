@@ -18,7 +18,7 @@ In terms of App Mesh configuration, we will want to begin shifting traffic over 
 ![](img/appmesh-fargate-colorapp-demo-2.png)
 <p align="center"><b><i>Figure 2.</i></b> App Mesh configuration of the Color App.</p>
 
-Finally, there is the physical deployment of the application itself to a compute environment. In this demo, `colorteller-blue` runs on ECS using the EC2 launch type and `colorteller-green` will run on ECS using the Fargate launch type. Our goal is to test with a portion of traffic going to `colorteller-blue`, ultimately increasing to 100% of traffic going to this version.
+Finally, there is the physical deployment of the application itself to a compute environment. In this demo, `colorteller-blue` runs on ECS using the EC2 launch type and `colorteller-green` will run on ECS using the Fargate launch type. Our goal is to test with a portion of traffic going to `colorteller-green`, ultimately increasing to 100% of traffic going to the new green version.
 
 ![](img/appmesh-fargate-colorapp-demo-3.png)
 <p align="center"><b><i>Figure 3.</i></b> AWS deployment perspective of the Color App.</p>
