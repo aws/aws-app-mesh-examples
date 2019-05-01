@@ -31,7 +31,7 @@ Finally, there is the physical deployment of the application itself to a compute
 
 ### Initial configuration
 
-Once you have deployed the Color App (see #prerequisites), configure the app so that 100% of traffic goes to `colorteller-blue` for now. The blue color will represent version 1 of our colorteller service. There are several ways you can accomplish this and I'll point them out, but then will recommend that you use the last approach.
+Once you have deployed the Color App (see #prerequisites), configure the app so that 100% of traffic goes to `colorteller-blue` for now. The blue color will represent version 1 of our colorteller service.
 
 Log into the App Mesh console and drill down into "Virtual routers" for the mesh. Configure the HTTP route to send 100% of traffic to the `colorteller-blue` virtual node.
 
