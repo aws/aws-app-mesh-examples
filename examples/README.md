@@ -24,8 +24,8 @@ export COLOR_GATEWAY_IMAGE=<image location for colorapp's gateway, e.g. "<yourac
 export COLOR_TELLER_IMAGE=<image location for colorapp's teller, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/colorteller:latest" - you need to build this image and use your own ECR repository, see below>
 ```
 
-## Infrastructure
-Before we can start playing with mesh examples we need to setup infrastructure pieces. Following steps will setup a VPC, Mesh, and ECS or EKS.
+## ECS
+Following steps will setup a VPC, Mesh, and ECS.
 
 * Setup VPC
 
@@ -45,11 +45,8 @@ $ ./infrastructure/appmesh-mesh.sh
 $ ./infrastructure/ecs-cluster.sh
 ```
 
-* Setup EKS Cluster (Optional if using ECS). Note that there are more steps to use Kubernetes cluster that are not covered here. Please follow [EKS Getting Started Guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html). See also the [Walkthrough: App Mesh with EKS](../walkthroughs/eks/) for other options.
-
-```
-$ ./infrastructure/eks-cluster.sh
-```
+## EKS
+* See [Walkthrough: App Mesh with EKS](../walkthroughs/eks/).
 
 ## Apps
 Once infrastructure is in place you can deploy applications and configure mesh. Go to corresponding application directory under ***apps/*** and follow the directions, e.g. *apps/colorapp*.
