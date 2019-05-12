@@ -198,3 +198,48 @@ Resources:
               VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
           - VirtualService:
               VirtualServiceName: !Sub "tcpecho.${ServicesDomain}"
+  FrontEndVirtualRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualRouterName: frontend-vr
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+  FrontEndRoute:
+    Type: AWS::AppMesh::Route
+    DependsOn:
+      - FrontEndVirtualRouter
+      - FrontEndVirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualRouterName: frontend-vr
+      RouteName: frontend-route
+      Spec:
+        HttpRoute:
+          Action:
+            WeightedTargets:
+              - VirtualNode: frontend-vn
+                Weight: 100
+          Match:
+            Prefix: "/"
+  FrontEndVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    DependsOn:
+      - ColorGatewayVirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: frontend-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 8080
+              Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "front-end.${ServicesDomain}"
+        Backends:
+          - VirtualService:
+              VirtualServiceName: !Sub "colorgateway.${ServicesDomain}"

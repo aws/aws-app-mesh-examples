@@ -12,6 +12,10 @@ Parameters:
     Type: String
     Description: DNS namespace used by services e.g. default.svc.cluster.local
 
+  FrontendTaskDefinition:
+    Type: String
+    Description: Task definition for frontend
+
   ColorGatewayTaskDefinition:
     Type: String
     Description: Task definition for ColorGateway Service
@@ -39,6 +43,12 @@ Parameters:
                  should be connected to. Use * to send all load balancer
                  traffic to this service.
 
+  LoadBalancerPathColor:
+    Type: String
+    Default: "/color"
+    Description: A path on the public load balancer that this service
+                 should be connected to. Use * to send all load balancer
+                 traffic to this service.
   DeployTester:
     Type: String
     Default: false
@@ -218,7 +228,8 @@ Resources:
   ColorGatewayService:
     Type: 'AWS::ECS::Service'
     DependsOn:
-      - WebLoadBalancerRule
+      - WebLoadBalancerRuleFrontEnd
+      - WebLoadBalancerRuleColor
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
@@ -242,7 +253,7 @@ Resources:
       LoadBalancers:
         - ContainerName: app
           ContainerPort: 9080
-          TargetGroupArn: !Ref WebTargetGroup
+          TargetGroupArn: !Ref WebTargetGroupColor
 
   ### tester
   TesterService:
@@ -289,6 +300,53 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       NetworkMode: "awsvpc"
       Memory: 256
+
+
+### frontend.default.svc.cluster.local
+  FrontEndServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+
+    Properties:
+      Name: "frontend"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  FrontEndService:
+    Type: 'AWS::ECS::Service'
+    DependsOn:
+      - WebTargetGroupFrontEnd
+      - WebLoadBalancerRuleFrontEnd
+      - WebLoadBalancerRuleColor
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': FrontEndServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: FrontendTaskDefinition }
+      LoadBalancers:
+        - ContainerName: app
+          ContainerPort: 80
+          TargetGroupArn: !Ref WebTargetGroupFrontEnd
 
   ### tcpecho.default.svc.cluster.local
   TcpEchoServiceDiscoveryRecord:
@@ -380,7 +438,7 @@ Resources:
         - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet2" }  
       SecurityGroups: [!Ref 'PublicLoadBalancerSG']
 
-  WebTargetGroup:
+  WebTargetGroupColor:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 6
@@ -389,7 +447,26 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
-      Name: !Sub "${EnvironmentName}-web"
+      Name: !Sub "${EnvironmentName}-color"
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 120
+      VpcId:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+  
+  WebTargetGroupFrontEnd:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      Name: !Sub "${EnvironmentName}-frontend"
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
@@ -405,21 +482,33 @@ Resources:
       - PublicLoadBalancer
     Properties:
       DefaultActions:
-        - TargetGroupArn: !Ref WebTargetGroup
+        - TargetGroupArn: !Ref WebTargetGroupFrontEnd
           Type: 'forward'
       LoadBalancerArn: !Ref 'PublicLoadBalancer'
       Port: 80
       Protocol: HTTP
 
-  WebLoadBalancerRule:
+  WebLoadBalancerRuleFrontEnd:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       Actions:
-        - TargetGroupArn: !Ref WebTargetGroup
+        - TargetGroupArn: !Ref WebTargetGroupFrontEnd
           Type: 'forward'
       Conditions:
         - Field: path-pattern
           Values: [!Ref 'LoadBalancerPath']
+      ListenerArn: !Ref PublicLoadBalancerListener
+      Priority: 2
+
+  WebLoadBalancerRuleColor:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref WebTargetGroupColor
+          Type: 'forward'
+      Conditions:
+        - Field: path-pattern
+          Values: [!Ref 'LoadBalancerPathColor']
       ListenerArn: !Ref PublicLoadBalancerListener
       Priority: 1
 

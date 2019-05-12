@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>AWS App Mesh Demo</title>
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
+  </head>
+  <body>
+    <div class="container" id="app">
+      <h3 class="text-center">AWS App Mesh Demo</h3>
+      <div>
+        <div class="row">
+          <div class="form-group col-lg-8">
+            <label for="rate_sel">Rate:</label>
+            <select v-model="interval_seconds" v-on:change="updateInterval"  class="form-control" id="rate_sel">
+              <option v-for="rate_option in rate_options" v-bind:value="rate_option.value">
+                {{ rate_option.text }}
+              </option>
+            </select>
+          </div>
+          <div class="col-lg-4">
+            <h3>
+              Your Id: 
+            <div class="badge badge-info">
+              {{ user_id }}
+            </div>
+            </h3>
+          </div>
+        </div>
+        <b-tabs>
+          <b-tab title="Colors" @click="changeActiveTab('color')">
+  						<transition-group name="colors-complete" tag="p" class="col-lg-12" mode="out-in">
+
+                	<div
+											v-bind:key="color_request.request_time"
+											v-bind:request_color="color_request.color"
+      								class="colors-complete-item col-lg-12 badge"
+											v-for="(color_request, index) in color_requests"
+											v-bind:style="{ backgroundColor: color_request.color }">
+                      {{ color_request.request_time }} </br>
+                      <template v-if="color_request.latency != null">
+                        {{ color_request.latency }} ms </br>
+                      </template>
+                      <template v-if="color_request.error_code != null">
+                        Error: {{ color_request.error_code }} </br>
+                      </template>
+
+									</div>
+							</transition-group>
+          </b-tab>
+          <b-tab title="Cats" @click="changeActiveTab('cats')">
+            <img v-bind:src="cat_picture.cat" class="col-lg-12" />
+          </b-tab>
+        </b-tabs>
+      </div>
+    </div>
+  </body>
+    <script>
+      var ActiveTab = "color"
+      var vm = new Vue({
+        el: '#app',
+        data: {
+          color_requests: [],
+          cat_picture: {},
+          interval_seconds: 30,
+          interval: null,
+          rate_options:[
+            { text: '5 per second', value: 2 },
+            { text: '2 per second', value: 5 },
+            { text: '1 per second', value: 10 },
+            { text: '1 every 2 seconds', value: 20 },
+            { text: '1 every 3 seconds', value: 30 },
+            { text: '1 every 5 seconds', value: 50 },
+            { text: '1 every 500 seconds', value: 5000 }
+          ],
+          user_id:  Math.random().toString(36).substring(2, 5) + Math.random().toString(36).substring(2, 5)
+        },
+        methods: {
+
+          changeActiveTab: function(value) {
+						ActiveTab=value
+          }
+          ,
+          getPostsViaREST: function() {
+						var start = new Date();
+
+            if (ActiveTab=="color"){
+              axios({ method: "GET", "url": "/color",
+                      headers: {'Content-Type': 'application/json','Cache-Control' : 'no-cache'}
+              }).then(result => {
+                  var end = new Date();
+                  this.color_requests.push(
+                    {	
+                      latency: end - start ,
+                      request_time: start.getHours() + ":" + start.getMinutes() + ":" + start.getSeconds() + ":" + start.getMilliseconds(),
+                      color: result.data.color,
+                      error_code: null
+                    }
+                  );
+              }).catch (error => {
+                  var end = new Date();
+                  this.color_requests.push({
+                    request_time: start.getHours() + ":" + start.getMinutes() + ":" + start.getSeconds() + ":" + start.getMilliseconds(),
+                    color: 'red',
+                    error_code: error.response.status
+                  })
+                  console.log(error.response)
+              });
+              while( this.color_requests.length > 10 ) {
+                this.color_requests.shift();
+              }
+            }
+            if (ActiveTab=="cats"){
+              axios({ method: "GET", "url": "/cats",
+                      headers: {'Content-Type': 'application/json','Cache-Control' : 'no-cache'}
+              }).then(result => {
+                this.cat_picture = result.data
+              }).catch (error => {
+                this.cat_picture = {cat: "/error.jpg"}
+                console.log(error);
+              });
+            }
+          },
+          setInterval: function() {
+            this.interval = setInterval(function () {
+              this.getPostsViaREST();
+            }.bind(this), this.interval_seconds * 100); 
+          },
+          updateInterval: function() {
+            clearInterval(this.interval)
+            this.setInterval()  
+          }
+        },
+        mounted: function () {
+          axios.defaults.headers.common['UserId'] = this.user_id;
+          this.getPostsViaREST();
+          this.setInterval()
+        }
+      });    
+    </script>
+
+		<style>
+			.colors-complete-item {
+				transition: all 1s;
+				color: white;
+        margin-top: 5px;
+			}
+			.colors-complete-leave-to
+			/* .colors-leave-active below version 2.1.8 */ {
+				opacity: 0;
+				transform: translateY(-100%);
+			}
+			.colors-complete-enter
+			/* .colors-leave-active below version 2.1.8 */ {
+				opacity: 0;
+				transform: translateY(100%);
+			}
+			.colors-complete-leave-active {
+				position: absolute;
+			}
+
+
+		</style>
+</html>
