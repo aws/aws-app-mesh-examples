@@ -14,27 +14,6 @@ Parameters:
 
 Resources:
 
-  ColorTellerGreenVirtualNode:
-    Type: AWS::AppMesh::VirtualNode
-    Properties:
-      MeshName: !Ref AppMeshMeshName
-      VirtualNodeName: colorteller-green-vn
-      Spec:
-        Listeners:
-          - PortMapping:
-              Port: 9080
-              Protocol: http
-            HealthCheck:
-              Protocol: http
-              Path: "/ping"
-              HealthyThreshold: 2
-              UnhealthyThreshold: 2
-              TimeoutMillis: 2000
-              IntervalMillis: 5000
-        ServiceDiscovery:
-          DNS:
-            Hostname: !Sub "colorteller-green.${ServicesDomain}"
-
   ColorTellerBlackVirtualNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:
@@ -119,6 +98,27 @@ Resources:
           DNS:
             Hostname: !Sub "colorteller.${ServicesDomain}"
 
+  ColorTellerGreenVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: colorteller-green-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: "/ping"
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorteller-green.${ServicesDomain}"
+
   ColorTellerVirtualRouter:
     Type: AWS::AppMesh::VirtualRouter
     Properties:
@@ -145,7 +145,7 @@ Resources:
           Action:
             WeightedTargets:
               - VirtualNode: colorteller-blue-vn
-                Weight: 2
+                Weight: 1
               - VirtualNode: colorteller-green-vn
                 Weight: 1
           Match:
