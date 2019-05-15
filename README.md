@@ -28,6 +28,10 @@ If you have a suggestion, request, submission, or bug fix for the examples in th
 
 If you have a feature request for AWS App Mesh, please open an Issue on the [public roadmap](https://github.com/aws/aws-app-mesh-roadmap).
 
+## Security disclosures
+
+If you think you’ve found a potential security issue, please do not post it in the Issues.  Instead, please follow the instructions [here](https://aws.amazon.com/security/vulnerability-reporting/) or [email AWS security directly](mailto:aws-security@amazon.com).
+
 ### Why use  App Mesh?
 
 1. Streamline operations by offloading communication management logic from application code and libraries into configurable infrastructure.
