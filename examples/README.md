@@ -39,13 +39,13 @@ $ ./infrastructure/vpc.sh
 $ ./infrastructure/appmesh-mesh.sh
 ```
 
-* Setup ECS Cluster (Optional if using ECS)
+* Setup ECS Cluster (Optional if using EKS)
 
 ```
 $ ./infrastructure/ecs-cluster.sh
 ```
 
-* Setup EKS Cluster (Optional if using EKS). Note that there are more steps to use Kubernetes cluster that are not covered here. Please follow [EKS Getting Started Guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html). See also the [Walkthrough: App Mesh with EKS](../walkthroughs/eks/) for other options.
+* Setup EKS Cluster (Optional if using ECS). Note that there are more steps to use Kubernetes cluster that are not covered here. Please follow [EKS Getting Started Guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html). See also the [Walkthrough: App Mesh with EKS](../walkthroughs/eks/) for other options.
 
 ```
 $ ./infrastructure/eks-cluster.sh
