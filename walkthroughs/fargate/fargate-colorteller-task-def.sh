@@ -28,7 +28,7 @@ envoy_container_json=$(jq -n \
     --arg ENVOY_LOG_LEVEL $envoy_log_level \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
     --arg AWS_REGION $AWS_DEFAULT_REGION \
-    --arg AWS_LOG_STREAM_PREFIX_ENVOY "colorteller-$COLOR-envoy" \
+    --arg AWS_LOG_STREAM_PREFIX "colorteller-$COLOR-envoy" \
     -f "${DIR}/envoy-container.json")
 xray_container_json=$(jq -n \
     --arg ECS_SERVICE_LOG_GROUP $ecs_service_log_group \
