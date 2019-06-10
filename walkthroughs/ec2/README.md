@@ -116,6 +116,7 @@ Try running it in a loop for verifying the distribution approaches 50/50 over ti
 $ for ((n=0;n<100;n++)); do echo "$n: $(curl -s $colorapp/color)"; done
 ...
 99: {"color":"yellow", "stats": {"red":0.47,"yellow":0.53}}
+```
 
 Great, it works!
 
