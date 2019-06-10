@@ -21,7 +21,7 @@ The key thing to note about this is that actual routing configuration is complet
 
 **Contents**
 
-- [App Mesh Walkthrough: Deploy the Color App on ECS](#app-mesh-walkthrough-deploy-the-color-app-on-ecs)
+- [App Mesh Walkthrough: Deploy the Color App on ECS](#app-mesh-walkthrough--deploy-the-color-app-on-ecs)
   - [Overview](#overview)
   - [Prerequisites](#prerequisites)
   - [Deploy infrastructure for the application](#deploy-infrastructure-for-the-application)
@@ -38,7 +38,7 @@ The key thing to note about this is that actual routing configuration is complet
   - [Shape traffic](#shape-traffic)
     - [Apply traffic rules](#apply-traffic-rules)
     - [Monitor with AWS X-Ray](#monitor-with-aws-x-ray)
-  - [Review](#review-1)
+  - [Review](#review)
   - [Summary](#summary)
   - [Resources](#resources)
 
@@ -302,6 +302,8 @@ In addition to the previously defined environment variables, you will also need 
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice (see example below).
   
 ***Deploy services to ECS***
+
+> Note: Make sure you install [jq](https://stedolan.github.io/jq/) prior to running the ecs-colorapp.sh script
 
 `examples/apps/colorapp/ecs/ecs-colorapp.sh`
 
