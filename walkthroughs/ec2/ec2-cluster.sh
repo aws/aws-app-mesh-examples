@@ -1,5 +1,9 @@
 #!/bin/bash
 
+ENVOY_IMAGE=subfuzion/aws-appmesh-envoy:v1.9.1.0-prod
+PROXY_ROUTER_MANAGER_IMAGE=subfuzion/aws-appmesh-proxy-route-manager:latest
+COLOR_TELLER_IMAGE=subfuzion/colorteller:latest
+
 set -ex 
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -17,6 +21,7 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_REGION}" \
     ClusterSize="${CLUSTER_SIZE:-1}" \
     ECSServicesDomain="${SERVICES_DOMAIN}" \
     EnvoyImage="${ENVOY_IMAGE}" \
+    ProxyRouterManagerImage="${PROXY_ROUTER_MANAGER_IMAGE}" \
     AppMeshXdsEndpoint="${APPMESH_XDS_ENDPOINT}" \
     AppMeshMeshName="${MESH_NAME}" \
     ColorTellerImage="${COLOR_TELLER_IMAGE}"
