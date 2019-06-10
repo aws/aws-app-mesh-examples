@@ -1,6 +1,6 @@
 **Contents**
 
-- [App Mesh Walkthrough: Deploy the Color App on ECS](#app-mesh-walkthrough--deploy-the-color-app-on-ecs)
+- [App Mesh Walkthrough: Deploy the Color App on ECS](#app-mesh-walkthrough-deploy-the-color-app-on-ecs)
   - [Overview](#overview)
   - [Prerequisites](#prerequisites)
   - [Deploy infrastructure for the application](#deploy-infrastructure-for-the-application)
