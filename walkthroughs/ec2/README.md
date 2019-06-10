@@ -130,7 +130,7 @@ You will want to examine the `EC2Instance` resource that we create in `ec2-clust
 
 ## Summary
 
-In this walkthrough, we demonstrated the flexibility of App Mesh in supporting un-containerized services that run directly on EC2 instances. Although we added this onto the existing ECS demo, many customers will find the ability to use App Mesh to add routing support to existing EC2-based services as they migrate toward a microservices architecture and adopt managed services like ECS, EKS, and Fargate.
+In this walkthrough, we demonstrated the flexibility of App Mesh in supporting un-containerized services that run directly on EC2 instances. Although we added this onto the existing ECS demo, many customers will benefit from the ability to use App Mesh to add routing support to existing EC2-based services as they migrate toward a microservices architecture and adopt managed services like ECS, EKS, and Fargate.
 
 ## Resources
 
