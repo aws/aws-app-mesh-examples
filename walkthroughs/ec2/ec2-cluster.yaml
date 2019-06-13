@@ -16,8 +16,6 @@ Parameters:
     Description: The Amazon Machine Image ID used for the cluster, leave it as the default value to get the latest AMI
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-#    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
-#    Default: ami-08e689a423405d7f6 amzn2-ami-hvm-2.0.20190313-x86_64-ebs
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
