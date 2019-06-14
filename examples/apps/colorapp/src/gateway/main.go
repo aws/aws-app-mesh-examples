@@ -209,7 +209,7 @@ func main() {
 	}
 	tcpEchoEndpoint, err := getTCPEchoEndpoint()
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	log.Println("Using color-teller at " + colorTellerEndpoint)
