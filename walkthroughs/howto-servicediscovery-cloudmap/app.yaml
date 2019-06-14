@@ -244,7 +244,7 @@ Resources:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
           Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/colorgateway-node'
         - Name: 'ENVOY_LOG_LEVEL'
-          Value: 'trace'
+          Value: 'debug'
 
   BlueColorTellerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -326,7 +326,7 @@ Resources:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
           Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/colorteller-blue-node'
         - Name: 'ENVOY_LOG_LEVEL'
-          Value: 'trace'
+          Value: 'debug'
 
   GreenColorTellerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -408,7 +408,7 @@ Resources:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
           Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/colorteller-green-node'
         - Name: 'ENVOY_LOG_LEVEL'
-          Value: 'trace'
+          Value: 'debug'
 
   ColorGatewayService:
     Type: AWS::ECS::Service
