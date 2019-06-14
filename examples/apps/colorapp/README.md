@@ -304,7 +304,7 @@ In addition to the previously defined environment variables, you will also need 
   
 ***Deploy services to ECS***
 
-> Note: Make sure you install [jq](https://stedolan.github.io/jq/) prior to running the ecs-colorapp.sh script
+> Note: Make sure you install [jq] prior to running the ecs-colorapp.sh script
 
 `examples/apps/colorapp/ecs/ecs-colorapp.sh`
 
