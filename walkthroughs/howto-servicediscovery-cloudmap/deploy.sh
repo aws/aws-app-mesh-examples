@@ -32,15 +32,16 @@ deploy_app() {
 }
 
 confirm_service_linked_role() {
-    aws iam get-role --role-name AWSServiceRoleForAppMesh
+    aws iam get-role --role-name AWSServiceRoleForAppMesh >/dev/null
     [[ $? -eq 0 ]] \
-        || echo "Error: no service linked role for App Mesh" && exit 1
+        || ( echo "Error: no service linked role for App Mesh" && exit 1 )
 }
 
 print_endpoint() {
+    echo "Public endpoint:"
     aws cloudformation describe-stacks \
       --stack-name="${RESOURCE_PREFIX}" \
-      --query="Stacks[0].Outputs[?OutputKey=='ColorGatewayEndpoint'].OutputValue"
+      --query="Stacks[0].Outputs[?OutputKey=='ColorGatewayEndpoint'].OutputValue" \
       --output=text
 }
 
@@ -55,6 +56,7 @@ main() {
     deploy_app
 
     confirm_service_linked_role
+    print_endpoint
 }
 
 main $@
