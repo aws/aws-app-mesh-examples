@@ -92,7 +92,7 @@ Resources:
     - ColorTellerRouter
     Properties:
       MeshName: !Ref AWS::StackName
-      VirtualServiceName: !Sub "color.${AWS::StackName}.local"
+      VirtualServiceName: !Sub "colorteller.${AWS::StackName}.local"
       Spec:
         Provider:
           VirtualRouter:
