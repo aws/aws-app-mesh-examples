@@ -20,5 +20,5 @@ The following articles are focused specifically on EKS.
 
 The following articles demonstrate how to use an App Mesh feature
 
-* [Service Discovery with AWS Cloud Map](./walkthroughs/howto-servicediscovery-cloudmap)
+* [Service Discovery with AWS Cloud Map](./howto-servicediscovery-cloudmap)
 
