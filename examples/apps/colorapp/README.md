@@ -1,3 +1,26 @@
+**Contents**
+
+- [App Mesh Walkthrough: Deploy the Color App on ECS](#app-mesh-walkthrough-deploy-the-color-app-on-ecs)
+  - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+  - [Deploy infrastructure for the application](#deploy-infrastructure-for-the-application)
+    - [Create the VPC and other core Infrastructure](#create-the-vpc-and-other-core-infrastructure)
+    - [Create an App Mesh](#create-an-app-mesh)
+    - [Create compute resources](#create-compute-resources)
+    - [Review](#review)
+  - [Deploy the application](#deploy-the-application)
+    - [Configure App Mesh resources](#configure-app-mesh-resources)
+    - [Deploy services to ECS](#deploy-services-to-ecs)
+      - [Deploy images to ECR for your account](#deploy-images-to-ecr-for-your-account)
+      - [Deploy gateway and colorteller services](#deploy-gateway-and-colorteller-services)
+      - [Test the application](#test-the-application)
+  - [Shape traffic](#shape-traffic)
+    - [Apply traffic rules](#apply-traffic-rules)
+    - [Monitor with AWS X-Ray](#monitor-with-aws-x-ray)
+  - [Review](#review)
+  - [Summary](#summary)
+  - [Resources](#resources)
+
 # App Mesh Walkthrough: Deploy the Color App on ECS
 
 > Note: this walkthrough is also available as a [Medium article](https://medium.com/containers-on-aws/aws-app-mesh-walkthrough-deploy-the-color-app-on-amazon-ecs-de3452846e9d).
@@ -19,28 +42,6 @@ Finally, we deploy the services that will comprise our application to ECS along 
 
 The key thing to note about this is that actual routing configuration is completely transparent to the application code. The code deployed to the `gateway` containers will send requests to the DNS name `colorteller.demo.local`, which we configure as a virtual service in App Mesh. App Mesh will push updates to all the `envoy` sidecar containers to ensure traffic is sent directly to colorteller tasks running on EC2 instances according to the routing rules we specify through App Mesh configuration. There are no physical routers at runtime since App Mesh route rules are transformed to Envoy configuration and pushed directly to the `envoy` sidecars within the dependent tasks.
 
-**Contents**
-
-- [App Mesh Walkthrough: Deploy the Color App on ECS](#app-mesh-walkthrough-deploy-the-color-app-on-ecs)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-  - [Deploy infrastructure for the application](#deploy-infrastructure-for-the-application)
-    - [Create the VPC and other core Infrastructure](#create-the-vpc-and-other-core-infrastructure)
-    - [Create an App Mesh](#create-an-app-mesh)
-    - [Create compute resources](#create-compute-resources)
-    - [Review](#review)
-  - [Deploy the application](#deploy-the-application)
-    - [Configure App Mesh resources](#configure-app-mesh-resources)
-    - [Deploy services to ECS](#deploy-services-to-ecs)
-      - [Deploy images to ECR for your account](#deploy-images-to-ecr-for-your-account)
-      - [Deploy gateway and colorteller services](#deploy-gateway-and-colorteller-services)
-      - [Test the application](#test-the-application)
-  - [Shape traffic](#shape-traffic)
-    - [Apply traffic rules](#apply-traffic-rules)
-    - [Monitor with AWS X-Ray](#monitor-with-aws-x-ray)
-  - [Review](#review-1)
-  - [Summary](#summary)
-  - [Resources](#resources)
 
 ## Overview
 
@@ -302,6 +303,8 @@ In addition to the previously defined environment variables, you will also need 
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice (see example below).
   
 ***Deploy services to ECS***
+
+> Note: Make sure you install [jq] prior to running the ecs-colorapp.sh script
 
 `examples/apps/colorapp/ecs/ecs-colorapp.sh`
 
