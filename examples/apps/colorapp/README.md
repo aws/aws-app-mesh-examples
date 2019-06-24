@@ -232,7 +232,7 @@ $ export AWS_DEFAULT_REGION=us-west-2
 $ export ENVIRONMENT_NAME=DEMO
 $ export SERVICES_DOMAIN=demo.local
 $ export MESH_NAME=appmesh-mesh
-$ ./examples/apps/colorteller/servicemesh/appmesh-colorapp.sh
+$ ./examples/apps/colorapp/servicemesh/appmesh-colorapp.sh
 ...
 + aws --profile default --region us-west-2 cloudformation deploy --stack-name DEMO-appmesh-colorapp --capabilities CAPABILITY_IAM --template-file /home/ec2-user/projects/aws/aws-app-mesh-examples/examples/apps/colorapp/servicemesh/appmesh-colorapp.yaml --parameter-overrides EnvironmentName=DEMO ServicesDomain=demo.local AppMeshMeshName=appmesh-mesh
 
