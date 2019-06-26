@@ -215,7 +215,7 @@ In this walkthrough, we rolled out an update from version 1 (blue) of our colort
 
 
 [A/B testing]: https://en.wikipedia.org/wiki/A/B_testing
-[previous article]: ../walkthrough.md
+[previous article]: ../../examples/apps/colorapp/README.md
 [AWS App Mesh Documentation]: https://aws.amazon.com/app-mesh/getting-started/
 [AWS App Mesh]: https://aws.amazon.com/app-mesh/
 [AWS CLI]: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
@@ -227,5 +227,5 @@ In this walkthrough, we rolled out an update from version 1 (blue) of our colort
 [Fargate]: https://aws.amazon.com/fargate/
 [repo]: https://github.com/aws/aws-app-mesh-examples
 [Sidecar Pattern]: https://www.oreilly.com/library/view/designing-distributed-systems/9781491983638/ch02.html
-[walkthrough]: ../walkthrough.md
+[walkthrough]: ../../examples/apps/colorapp/README.md
 [walkthrough prerequisites]: https://medium.com/containers-on-aws/aws-app-mesh-walkthrough-deploy-the-color-app-on-amazon-ecs-de3452846e9d#42cf
