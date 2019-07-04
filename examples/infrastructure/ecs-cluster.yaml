@@ -11,12 +11,12 @@ Parameters:
   InstanceType:
     Description: Which instance type should we use to build the ECS cluster?
     Type: String
-    Default: c4.large
+    Default: t2.micro
 
   ClusterSize:
     Description: How many ECS hosts do you want to initially deploy?
     Type: Number
-    Default: 5 
+    Default: 2 
 
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instances
