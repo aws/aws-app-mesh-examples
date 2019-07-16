@@ -9,7 +9,7 @@ export MESH_REGION="" # Leave this empty
 
 ROOT=$(cd $(dirname $0)/; pwd)
 
-if [[ -z $CA_BUNDLE ]]; then
+if [[ -z ${CA_BUNDLE:-} ]]; then
     export CA_BUNDLE=$(kubectl config view --raw -o json --minify | jq -r '.clusters[0].cluster."certificate-authority-data"' | tr -d '"')
 fi
 
