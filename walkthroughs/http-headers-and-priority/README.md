@@ -10,9 +10,9 @@
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
 
-3. The region to use.
+3. Preview is only available in us-west-2 so export this environment variable to avoid any issues
     ```
-    export AWS_DEFAULT_REGION=<i.e. us-east-1>
+    export AWS_DEFAULT_REGION=us-west-2
     ```
 
 ## Create a VPC
