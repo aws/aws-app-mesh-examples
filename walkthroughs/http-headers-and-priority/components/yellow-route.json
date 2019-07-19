@@ -1,0 +1,24 @@
+{
+  "virtualRouterName": "color-router",
+  "routeName": "color-route-yellow",
+  "spec": {
+    "httpRoute": {
+      "match": {
+        "prefix": "/",
+        "headers": [
+          {
+            "name": "color_header"
+          }
+        ]
+      },
+      "action": {
+        "weightedTargets": [
+          {
+            "virtualNode": "yellow-node",
+            "weight": 1
+          }
+        ]
+      }
+    }
+  }
+}
