@@ -88,10 +88,10 @@ Check out the template in `header-mesh.yaml` if you want.
     ```
 
 ## Deploy the Rest
-This creates the ECS Tasks to run our apps on Fargate along with config to have ECS automatically register our Task instances with Cloud Map. Feel free to look at bash.yml for the stack details. This stack will take a few minutes to deploy.
+This creates the ECS Tasks to run our apps on Fargate along with config to have ECS automatically register our Task instances with Cloud Map. Feel free to look at header.yml for the stack details. This stack will take a few minutes to deploy.
 
 ```
-aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name header --template-body file://bash.yaml
+aws cloudformation create-stack --capabilities CAPABILITY_IAM --stack-name header --template-body file://header.yaml
 ```
 And check the status until it is completed:
 ```
