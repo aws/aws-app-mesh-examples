@@ -2,3 +2,4 @@
 examples/apps/colorapp/pkg/
 examples/apps/colorapp/bin
 .DS_Store
+.idea
