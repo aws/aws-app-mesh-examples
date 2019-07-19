@@ -116,7 +116,7 @@ aws cloudformation describe-stacks --stack-name header
 
 2. Update various routes with the json files in this package in order to see headers and priority updates. For instance in the demo video we change the priority of color-route-red by updating the *priority* value from 5 to 1 then running the following command 
   ```
-  aws appmesh-preview update-route --mesh-name header-mesh --cli-input-json file://red-route.json
+  aws appmesh-preview update-route --mesh-name header-mesh --cli-input-json file://components/red-route.json
   ```
 
 3. You will see the updated priority in the response json from the update-route command above to confirm your updates to the route. Try updating various color nodes with different headers and repeat the steps above to apply changes.
@@ -138,3 +138,5 @@ You can also delete the 2 stack we created with:
   ```
   aws cloudformation delete-stack --stack-name vpc
   ```
+  
+ delete the colorapp and feapp repositories in ECR through the console. Select each one and select delete. 
