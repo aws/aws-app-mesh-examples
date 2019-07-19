@@ -133,7 +133,7 @@ You can also delete the 2 stack we created with:
   aws cloudformation delete-stack --stack-name header
   ```
   
- aonce this stack is deleted you can then delete the next one:
+ once this stack is deleted you can then delete the next one:
   
   ```
   aws cloudformation delete-stack --stack-name vpc
