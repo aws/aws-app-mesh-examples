@@ -1,4 +1,5 @@
-# Routing using HTTP headers and configuring route priority
+# Routing using HTTP headers and configuring route priority with AWS App Mesh
+Author: Shan Kiyani and Shubha Rao
 
 ## Intro
 
@@ -67,7 +68,7 @@ In a mesh, routing decisions are on client proxies, unlike in load balancers, wh
 
  For instance, a header value of 100 would match this route while a header value of 150 would not match this route. This route specifies a priority value of 1000 which is the lowest priority value in our set. So this route would only be matched if no other prioritized routes’ headers matched (routes that don't specify a priority can be thought of as having a priority value of 1000 + 1).
 
-### Route with weights
+### Route with default present match
 
  color-route-yellow is using the default match of “present.“ Its spec looks like the following:
 
@@ -166,9 +167,8 @@ color-route-green is matching on a regex match. Its spec looks like the followin
 
 ## Demo
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/BR3YT7WsGGI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
- [Video link] (https://youtu.be/BR3YT7WsGGI)
+[![Header Routing Demo Video](https://img.youtube.com/vi/BR3YT7WsGGI/0.jpg)](https://www.youtube.com/watch?v=BR3YT7WsGGI)
+[Video is also here](https://youtu.be/BR3YT7WsGGI)
 
 
 1. Send header value of 100, result is blue
@@ -176,7 +176,9 @@ color-route-green is matching on a regex match. Its spec looks like the followin
 3. Send header value of 149, result is blue
 4. Send header value of “thisvalueisnotinanyroute”, result is yellow. This is because the header name is present which matches the constraint of color-route-yellow which defaults to present match.
 5. Send header value of “redorgreen”, result is red. Notice even though this header matches the header constraints of both color-route-green and color-route-red, the priority of color-route-red is 1 which takes precedence over color-route-green which has a priority of 2
-6. update color-route-red to have a lower priority, here we update color-route-red to 5
+6. Update color-route-red to have a lower priority, here we update color-route-red to 5
 7. Send header value of “redorgreen”, result is now green. This is because color-route-green has the highest priority value of 2
 
- This feature is available now in the [AWS App Mesh Preview Channel] (https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html)
+ This feature is available now in the [AWS App Mesh Preview Channel](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html)
+ 
+ If you have any questions or feedback please open an [Issue](https://github.com/aws/aws-app-mesh-roadmap/issues) or email us at aws-appmesh-feedback@amazon.com
