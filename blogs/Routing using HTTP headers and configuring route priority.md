@@ -2,7 +2,7 @@
 
 ## Intro
 
-AWS App Mesh now supports [header based routing] (https://docs.aws.amazon.com/app-mesh/latest/userguide/route-http-headers.html) to manage traffic between services. This is in addition to [path prefix based] (https://docs.aws.amazon.com/app-mesh/latest/userguide/route-path.html) and host based routing. You can now create rules and route traffic based on standard and custom HTTP headers and methods, which includes cookie data.  You can also now use   [route priorities]  (https://docs.aws.amazon.com/app-mesh/latest/userguide/routes.html) to control the order of matching rules.
+AWS App Mesh now supports [header based routing](https://docs.aws.amazon.com/app-mesh/latest/userguide/route-http-headers.html) to manage traffic between services. This is in addition to [path prefix based](https://docs.aws.amazon.com/app-mesh/latest/userguide/route-path.html) and host based routing. You can now create rules and route traffic based on standard and custom HTTP headers and methods, which includes cookie data.  You can also now use [route priorities](https://docs.aws.amazon.com/app-mesh/latest/userguide/routes.html) to control the order of matching rules.
 
 Header-based routing pattern enables using HTTP header information as a basis to determine how to route a request. This might be a standard header, like Accept or Cookie, or it might be a custom header, like *my-own-header-key-value*. Using this, you can create patterns such as session persistence (sticky sessions) or an enhanced experience using "state". Other common use cases to use header based routing includes: 
 - A/B testing (e.g.: custom headers using any string)
@@ -13,7 +13,7 @@ Header-based routing pattern enables using HTTP header information as a basis to
 
 ## Using Header based routing
 
-Here is a simple demo application that we will use to showcase some example routing rules. This example is available on [Github AWS App Mesh examples] (https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/http-headers-and-priority).  This is the same example used in the demo video below.
+Here is a simple demo application that we will use to showcase some example routing rules. This example is available on [Github AWS App Mesh examples](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/http-headers-and-priority).  This is the same example used in the demo video below.
 
 ### Service view: 
 
@@ -21,7 +21,7 @@ Here is a simple demo application that we will use to showcase some example rout
 
 ### App Mesh view:
 
-You will need to AWS App Mesh APIs to represent your application’s services and its connection graph. Then, configure a mesh, virtual services (an abstraction of a real service, typically its service discovery name), virtual nodes (logical pointer to a task group or deployment), virtual routers ( to handle traffic for one or more virtual services) and routes ( to match requests and distribute traffic to its associated virtual nodes).
+You will need to AWS App Mesh APIs to represent your application’s services and its connection graph. Then, configure a mesh, virtual services (an abstraction of a real service, typically its service discovery name), virtual nodes (logical pointer to a task group or deployment), virtual routers (to handle traffic for one or more virtual services) and routes (to match requests and distribute traffic to its associated virtual nodes).
 
 ![app mesh view](appmeshview.jpg)
 
@@ -31,7 +31,7 @@ In a mesh, routing decisions are on client proxies, unlike in load balancers, wh
 
  In this mesh there is a virtual router defined as “color-router.” This virtual router is associated to 4 routes named “color-route-red”, “color-route-blue”, “color-route-green”, and “color-route-yellow”. All routes in this example are based on the same path prefix of “/”.
 
-### Blue Route
+### Route to match on a range
 
 **color-route-blue** is matching on a range value between [100, 150) - “)” in the range notation means exclusive. Its spec looks like the following: 
 
@@ -67,7 +67,7 @@ In a mesh, routing decisions are on client proxies, unlike in load balancers, wh
 
  For instance, a header value of 100 would match this route while a header value of 150 would not match this route. This route specifies a priority value of 1000 which is the lowest priority value in our set. So this route would only be matched if no other prioritized routes’ headers matched (routes that don't specify a priority can be thought of as having a priority value of 1000 + 1).
 
-### Yellow Route
+### Route with weights
 
  color-route-yellow is using the default match of “present.“ Its spec looks like the following:
 
@@ -98,7 +98,7 @@ In a mesh, routing decisions are on client proxies, unlike in load balancers, wh
 
 For example, looking at blue-route and yellow-route, HTTP requests with a header "color_header: 125" could match either route. Without a priority set on these routes, there is no guarantee on which route this traffic will take, and no guarantee that the choice is consistent over time. By adding explicit route priorities, App Mesh ensures that Envoy will route traffic consistently with your specified priorities.
 
-### Green Route
+### Route with a regex match
 
 color-route-green is matching on a regex match. Its spec looks like the following:
 
@@ -131,7 +131,7 @@ color-route-green is matching on a regex match. Its spec looks like the followin
 
  color-route-green matches on the regex string "redor.*". This route has a priority of 2. We’ve selected this regex pattern to provide a case where leveraging a route priority can be useful.
 
-### Red Route
+### Route with a prefix match
 
  color-route-red is matching on a prefix match. Its spec looks like the following:
 
