@@ -17,13 +17,13 @@ Here is a simple demo application that we will use to showcase some example rout
 
 ### Service view: 
 
-![color app services view](color app services view.jpg)
+![color app services view](colorappservicesview.jpg)
 
 ### App Mesh view:
 
 You will need to AWS App Mesh APIs to represent your application’s services and its connection graph. Then, configure a mesh, virtual services (an abstraction of a real service, typically its service discovery name), virtual nodes (logical pointer to a task group or deployment), virtual routers ( to handle traffic for one or more virtual services) and routes ( to match requests and distribute traffic to its associated virtual nodes).
 
-![app mesh view](app mesh view.jpg)
+![app mesh view](appmeshview.jpg)
 
 In a mesh, routing decisions are on client proxies, unlike in load balancers, where it is on the server side. App Mesh configures proxies with required routing rules to handle egress HTTP connections. Route matching happens at the client side proxies associated with virtual nodes. Proxies get route configuration from all their backends. If a backend virtual service is mapped to a virtual router as its provider, the client proxies gets the routes specified at the router. If the backend virtual service is mapped to a virtual node, client proxies get service discovery endpoints of the service. 
 
