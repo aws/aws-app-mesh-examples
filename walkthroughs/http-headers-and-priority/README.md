@@ -137,6 +137,6 @@ You can also delete the 2 stack we created with:
   
   ```
   aws cloudformation delete-stack --stack-name vpc
-  ```
-  
+  ``` 
+
  delete the colorapp and feapp repositories in ECR through the console. Select each one and select delete. 
