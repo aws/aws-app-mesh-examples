@@ -166,7 +166,9 @@ color-route-green is matching on a regex match. Its spec looks like the followin
 
 ## Demo
 
- Video link: [https://drive.corp.amazon.com/documents/AWS%20Lattice/Demos/HeadersAndPriority.mov](https://drive.corp.amazon.com/documents/AWS Lattice/Demos/HeadersAndPriority.mov)
+<iframe width="560" height="315" src="https://www.youtube.com/embed/BR3YT7WsGGI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+ [Video link] (https://youtu.be/BR3YT7WsGGI)
 
 
 1. Send header value of 100, result is blue
