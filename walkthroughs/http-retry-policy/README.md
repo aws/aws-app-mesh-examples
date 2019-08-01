@@ -126,6 +126,7 @@ aws cloudformation describe-stacks --stack-name retrypolicy
     ```
   
 5. Check the logs for blue node and search for the status code "503". Based on your retry policy, you would see multiple requests with "503" indicating the retries.
+![alt text](components/retries.png)
 
 ## Clean up 
 
