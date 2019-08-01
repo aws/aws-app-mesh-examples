@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "serviceDiscovery": {
+      "awsCloudMap": {
+        "namespaceName": "retrypolicy-mesh.local",
+        "serviceName": "front"
+      }
+    },
+    "listeners": [
+      {
+        "healthCheck": {
+          "protocol": "http",
+          "timeoutMillis": 2000,
+          "intervalMillis": 5000,
+          "healthyThreshold": 2,
+          "path": "/ping",
+          "unhealthyThreshold": 2,
+          "port": 8080
+        },
+        "portMapping": {
+          "protocol": "http",
+          "port": 8080
+        }
+      }
+    ],
+    "backends": [
+      {
+        "virtualService": {
+          "virtualServiceName": "color.retrypolicy-mesh.local"
+        }
+      }
+    ]
+  }
+}
