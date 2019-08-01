@@ -18,7 +18,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             return
-        header = self.headers.get('test-header')
+        header = self.headers.get('statuscode-header')
         if header is not None:
             if header == '200':
                 self.send_response(200)

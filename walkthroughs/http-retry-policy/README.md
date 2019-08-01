@@ -34,7 +34,10 @@ aws cloudformation describe-stacks --stack-name retrypolicy-vpc
     ```
     aws ecr create-repository --repository-name retrypolicy-ecr-feapp
     ```
-2. Build the colorapp Docker image: a http server that just returns the value of its `COLOR` environment variable. This command also tags the image with the ECR repo we created earlier:
+2. Build the colorapp Docker image: a http server that returns the value of its `COLOR` environment variable. It also returns a status code based on a custom header "statuscode-header".
+   This would allow us to test the retry policy by returning different error codes.
+   
+   The command also tags the image with the ECR repo we created earlier:
     ```
     docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/retrypolicy-ecr-colorapp colorapp
     ```
@@ -96,32 +99,33 @@ aws cloudformation describe-stacks --stack-name retrypolicy
 ```
 
 ## Verification
-
 1. Once the stack above have successfully deployed, get the public address of the frontend service. Look for an http address under `FrontendEndpoint`:
-  ```
-  aws cloudformation describe-stacks --stack-name retrypolicy
-  ```
-  
-2. In our demo we will use this endpoint in postman to pass header values to the header "test_header" and observe retry policy in action.
+    ```
+    aws cloudformation describe-stacks --stack-name retrypolicy
+    ```
+
+2. In our demo we will use this endpoint in curl to pass header values to the header "statuscode_header" and observe retry policy in action.
 
 ## Update Route
 
 1. Check the current route configuration calling describe-route by name. For instance, to describe the blue route:
-  ```
-  aws appmesh-preview describe-route --mesh-name retrypolicy-mesh --virtual-router-name color-router --route-name color-route-blue
-  ```
+    ```
+    aws appmesh-preview describe-route --mesh-name retrypolicy-mesh --virtual-router-name color-router --route-name color-route-blue
+    ```
   
 2. Update the route with the json file in this package to include and create the retry policy 
-  ```
-  aws appmesh-preview update-route --mesh-name retrypolicy-mesh --cli-input-json file://components/blue-route.json
-  ```
+    ```
+    aws appmesh-preview update-route --mesh-name retrypolicy-mesh --cli-input-json file://components/blue-route.json
+    ```
 
 3. You will see the updated retry policy in the response json from the update-route command above to confirm your updates to the route.
 
 4. Use curl and send requests to your frontend service while adding headers to see retry policy in place.
-  ```
-  curl <frontend Service URL> -H "test-header: 503" -v
-  ```
+    ```
+    curl <frontend Service URL> -H "statuscode-header: 503" -v
+    ```
+  
+5. Check the logs for blue node and search for the status code "503". Based on your retry policy, you would see multiple requests with "503" indicating the retries.
 
 ## Clean up 
 

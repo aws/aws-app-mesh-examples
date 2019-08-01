@@ -238,7 +238,7 @@ Resources:
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'
             - Name: 'FORWARD_HEADER'
-              Value: 'test-header'
+              Value: 'statuscode-header'
 
   BlueTaskDef:
     Type: AWS::ECS::TaskDefinition
