@@ -18,11 +18,14 @@ Set or export the following environment variables with appropriate values for yo
 export AWS_ACCOUNT_ID=999999999999
 
 # The AWS region you want to use
-export AWS_DEFAULT_REGION=us-west-1
+export AWS_DEFAULT_REGION=us-west-2
 
 # The prefix to use for all the resources we create
 export RESOURCE_PREFIX=demo
 ```
+
+## Publish application container images to ECR
+Run `walkthroughs/howto-servicediscovery-cloudmap/deploy-images.sh`
 
 ## Run the Demo
 
