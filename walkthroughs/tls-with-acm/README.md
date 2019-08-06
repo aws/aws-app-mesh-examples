@@ -1,0 +1,233 @@
+# Configuring TLS with AWS Certificate Manager
+
+In this walkthrough we'll enable TLS encryption between two services in App Mesh using X.509 certificates provided by AWS Certificate Manager (ACM). This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp).
+
+## Introduction
+
+In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
+
+With ACM, you can host some or all of your Public Key Infrastructure (PKI) in AWS, and App Mesh will automatically distribute the certificates to the Envoys configured by your Virtual Nodes. App Mesh also automatically distributes the appropriate TLS validation context to other Virtual Nodes which depend on your service by way of a Virtual Service.
+
+Let's jump into a brief example of App Mesh TLS in action.
+
+## Step 1: Download the App Mesh Preview CLI
+
+You will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
+
+```bash
+aws configure add-model \
+        --service-name appmesh-preview \
+        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
+```
+
+Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+
+## Step 1: Create Color App Infrastructure
+
+We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
+
+```bash
+export AWS_ACCOUNT_ID=<your account id>
+export KEY_PAIR_NAME=<your SSH key pair stored in AWS>
+export AWS_DEFAULT_REGION=us-west-2
+export ENVIRONMENT_NAME=AppMeshTLSExample
+export MESH_NAME=ColorApp-TLS
+export ENVOY_IMAGE="111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.9.1.0-prod"
+export SERVICES_DOMAIN="default.svc.cluster.local"
+export COLOR_GATEWAY_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/gateway:latest"
+export COLOR_TELLER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/colorteller:latest"
+```
+
+First, create the VPC.
+
+```bash
+./infrastructure/vpc.sh
+```
+
+Next, create the ECS cluster and ECR repositories.
+
+```bash
+./infrastructure/ecs-cluster.sh
+./infrastructure/ecr-repositories.sh
+```
+
+Finally, build and deploy the color app images.
+
+```bash
+./src/colorteller/deploy.sh
+./src/gateway/deploy.sh
+```
+
+## Step 2: Create a Certificate
+
+Before we can encrypt traffic between services in the mesh, we need to generate a certificate.
+
+To keep things simple, we'll use a single self-signed certificate for this walkthrough. However, you can also use certificates signed by an ACM Private Certificate Authority to enable TLS encryption in App Mesh. [See below](##extra-create-a-private-certificate-authority-and-certificate) for how to create a Private Certificate Authority and certificate.
+
+This certificate will be used to encrypt traffic between the color teller and color gateway Virtual Nodes. In case you want to experiment further after this walkthrough, we'll create a wildcard certificate for the whole service domain, but we'll only be applying it to the Color Teller Virtual Node.
+
+```bash
+openssl req \
+       -newkey rsa:2048 -nodes -keyout colorapp-wildcard.key.pem \
+       -subj "/C=US/ST=Washington/L=Seattle/O=Meshy Co/OU=My Mesh/CN=*.${SERVICES_DOMAIN}" \
+       -x509 -days 365 -out colorapp-wildcard.cert.pem
+```
+
+Next we'll import this certificate into ACM for use with App Mesh.
+
+> Note: You pay a monthly fee for each certificate you import to AWS Certificate Manager. For more information, see [AWS Certificate Manager Pricing](https://aws.amazon.com/certificate-manager/pricing/).
+
+```bash
+export CERTIFICATE_ARN=`aws acm import-certificate \
+    --certificate file://colorapp-wildcard.cert.pem \
+    --private-key file://colorapp-wildcard.key.pem \
+    --query CertificateArn --output text`
+```
+
+## Step 3: Create a TLS enabled mesh
+
+This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white). We'll be encrypting traffic from the gateway to the color teller node. As such, our color teller white Virtual Node spec looks like this:
+
+```json
+"listeners": [
+    {
+        "portMapping": {
+            "port": 9080,
+            "protocol": "http"
+        },
+        "healthCheck": {
+            "protocol": "http",
+            "path": "/ping",
+            "healthyThreshold": 2,
+            "unhealthyThreshold": 2,
+            "timeoutMillis": 2000,
+            "intervalMillis": 5000
+        },
+        "tls": {
+            "mode": "STRICT",
+            "certificate": {
+                "acm": {
+                    "certificateArn": "${CERTIFICATE_ARN}"
+                }
+            }
+        }
+    }
+],
+"serviceDiscovery": {
+    "dns": {
+        "hostname": "colorteller.${SERVICES_DOMAIN}"
+    }
+}
+```
+
+For more information on what TLS settings you can provide for a Virtual Node, see the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation.
+
+Let's create the mesh.
+
+```bash
+./mesh/mesh.sh up
+```
+
+## Step 4: Deploy and Verify
+
+Our final step is to deploy the service and test it out.
+
+```bash
+./infrastructure/ecs-service.sh
+```
+
+Let's issue a request to the color gateway.
+
+```bash
+COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
+    --stack-name $ENVIRONMENT_NAME-ecs-service \
+    | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="ColorAppEndpoint") | .OutputValue')
+curl "${COLORAPP_ENDPOINT}/color"
+```
+
+You should see a successful response with the color white.
+
+Finally, let's log in to the bastion host and check the SSL handshake statistics.
+
+```bash
+BASTION_IP=$(aws cloudformation describe-stacks \
+    --stack-name $ENVIRONMENT_NAME-ecs-cluster \
+    | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="BastionIP") | .OutputValue')
+ssh ec2-user@$BASTION_IP
+curl -s http://colorteller.default.svc.cluster.local:9901/stats | grep ssl.handshake
+```
+
+You should see output similar to: `listener.0.0.0.0_15000.ssl.handshake: 1`, indicating a successful SSL handshake was achieved between gateway and color teller.
+
+That's it! We've encrypted traffic from our gateway service to our color teller white service using a certificate from ACM.
+
+Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
+
+## Extra: Create a Private Certificate Authority and Certificate
+
+This section walks through creating your entire PKI within AWS Certificate Manager. We'll focus on a simple hierarchy with a root certificate authority (CA) and end-entity certificate, but you may wish to create additional hierarchy with intermediate CAs for your real mesh.
+
+Start by creating a root certificate authority (CA) in ACM.
+
+> You pay a monthly fee for the operation of each AWS Certificate Manager Private Certificate Authority until you delete it and you pay for the private certificates you issue each month. For more information, see [AWS Certificate Manager Pricing](https://aws.amazon.com/certificate-manager/pricing/).
+
+```bash
+ROOT_CA_ARN=`aws acm-pca create-certificate-authority \
+    --certificate-authority-type ROOT \
+    --certificate-authority-configuration \
+    "KeyAlgorithm=RSA_2048,
+    SigningAlgorithm=SHA256WITHRSA,
+    Subject={
+        Country=US,
+        State=WA,
+        Locality=Seattle,
+        Organization=Meshy Co,
+        OrganizationalUnit=My Mesh,
+        SerialNumber=1001,
+        CommonName=${SERVICES_DOMAIN}}" \
+        --query CertificateAuthorityArn --output text`
+```
+
+Next you need to self-sign your root CA. Start by retrieving the CSR contents:
+
+```bash
+ROOT_CA_CSR=`aws acm-pca get-certificate-authority-csr \
+    --certificate-authority-arn ${ROOT_CA_ARN} \
+    --query Csr --output text`
+```
+
+Sign the CSR using itself as the issuer:
+
+```bash
+ROOT_CA_CERT_ARN=`aws acm-pca issue-certificate \
+    --certificate-authority-arn ${ROOT_CA_ARN} \
+    --template-arn arn:aws:acm-pca:::template/RootCACertificate/V1 \
+    --signing-algorithm SHA256WITHRSA \
+    --validity Value=10,Type=YEARS \
+    --csr ${ROOT_CA_CSR} \
+    --query CertificateArn --output text`
+```
+
+Then import the signed certificate as the root CA:
+
+```bash
+ROOT_CA_CERT=`aws acm-pca get-certificate \
+    --certificate-arn ${ROOT_CA_CERT_ARN} \
+    --certificate-authority-arn ${ROOT_CA_ARN} \
+    --query Certificate --output text`
+
+aws acm-pca import-certificate-authority-certificate \
+    --certificate-authority-arn $ROOT_CA_ARN \
+    --certificate $ROOT_CA_CERT
+```
+
+Now you can request a managed certificate from ACM using this CA:
+
+```bash
+export CERTIFICATE_ARN=`aws acm request-certificate \
+    --domain-name "*.${SERVICES_DOMAIN}" \
+    --certificate-authority-arn ${ROOT_CA_ARN} \
+    --query CertificateArn --output text`
+```
+
+With managed certificates, ACM will automatically renew certificates that are nearing the end of their validity, and App Mesh will automatically distribute the renewed certificates. See [Managed Renewal and Deployment](https://aws.amazon.com/certificate-manager/faqs/#Managed_Renewal_and_Deployment) for more information.
