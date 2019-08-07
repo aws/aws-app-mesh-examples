@@ -1,9 +1,0 @@
-{
-    "spec": {
-        "provider": {
-            "virtualRouter": {
-                "virtualRouterName": "colorteller-vr"
-            }
-        }
-    }
-}
