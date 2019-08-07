@@ -62,15 +62,39 @@ Finally, build and deploy the color app images.
 
 Before we can encrypt traffic between services in the mesh, we need to generate a certificate.
 
-To keep things simple, we'll use a single self-signed certificate for this walkthrough. However, you can also use certificates signed by an ACM Private Certificate Authority to enable TLS encryption in App Mesh. [See below](##extra-create-a-private-certificate-authority-and-certificate) for how to create a Private Certificate Authority and certificate.
+App Mesh currently supports two approaches to using certificates from ACM:
 
-This certificate will be used to encrypt traffic between the color teller and color gateway Virtual Nodes. In case you want to experiment further after this walkthrough, we'll create a wildcard certificate for the whole service domain, but we'll only be applying it to the Color Teller Virtual Node.
+1. [Imported certificates](https://docs.aws.amazon.com/acm/latest/userguide/import-certificate.html)
+2. Certificates issued by an [ACM Private Certificate Authority](https://docs.aws.amazon.com/acm-pca/latest/userguide/PcaWelcome.html)
+
+To keep things simple, we'll use an imported certificate for this walkthrough. If you're interested in setting up a Private CA in ACM for this walkthrough, [see below](#extra-create-a-private-certificate-authority-and-certificate).
+
+Start by generating a certificate authority we'll use to issue certificates for the mesh.
+
+```bash
+openssl req -newkey rsa:2048 -nodes -keyout root-ca.key.pem \
+    -new -x509 -days 3650 -sha256 -extensions v3_ca \
+    -config ca/directives.cnf \
+    -subj "/C=US/ST=Washington/L=Seattle/O=Meshy Co/OU=My Mesh/CN=colorapp.local" \
+    -out root-ca.cert.pem
+```
+
+Then generate the certificate and sign it. This certificate will be used to encrypt traffic between the color teller and color gateway Virtual Nodes.
 
 ```bash
 openssl req \
-       -newkey rsa:2048 -nodes -keyout colorapp-wildcard.key.pem \
-       -subj "/C=US/ST=Washington/L=Seattle/O=Meshy Co/OU=My Mesh/CN=*.${SERVICES_DOMAIN}" \
-       -x509 -days 365 -out colorapp-wildcard.cert.pem
+       -newkey rsa:2048 -nodes -keyout colorteller-white.key.pem \
+       -subj "/C=US/ST=Washington/L=Seattle/O=Meshy Co/OU=My Mesh/CN=colorteller.${SERVICES_DOMAIN}" \
+       -out colorteller-white.csr.pem
+
+openssl x509 -req \
+    -in colorteller-white.csr.pem \
+    -CA root-ca.cert.pem \
+    -CAkey root-ca.key.pem \
+    -CAcreateserial \
+    -days 30 \
+    -sha256 \
+    -out colorteller-white.cert.pem
 ```
 
 Next we'll import this certificate into ACM for use with App Mesh.
@@ -79,8 +103,9 @@ Next we'll import this certificate into ACM for use with App Mesh.
 
 ```bash
 export CERTIFICATE_ARN=`aws acm import-certificate \
-    --certificate file://colorapp-wildcard.cert.pem \
-    --private-key file://colorapp-wildcard.key.pem \
+    --certificate-chain file://root-ca.cert.pem \
+    --certificate file://colorteller-white.cert.pem \
+    --private-key file://colorteller-white.key.pem \
     --query CertificateArn --output text`
 ```
 
