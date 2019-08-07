@@ -22,7 +22,7 @@ aws configure add-model \
 
 Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
-## Step 1: Create Color App Infrastructure
+## Step 2: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
@@ -58,7 +58,7 @@ Finally, build and deploy the color app images.
 ./src/gateway/deploy.sh
 ```
 
-## Step 2: Create a Certificate
+## Step 3: Create a Certificate
 
 Before we can encrypt traffic between services in the mesh, we need to generate a certificate.
 
@@ -84,7 +84,7 @@ export CERTIFICATE_ARN=`aws acm import-certificate \
     --query CertificateArn --output text`
 ```
 
-## Step 3: Create a TLS enabled mesh
+## Step 4: Create a TLS enabled mesh
 
 This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white). We'll be encrypting traffic from the gateway to the color teller node. As such, our color teller white Virtual Node spec looks like this:
 
@@ -128,7 +128,7 @@ Let's create the mesh.
 ./mesh/mesh.sh up
 ```
 
-## Step 4: Deploy and Verify
+## Step 5: Deploy and Verify
 
 Our final step is to deploy the service and test it out.
 
