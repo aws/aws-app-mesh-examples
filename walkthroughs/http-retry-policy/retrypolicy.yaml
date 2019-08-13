@@ -203,7 +203,7 @@ Resources:
             - Name: 'COLOR_HOST'
               Value: !Sub 'color.${AWS::StackName}-mesh.local:8080'
         - Name: envoy
-          Image: '111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.9.1.0-prod'
+          Image: '111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.0-prod'
           Essential: true
           User: '1337'
           Ulimits:
@@ -285,7 +285,7 @@ Resources:
             - Name: 'COLOR'
               Value: 'blue'
         - Name: envoy
-          Image: '111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.9.1.0-prod'
+          Image: '111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.0-prod'
           Essential: true
           User: '1337'
           Ulimits:
