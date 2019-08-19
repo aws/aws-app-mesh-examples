@@ -3,14 +3,22 @@
 
 set -ex
 
-if [ -z $COLOR_TELLER_IMAGE ]; then
-    echo "COLOR_TELLER_IMAGE environment variable is not set"
+if [ -z $AWS_ACCOUNT_ID ]; then
+    echo "AWS_ACCOUNT_ID environment variable is not set."
     exit 1
 fi
 
+if [ -z $AWS_DEFAULT_REGION ]; then
+    echo "AWS_DEFAULT_REGION environment variable is not set."
+    exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+COLOR_TELLER_IMAGE=${COLOR_TELLER_IMAGE:-"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/color/teller"}
+
 # build
-docker build -t $COLOR_TELLER_IMAGE .
+docker build -t $COLOR_TELLER_IMAGE ${DIR}
 
 # push
-$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION --profile $AWS_PROFILE)
+$(aws ecr get-login --no-include-email)
 docker push $COLOR_TELLER_IMAGE

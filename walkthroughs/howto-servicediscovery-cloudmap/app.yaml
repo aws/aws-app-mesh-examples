@@ -5,15 +5,32 @@ Parameters:
     Description: App Mesh XDS Endpoint Override (normally don't set this)
     Default: ""
 
+  EnvoyImage:
+    Type: String
+    Description: Envoy container image
+
+  ColorTellerImage:
+    Type: String
+    Description: Color Teller container image
+
+  ColorGatewayImage:
+    Type: String
+    Description: Color Gateway container image
+
+  LaunchType:
+    Type: String
+    Description: ECS Task Launch Type
+    Default: FARGATE
+
 Resources:
   Cluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Ref AWS::StackName
-      
+
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
-    Properties: 
+    Properties:
       GroupDescription: "Security group for the instances"
       VpcId:
         Fn::ImportValue: !Sub '${AWS::StackName}-vpc:VPC'
@@ -21,7 +38,7 @@ Resources:
       - CidrIp:
           Fn::ImportValue: !Sub '${AWS::StackName}-vpc:VpcCIDR'
         IpProtocol: -1
-        
+
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -42,6 +59,7 @@ Resources:
         }
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/CloudWatchFullAccess
+      - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
@@ -136,7 +154,7 @@ Resources:
       VpcId:
         Fn::ImportValue:
           !Sub "${AWS::StackName}-vpc:VPC"
-  
+
   PublicLoadBalancerListener:
     DependsOn:
     - PublicLoadBalancer
@@ -166,7 +184,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
-      - 'FARGATE'
+      - !Ref LaunchType
       Family: 'colorgateway'
       NetworkMode: 'awsvpc'
       Cpu: 256
@@ -189,7 +207,7 @@ Resources:
           Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
       - Name: 'app'
-        Image: subfuzion/colorgateway:v2
+        Image: !Ref ColorGatewayImage
         Essential: true
         DependsOn:
         - ContainerName: "envoy"
@@ -213,7 +231,7 @@ Resources:
         - Name: "STAGE"
           Value: ""
       - Name: envoy
-        Image: subfuzion/aws-appmesh-envoy:v1.9.1.0-prod
+        Image: !Ref EnvoyImage
         Essential: true
         User: '1337'
         Ulimits:
@@ -250,7 +268,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
-      - 'FARGATE'
+      - !Ref LaunchType
       Family: 'blue'
       NetworkMode: 'awsvpc'
       Cpu: 256
@@ -273,7 +291,7 @@ Resources:
           Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
       - Name: 'app'
-        Image: subfuzion/colorteller
+        Image: !Ref ColorTellerImage
         Essential: true
         DependsOn:
         - ContainerName: "envoy"
@@ -295,7 +313,7 @@ Resources:
         - Name: "STAGE"
           Value: ""
       - Name: envoy
-        Image: subfuzion/aws-appmesh-envoy:v1.9.1.0-prod
+        Image: !Ref EnvoyImage
         Essential: true
         User: '1337'
         Ulimits:
@@ -332,7 +350,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
-      - 'FARGATE'
+      - !Ref LaunchType
       Family: 'green'
       NetworkMode: 'awsvpc'
       Cpu: 256
@@ -355,7 +373,7 @@ Resources:
           Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
       - Name: 'app'
-        Image: subfuzion/colorteller
+        Image: !Ref ColorTellerImage
         Essential: true
         DependsOn:
         - ContainerName: "envoy"
@@ -377,7 +395,7 @@ Resources:
         - Name: "STAGE"
           Value: ""
       - Name: envoy
-        Image: subfuzion/aws-appmesh-envoy:v1.9.1.0-prod
+        Image: !Ref EnvoyImage
         Essential: true
         User: '1337'
         Ulimits:
@@ -420,7 +438,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: 1
-      LaunchType: 'FARGATE'
+      LaunchType: !Ref LaunchType
       ServiceRegistries:
       - RegistryArn: !GetAtt 'ColorGatewayServiceRegistry.Arn'
       NetworkConfiguration:
@@ -428,7 +446,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
           - !Ref SecurityGroup
-          Subnets: 
+          Subnets:
           - Fn::ImportValue:
               !Sub '${AWS::StackName}-vpc:PrivateSubnet1'
           - Fn::ImportValue:
@@ -447,7 +465,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: 1
-      LaunchType: 'FARGATE'
+      LaunchType: !Ref LaunchType
       ServiceRegistries:
       - RegistryArn: !GetAtt 'ColorTellerServiceRegistry.Arn'
       NetworkConfiguration:
@@ -455,7 +473,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
           - !Ref SecurityGroup
-          Subnets: 
+          Subnets:
           - Fn::ImportValue:
               !Sub '${AWS::StackName}-vpc:PrivateSubnet1'
           - Fn::ImportValue:
@@ -470,7 +488,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: 1
-      LaunchType: 'FARGATE'
+      LaunchType: !Ref LaunchType
       ServiceRegistries:
       - RegistryArn: !GetAtt 'ColorTellerServiceRegistry.Arn'
       NetworkConfiguration:
@@ -478,7 +496,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
           - !Ref SecurityGroup
-          Subnets: 
+          Subnets:
           - Fn::ImportValue:
               !Sub '${AWS::StackName}-vpc:PrivateSubnet1'
           - Fn::ImportValue:

@@ -2,11 +2,28 @@
 
 set -e
 
+if [ -z $AWS_ACCOUNT_ID ]; then
+    echo "AWS_ACCOUNT_ID environment variable is not set."
+    exit 1
+fi
+
+if [ -z $AWS_DEFAULT_REGION ]; then
+    echo "AWS_DEFAULT_REGION environment variable is not set."
+    exit 1
+fi
+
+if [ -z $ENVOY_IMAGE ]; then
+    echo "ENVOY_IMAGE environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html"
+    exit 1
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+APP_DIR="${DIR}/../../examples/apps/colorapp"
+COLOR_GATEWAY_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/color/gateway
+COLOR_TELLER_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/color/teller
 
 deploy_vpc() {
-    aws --region "${AWS_DEFAULT_REGION}" \
-        cloudformation deploy \
+    aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --stack-name "${RESOURCE_PREFIX}-vpc" \
         --template-file "${DIR}/vpc.yaml" \
@@ -14,8 +31,7 @@ deploy_vpc() {
 }
 
 deploy_mesh() {
-    aws --region "${AWS_DEFAULT_REGION}" \
-        cloudformation deploy \
+    aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --stack-name "${RESOURCE_PREFIX}-mesh" \
         --template-file "${DIR}/mesh.yaml" \
@@ -23,12 +39,12 @@ deploy_mesh() {
 }
 
 deploy_app() {
-    aws --region "${AWS_DEFAULT_REGION}" \
-        cloudformation deploy \
+    aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --stack-name "${RESOURCE_PREFIX}" \
         --template-file "${DIR}/app.yaml" \
-        --capabilities CAPABILITY_IAM
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides "EnvoyImage=${ENVOY_IMAGE}" "ColorTellerImage=${COLOR_TELLER_IMAGE}" "ColorGatewayImage=${COLOR_GATEWAY_IMAGE}"
 }
 
 confirm_service_linked_role() {
@@ -39,10 +55,11 @@ confirm_service_linked_role() {
 
 print_endpoint() {
     echo "Public endpoint:"
-    aws cloudformation describe-stacks \
-      --stack-name="${RESOURCE_PREFIX}" \
-      --query="Stacks[0].Outputs[?OutputKey=='ColorGatewayEndpoint'].OutputValue" \
-      --output=text
+    prefix=$( aws cloudformation describe-stacks \
+        --stack-name="${RESOURCE_PREFIX}" \
+        --query="Stacks[0].Outputs[?OutputKey=='ColorGatewayEndpoint'].OutputValue" \
+        --output=text )
+    echo "${prefix}/color"
 }
 
 main() {
