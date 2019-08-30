@@ -70,7 +70,7 @@ Each template has a corresponding shell script with a `.sh` extension that you r
 * `MESH_NAME` - name to use to identify the mesh you create.
 * `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`).
 * `KEY_PAIR_NAME` - your [Amazon EC2 Key Pair].
-* `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image (currently: `111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.0-prod`)
+* `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image (currently: `111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod`)
 * `COLOR_GATEWAY_IMAGE` - Docker image for the Color App gateway microservice in ECR.
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice in ECR.
 
