@@ -59,7 +59,7 @@ spec:
               value: "${AWS_DEFAULT_REGION}"
       initContainers:
         - name: proxyinit
-          image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
+          image: 111345817488.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-proxy-route-manager:v2
           securityContext:
             capabilities:
               add:
@@ -134,7 +134,7 @@ spec:
               value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
-          image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
+          image: 111345817488.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-proxy-route-manager:v2
           securityContext:
             capabilities:
               add:
@@ -210,7 +210,7 @@ spec:
               value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
-          image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
+          image: 111345817488.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-proxy-route-manager:v2
           securityContext:
             capabilities:
               add:
@@ -285,7 +285,7 @@ spec:
               value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
-          image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
+          image: 111345817488.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-proxy-route-manager:v2
           securityContext:
             capabilities:
               add:
@@ -360,7 +360,7 @@ spec:
               value: ${AWS_DEFAULT_REGION}
       initContainers:
         - name: proxyinit
-          image: 111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-proxy-route-manager
+          image: 111345817488.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-proxy-route-manager:v2
           securityContext:
             capabilities:
               add:
