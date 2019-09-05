@@ -1,0 +1,20 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 9080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "hostname": $DNS_HOSTNAME
+            }
+        },
+        "backends": [
+            {"virtualService": {"virtualServiceName": $COLOR_TELLER_VS }}
+        ]
+    }
+}
