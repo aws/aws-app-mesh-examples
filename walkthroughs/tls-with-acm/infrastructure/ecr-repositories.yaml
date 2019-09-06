@@ -1,0 +1,10 @@
+Resources:
+  GatewayRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: gateway
+
+  ColorTellerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: colorteller
