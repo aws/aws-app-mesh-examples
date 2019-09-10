@@ -26,9 +26,9 @@ class Handler(BaseHTTPRequestHandler):
             print('Trying to hit ' + COLOR_HOST.split(':')[0])
             print(socket.gethostbyname(COLOR_HOST.split(':')[0]))
             req = Request(f'http://{COLOR_HOST}')
-            color_header = self.headers.get('color_header')
-            if color_header is not None:
-                req.add_header('color_header', color_header)
+            cool_header = self.headers.get('color_header')
+            if cool_header is not None:
+                req.add_header('color_header', cool_header)
             res = urlopen(req)
             self.send_response(200)
             self.end_headers()
@@ -37,7 +37,7 @@ class Handler(BaseHTTPRequestHandler):
         except HTTPError as e:
             print(f'[ERROR] {e}')
             self.send_error(e.code, e.reason)
-        
+
         except Exception as e:
             print(f'[ERROR] {e}')
             self.send_error(500, b'Something really bad happened')
