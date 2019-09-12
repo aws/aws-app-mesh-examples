@@ -98,7 +98,7 @@ ROOT_CA_CERT_ARN=`aws acm-pca issue-certificate \
     --template-arn arn:aws:acm-pca:::template/RootCACertificate/V1 \
     --signing-algorithm SHA256WITHRSA \
     --validity Value=10,Type=YEARS \
-    --csr ${ROOT_CA_CSR} \
+    --csr "${ROOT_CA_CSR}" \
     --query CertificateArn --output text`
 ```
 
@@ -112,7 +112,7 @@ ROOT_CA_CERT=`aws acm-pca get-certificate \
 
 aws acm-pca import-certificate-authority-certificate \
     --certificate-authority-arn $ROOT_CA_ARN \
-    --certificate $ROOT_CA_CERT
+    --certificate "${ROOT_CA_CERT}"
 ```
 
 Now you can request a managed certificate from ACM using this CA:
