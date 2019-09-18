@@ -3,16 +3,18 @@
 
 set -ex
 
-if [ -z $COLOR_TELLER_IMAGE ]; then
-    echo "COLOR_TELLER_IMAGE environment variable is not set"
+if [ -z $COLOR_TELLER_IMAGE_NAME ]; then
+    echo "COLOR_TELLER_IMAGE_NAME environment variable is not set"
     exit 1
 fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COLOR_TELLER_IMAGE_NAME}:latest"
+
 # build
-docker build -t $COLOR_TELLER_IMAGE $DIR
+docker build -t $IMAGE $DIR
 
 # push
-$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
-docker push $COLOR_TELLER_IMAGE
+$(aws ecr get-login --no-include-email)
+docker push $IMAGE
