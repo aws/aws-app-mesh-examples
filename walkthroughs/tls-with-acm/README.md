@@ -26,16 +26,18 @@ Additionally, this walkthrough makes use of the unix command line utility `jq`. 
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
+You'll need a keypair stored in AWS to access a bastion host. If you don't have one, see [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=AppMeshTLSExample
 export MESH_NAME=ColorApp-TLS
-export ENVOY_IMAGE="111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod"
+export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
-export COLOR_GATEWAY_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/gateway:latest"
-export COLOR_TELLER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/colorteller:latest"
+export GATEWAY_IMAGE_NAME="gateway"
+export COLOR_TELLER_IMAGE_NAME="colorteller"
 ```
 
 First, create the VPC.

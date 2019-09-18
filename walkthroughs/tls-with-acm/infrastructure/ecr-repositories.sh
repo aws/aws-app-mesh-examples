@@ -8,4 +8,7 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     cloudformation deploy \
     --stack-name "${ENVIRONMENT_NAME}-ecr-repositories" \
     --capabilities CAPABILITY_IAM \
-    --template-file "${DIR}/ecr-repositories.yaml"
+    --template-file "${DIR}/ecr-repositories.yaml" \
+    --parameter-overrides \
+    GatewayImageName="${GATEWAY_IMAGE_NAME}" \
+    ColorTellerImageName="${COLOR_TELLER_IMAGE_NAME}"

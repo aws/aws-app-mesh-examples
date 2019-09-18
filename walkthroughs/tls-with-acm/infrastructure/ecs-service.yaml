@@ -12,6 +12,18 @@ Parameters:
     Type: String
     Description: DNS namespace used by services e.g. default.svc.cluster.local
 
+  EnvoyImage:
+    Type: String
+    Description: The image to use for the Envoy container
+
+  GatewayImageName:
+    Description: The name for the gateway image
+    Type: String
+
+  ColorTellerImageName:
+    Description: The name for the color teller image
+    Type: String
+
   LoadBalancerPath:
     Type: String
     Default: "*"
@@ -65,7 +77,7 @@ Resources:
             Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
         - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/colorteller'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorTellerImageName}'
           Essential: true
           DependsOn:
             - ContainerName: 'envoy'
@@ -86,7 +98,7 @@ Resources:
             - Name: 'COLOR'
               Value: 'white'
         - Name: envoy
-          Image: '111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.9.1.0-prod'
+          Image: !Ref EnvoyImage
           Essential: true
           User: '1337'
           Ulimits:
@@ -186,7 +198,7 @@ Resources:
             Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
         - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/gateway'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GatewayImageName}'
           Essential: true
           DependsOn:
             - ContainerName: 'envoy'
@@ -209,7 +221,7 @@ Resources:
             - Name: TCP_ECHO_ENDPOINT
               Value: unused
         - Name: envoy
-          Image: '111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.9.1.0-prod'
+          Image: !Ref EnvoyImage
           Essential: true
           User: '1337'
           Ulimits:
