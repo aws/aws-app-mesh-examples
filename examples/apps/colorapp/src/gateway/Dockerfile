@@ -8,6 +8,8 @@ ENV GO111MODULE=on
 COPY go.mod .
 COPY go.sum .
 
+# Force the go compiler to ignore proxies
+RUN go env -w GOPROXY=direct
 # This ensures `go mod download` happens only when go.mod and go.sum change.
 RUN go mod download
 
