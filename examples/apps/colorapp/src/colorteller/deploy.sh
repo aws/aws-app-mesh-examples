@@ -15,9 +15,10 @@ fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 COLOR_TELLER_IMAGE=${COLOR_TELLER_IMAGE:-"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/color/teller"}
+GO_PROXY=${GO_PROXY:="https://proxy.golang.org"}
 
 # build
-docker build -t $COLOR_TELLER_IMAGE ${DIR}
+docker build --build-arg GO_PROXY=$GO_PROXY -t $COLOR_TELLER_IMAGE ${DIR}
 
 # push
 $(aws ecr get-login --no-include-email)

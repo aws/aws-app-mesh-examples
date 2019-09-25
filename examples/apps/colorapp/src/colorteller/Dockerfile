@@ -1,5 +1,5 @@
 FROM golang:1-stretch as builder
-ARG GO_PROXY=direct
+ARG GO_PROXY=https://proxy.golang.org
 WORKDIR /go/src/github.com/aws/aws-app-mesh-examples/colorapp/teller
 
 # Force the go compiler to use modules.

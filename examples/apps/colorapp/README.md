@@ -289,6 +289,11 @@ The push refers to repository [226767807331.dkr.ecr.us-west-2.amazonaws.com/colo
 latest: digest: sha256:ca16f12268907c32140586e2568e2032f04b95d70b373c00fcee7e776e2d29da size: 528
 $
 ```
+NOTE: If you run into issues with certificate because GO PROXY server is not reachable, you can turn it off by setting the environment variable `GO_PROXY` as below and then build the gateway and colorteller images
+```
+export GO_PROXY=direct
+```
+
 
 #### Deploy gateway and colorteller services
 

@@ -68,3 +68,7 @@ cd apps/colorapp/src/gateway
 ./deploy.sh
 cd -
 ```
+NOTE: If you run into issues with certificate because GO PROXY server is not reachable, you can turn it off by setting the environment variable `GO_PROXY` as below and then build the docker images
+```
+export GO_PROXY=direct
+```
