@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package color;
+
+service ColorService {
+  rpc GetColor (GetColorRequest) returns (GetColorResponse) {}
+  rpc SetColor (SetColorRequest) returns (SetColorResponse) {}
+}
+
+message GetColorRequest {}
+
+message GetColorResponse {
+  string color = 1;
+}
+
+message SetColorRequest {
+  string color = 1;
+}
+
+message SetColorResponse {
+  string color = 1;
+}

@@ -1,0 +1,10 @@
+{
+    "spec": {
+        "provider": {
+            "virtualRouter": {
+                "virtualRouterName": "virtual-router"
+            }
+        }
+    },
+    "virtualServiceName": "color_server.grpc.local"
+}
