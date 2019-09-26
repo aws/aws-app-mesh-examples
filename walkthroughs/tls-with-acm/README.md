@@ -215,6 +215,34 @@ That's it! We've encrypted traffic from our gateway service to our color teller 
 
 Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
 
+## Step 6: Clean Up
+
+If you want to keep the application running, you can do so, but this is the end of this walkthrough.
+Run the following commands to clean up and tear down the resources that we’ve created.
+
+```bash
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws ecr delete-repository --force --repository-name colorteller
+aws ecr delete-repository --force --repository-name gateway
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repository
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
+```
+
+Delete the mesh.
+
+```bash
+./mesh/mesh.sh down
+```
+
+And finally delete the certificates.
+
+```bash
+aws acm delete-certificate --certificate-arn $CERTIFICATE_ARN
+aws acm-pca update-certificate-authority --certificate-authority-arn $ROOT_CA_ARN --status DISABLED
+aws acm-pca delete-certificate-authority --certificate-authority-arn $ROOT_CA_ARN
+```
+
 ## Frequently Asked Questions
 
 ### 1. What permissions does the IAM role used by the Envoy need in order to retrieve a certificate and private key from ACM?
