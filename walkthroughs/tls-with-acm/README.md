@@ -26,11 +26,21 @@ Additionally, this walkthrough makes use of the unix command line utility `jq`. 
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
-You'll need a keypair stored in AWS to access a bastion host. If you don't have one, see [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+
+```bash
+aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
+```
+
+This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
+`~/.ssh/color-app.pem`. 
+
+Next, we need to set a few environment variables before provisioning the
+infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, and `ENVOY_IMAGE` below.
 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
-export KEY_PAIR_NAME=<your SSH key pair stored in AWS>
+export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=AppMeshTLSExample
 export MESH_NAME=ColorApp-TLS
@@ -206,6 +216,34 @@ You should see output similar to: `listener.0.0.0.0_15000.ssl.handshake: 1`, ind
 That's it! We've encrypted traffic from our gateway service to our color teller white service using a certificate from ACM.
 
 Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
+
+## Step 6: Clean Up
+
+If you want to keep the application running, you can do so, but this is the end of this walkthrough.
+Run the following commands to clean up and tear down the resources that we’ve created.
+
+```bash
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws ecr delete-repository --force --repository-name colorteller
+aws ecr delete-repository --force --repository-name gateway
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repository
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
+```
+
+Delete the mesh.
+
+```bash
+./mesh/mesh.sh down
+```
+
+And finally delete the certificates.
+
+```bash
+aws acm delete-certificate --certificate-arn $CERTIFICATE_ARN
+aws acm-pca update-certificate-authority --certificate-authority-arn $ROOT_CA_ARN --status DISABLED
+aws acm-pca delete-certificate-authority --certificate-authority-arn $ROOT_CA_ARN
+```
 
 ## Frequently Asked Questions
 
