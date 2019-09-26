@@ -32,9 +32,11 @@ You'll need a keypair stored in AWS to access a bastion host. You can create a k
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
 ```
 
-This command creates an Amazon EC2 Key Pair with name `color-app` and save the private key at
-`~/.ssh/color-app.pem`. Next, we need to set a few environment variables before provisioning the
-infrastructure. Please take note to change the value for `AWS_ACCOUNT_ID` and `KEY_PAIR_NAME`.
+This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
+`~/.ssh/color-app.pem`. 
+
+Next, we need to set a few environment variables before provisioning the
+infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, and `ENVOY_IMAGE` below.
 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
