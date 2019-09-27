@@ -42,8 +42,14 @@ func main() {
 		log.Printf("Recived getColor request: %v", req)
 		resp, err := c.GetColor(ctx, &pb.GetColorRequest{})
 		if err != nil {
-			http.Error(w, err.Error(), 500)
-			log.Fatalf("Could not get color: %v", err)
+			s, _ := status.FromError(err)
+			if s.Code() != codes.Unimplemented {
+				http.Error(w, err.Error(), 500)
+			        log.Fatalf("Something really bad happened: %v %v", s.Code(), err)
+			}
+			http.Error(w, err.Error(), 404)
+			log.Printf("Can't find GetColor method: %v %v", s.Code(), err)
+			return
 		}
 		log.Printf("Got GetColor response: %v", resp)
 		io.WriteString(w, resp.GetColor())
