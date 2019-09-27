@@ -81,6 +81,7 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     rpc error: code = Unimplemented desc = 
     ```
    This is because our current mesh is only configured to route the gRPC Method `GetColor`:
+   
    (from [mesh/route.json](./mesh/route.json))
     ```json
     {
