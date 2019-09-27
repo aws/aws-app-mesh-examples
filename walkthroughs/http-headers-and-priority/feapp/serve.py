@@ -26,13 +26,15 @@ class Handler(BaseHTTPRequestHandler):
             print('Trying to hit ' + COLOR_HOST.split(':')[0])
             print(socket.gethostbyname(COLOR_HOST.split(':')[0]))
             req = Request(f'http://{COLOR_HOST}')
+            
             color_header = self.headers.get('color_header')
             if color_header is not None:
                 req.add_header('color_header', color_header)
+
             res = urlopen(req)
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(res.read())
+            self.wfile.write(res.read() + b'\n')
 
         except HTTPError as e:
             print(f'[ERROR] {e}')
