@@ -119,5 +119,5 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
 ### Teardown
 When you are done with the example you can delete everything we created by running:
 ```
-./deploy delete
+./deploy.sh delete
 ```
