@@ -1,0 +1,19 @@
+{
+    "routeName": "route",
+    "spec": {
+        "http2Route": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "color_server-red",
+                        "weight": 1
+                    }
+                ]
+            },
+            "match": {
+		"prefix": "/"
+            }
+        }
+    },
+    "virtualRouterName": "virtual-router"
+}
