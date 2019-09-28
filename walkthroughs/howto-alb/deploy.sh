@@ -73,6 +73,7 @@ print_endpoint() {
 }
 
 deploy_stacks() {
+
     if [ -z $SKIP_IMAGES ]; then
         echo "deploy images..."
         deploy_images
