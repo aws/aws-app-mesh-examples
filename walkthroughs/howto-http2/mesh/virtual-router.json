@@ -1,0 +1,13 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 8080,
+                    "protocol": "http2"
+                }
+            }
+        ]
+    },
+    "virtualRouterName": "virtual-router"
+}
