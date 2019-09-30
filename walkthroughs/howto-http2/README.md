@@ -6,7 +6,7 @@ This example shows how we can route between HTTP2 clients and servers using App 
 
 ### Color Server
 
-The Color Server is a simple go HTTP2 server returns a color. In this example, we have 3 types of the Color Server running: `red`, `green`, and `blue` each returing a different color. All service instances are registered under the `color_server.http2.local` DNS namespace. But we will be able to route between them by registering their color metadata in [AWS Cloud Map](https://docs.aws.amazon.com/cloud-map/latest/dg/what-is-cloud-map.html) and configuring our virtual-nodes to use AWS Cloud Map [Service Discovery](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual_nodes.html#create-virtual-node).
+The Color Server is a simple go HTTP2 server returns a color. In this example, we have 3 types of the Color Server running: `red`, `green`, and `blue` each returning a different color. All service instances are registered under the `color_server.http2.local` DNS namespace. But we will be able to route between them by registering their color metadata in [AWS Cloud Map](https://docs.aws.amazon.com/cloud-map/latest/dg/what-is-cloud-map.html) and configuring our virtual-nodes to use AWS Cloud Map [Service Discovery](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual_nodes.html#create-virtual-node).
 
 ### Color Client
 
