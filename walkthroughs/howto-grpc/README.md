@@ -62,7 +62,7 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     ```
     curl $COLOR_ENDPOINT/getColor
     ```
-   You should see `no color!`. The color returned by the Color Service via the Color Client can be configured using the `/setColor` API.
+   You should see `no_color`. The color returned by the Color Service via the Color Client can be configured using the `/setColor` API.
 3. Attempt to change the color by curling the `/setColor` API
     ```
     curl -i -X POST -d "blue" $COLOR_ENDPOINT/setColor
