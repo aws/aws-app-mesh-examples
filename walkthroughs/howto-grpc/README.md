@@ -110,7 +110,7 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     ```
     curl -i -X POST -d "blue" $COLOR_ENDPOINT/setColor
     ```
-   You'll see that we got a `HTTP/1.1 200 OK` response. You'll also see `no color!` in the response. But this is the previous color being returned after a successful color update.
+   You'll see that we got a `HTTP/1.1 200 OK` response. You'll also see `no_color` in the response. But this is the previous color being returned after a successful color update.
 6. You can verify that the color did, in fact, update
     ```
     curl $COLOR_ENDPOINT/getColor

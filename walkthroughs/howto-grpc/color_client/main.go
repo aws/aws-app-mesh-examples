@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	pb "github.com/aws/aws-app-mesh-examples/walkthroughs/howto-grpc/color_client/color"
 	"google.golang.org/grpc"
@@ -15,19 +16,19 @@ import (
 )
 
 func main() {
-	color_host := os.Getenv("COLOR_HOST")
-	if color_host == "" {
+	colorHost := os.Getenv("COLOR_HOST")
+	if colorHost == "" {
 		log.Fatalf("no COLOR_HOST defined")
 	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatalf("no PORT defined")
 	}
-	log.Printf("COLOR_HOST is: %v", color_host)
+	log.Printf("COLOR_HOST is: %v", colorHost)
 	log.Printf("PORT is: %v", port)
 
 	// Connect to COLOR_HOST
-	conn, err := grpc.Dial(color_host, grpc.WithInsecure())
+	conn, err := grpc.Dial(colorHost, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -52,7 +53,7 @@ func main() {
 			return
 		}
 		log.Printf("Got GetColor response: %v", resp)
-		io.WriteString(w, resp.GetColor())
+		io.WriteString(w, strings.ToLower(resp.GetColor().String()))
 	})
 
 	http.HandleFunc("/setColor", func(w http.ResponseWriter, req *http.Request) {
@@ -64,7 +65,8 @@ func main() {
 			log.Printf("Could not read request body: %v", err)
 			return
 		}
-		resp, err := c.SetColor(ctx, &pb.SetColorRequest{Color: string(color)})
+		colorString := strings.ToUpper(string(color))
+		resp, err := c.SetColor(ctx, &pb.SetColorRequest{Color: pb.Color(pb.Color_value[colorString])})
 		if err != nil {
 			s, _ := status.FromError(err)
 			if s.Code() != codes.Unimplemented {
@@ -76,7 +78,7 @@ func main() {
 			return
 		}
 		log.Printf("Got SetColor response: %v", resp)
-		io.WriteString(w, resp.GetColor())
+		io.WriteString(w, strings.ToLower(resp.GetColor().String()))
 	})
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
 }

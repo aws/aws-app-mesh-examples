@@ -7,16 +7,29 @@ service ColorService {
   rpc SetColor (SetColorRequest) returns (SetColorResponse) {}
 }
 
+enum Color {
+  NO_COLOR = 0;
+  RED = 1;
+  BLUE = 2;
+  GREEN = 3;
+  YELLOW = 4;
+  ORANGE = 5;
+  PURPLE = 6;
+  PINK = 7;
+  BLACK = 8;
+  WHITE = 9;
+}
+
 message GetColorRequest {}
 
 message GetColorResponse {
-  string color = 1;
+  Color color = 1;
 }
 
 message SetColorRequest {
-  string color = 1;
+  Color color = 1;
 }
 
 message SetColorResponse {
-  string color = 1;
+  Color color = 1;
 }

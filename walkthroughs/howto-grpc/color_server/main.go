@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	pb "github.com/aws/aws-app-mesh-examples/walkthroughs/howto-grpc/color_server/color"
 	"google.golang.org/grpc"
@@ -14,7 +15,7 @@ import (
 )
 
 type server struct {
-	color string
+	color pb.Color
 }
 
 func (s *server) GetColor(ctx context.Context, in *pb.GetColorRequest) (*pb.GetColorResponse, error) {
@@ -55,8 +56,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterColorServiceServer(s, &server{color})
-	health.RegisterHealthServer(s, &server{color})
+	colorValue := pb.Color(pb.Color_value[strings.ToUpper(color)])
+	pb.RegisterColorServiceServer(s, &server{color: colorValue})
+	health.RegisterHealthServer(s, &server{color: colorValue})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
