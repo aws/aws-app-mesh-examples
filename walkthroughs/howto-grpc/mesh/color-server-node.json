@@ -1,0 +1,27 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "healthCheck": {
+                    "healthyThreshold": 2,
+                    "intervalMillis": 5000,
+                    "port": 8080,
+                    "protocol": "grpc",
+                    "timeoutMillis": 2000,
+                    "unhealthyThreshold": 3
+                },
+                "portMapping": {
+                    "port": 8080,
+                    "protocol": "grpc"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "awsCloudMap": {
+                "namespaceName": "grpc.local",
+                "serviceName": "color_server"
+            }
+        }
+    },
+    "virtualNodeName": "color_server"
+}

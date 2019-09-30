@@ -1,0 +1,19 @@
+{
+    "routeName": "route",
+    "spec": {
+        "grpcRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "color_server",
+                        "weight": 100
+                    }
+                ]
+            },
+            "match": {
+		"serviceName": "color.ColorService"
+            }
+        }
+    },
+    "virtualRouterName": "virtual-router"
+}
