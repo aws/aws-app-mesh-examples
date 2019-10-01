@@ -78,5 +78,5 @@ Run the following command to remove all resources created from this demo:
 ```
 
 To manually delete resources delete the two stacks this walkthrough created (named _howto-http-headers-app_ and _howto-http-headers-infra_). 
-Also go to ECR and remove all images associated
-to the two repositories created (named __ and __) then you can delete the repositories once their images are removed. 
+Also go to ECR and remove all images associated to the two repositories created (_named howto-http-headers/colorapp_ and _howto-http-headers-feapp_) 
+then you can delete the repositories once their images are removed. 
