@@ -1,0 +1,28 @@
+{
+  "virtualRouterName": "color-router",
+  "routeName": "color-route-red",
+  "spec": {
+    "priority": 1,
+    "httpRoute": {
+      "match": {
+        "prefix": "/",
+        "headers": [
+          {
+            "name": "color_header",
+            "match" : {
+              "prefix" : "redorgreen"
+            }
+          }
+        ]
+      },
+      "action": {
+        "weightedTargets": [
+          {
+            "virtualNode": "red-node",
+            "weight": 1
+          }
+        ]
+      }
+    }
+  }
+}
