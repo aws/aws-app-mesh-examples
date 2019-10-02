@@ -66,7 +66,7 @@ To see this run the following command where endpoint refers to the output from t
 3. Lets update the red route to have a higher priority than the green route. Run the following command to update the priority on the red route
 then rerun the curl command above. You should be routing to red now.  
   ```
-  aws appmesh update-route --mesh-name header-mesh --cli-input-json file://color-route.json
+  aws appmesh update-route --mesh-name howto-http-headers --cli-input-json file://color-route.json
   ```
   
 4. Feel free to update various routes in the json file above by changing the route name. Reference these docs to test the various
