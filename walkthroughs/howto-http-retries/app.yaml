@@ -1,30 +1,158 @@
 Parameters:
+
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
   AppMeshXdsEndpoint:
     Type: String
     Description: App Mesh XDS Endpoint Override
     Default: ""
 
+  EnvoyImage:
+    Type: String
+    Description: Envoy container image
+    Default: "111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.0-prod"
+
+  FrontAppImage:
+    Type: String
+    Description: Front app container image
+
+  ColorAppImage:
+    Type: String
+    Description: Color app container image
+
 Resources:
+
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Ref ProjectName
+
+  ColorRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    DependsOn:
+      - Mesh
+    Properties:
+      MeshName: !Ref ProjectName
+      VirtualRouterName: 'color-router'
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 8080
+              Protocol: http
+
+  ColorService:
+    Type: AWS::AppMesh::VirtualService
+    DependsOn:
+      - ColorRouter
+    Properties:
+      MeshName: !Ref ProjectName
+      VirtualServiceName: !Sub 'color.${ProjectName}.local'
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: 'color-router'
+
+  FrontNode:
+    Type: AWS::AppMesh::VirtualNode
+    DependsOn:
+      - ColorRouter
+    Properties:
+      MeshName: !Ref ProjectName
+      VirtualNodeName: 'front-node'
+      Spec:
+        Backends:
+          - VirtualService:
+              VirtualServiceName: !Sub 'color.${ProjectName}.local'
+        Listeners:
+          - PortMapping:
+              Port: 8080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: '/ping'
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: 'front'
+
+  BlueNode:
+    Type: AWS::AppMesh::VirtualNode
+    DependsOn:
+      - Mesh
+    Properties:
+      MeshName: !Ref ProjectName
+      VirtualNodeName: 'blue-node'
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 8080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: '/ping'
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: 'color'
+            Attributes:
+              - Key: 'ECS_TASK_DEFINITION_FAMILY'
+                Value: 'blue'
+
+  ColorRouteBlue:
+    Type: AWS::AppMesh::Route
+    DependsOn:
+      - ColorRouter
+      - BlueNode
+    Properties:
+      MeshName: !Ref ProjectName
+      VirtualRouterName: 'color-router'
+      RouteName: 'color-route-blue'
+      Spec:
+        Priority: 1000
+        HttpRoute:
+          Match:
+            Prefix: '/'
+          Action:
+            WeightedTargets:
+              - VirtualNode: 'blue-node'
+                Weight: 100
+          RetryPolicy:
+            MaxRetries: 4
+            PerRetryTimeout:
+              Value: 15
+              Unit: "ms"
+            HttpRetryEvents: ["server-error"]
+
   Cluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Ref AWS::StackName
+      ClusterName: !Ref ProjectName
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: "Security group for the instances"
       VpcId:
-        Fn::ImportValue: !Sub '${AWS::StackName}-vpc:VPC'
+        Fn::ImportValue: !Sub '${ProjectName}:VPC'
       SecurityGroupIngress:
         - CidrIp:
-            Fn::ImportValue: !Sub '${AWS::StackName}-vpc:VpcCIDR'
+            Fn::ImportValue: !Sub '${ProjectName}:VpcCIDR'
           IpProtocol: -1
 
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '${AWS::StackName}-log-group'
+      LogGroupName: !Sub '${ProjectName}-log-group'
       RetentionInDays: 30
 
   TaskIamRole:
@@ -41,7 +169,6 @@ Resources:
         }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
-        - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
         - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
 
   TaskExecutionIamRole:
@@ -63,10 +190,10 @@ Resources:
   CloudMapNamespace:
     Type: AWS::ServiceDiscovery::PrivateDnsNamespace
     Properties:
-      Name: !Sub '${AWS::StackName}-mesh.local'
+      Name: !Sub '${ProjectName}.local'
       Vpc:
         Fn::ImportValue:
-          !Sub "${AWS::StackName}-vpc:VPC"
+          !Sub "${ProjectName}:VPC"
 
   ColorServiceRegistry:
     Type: AWS::ServiceDiscovery::Service
@@ -98,7 +225,7 @@ Resources:
       GroupDescription: 'Access to the public facing load balancer'
       VpcId:
         Fn::ImportValue:
-          !Sub "${AWS::StackName}-vpc:VPC"
+          !Sub "${ProjectName}:VPC"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: -1
@@ -112,9 +239,9 @@ Resources:
           Value: '30'
       Subnets:
         - Fn::ImportValue:
-            !Sub '${AWS::StackName}-vpc:PublicSubnet1'
+            !Sub '${ProjectName}:PublicSubnet1'
         - Fn::ImportValue:
-            !Sub '${AWS::StackName}-vpc:PublicSubnet2'
+            !Sub '${ProjectName}:PublicSubnet2'
       SecurityGroups:
         - !Ref PublicLoadBalancerSecurityGroup
 
@@ -127,7 +254,7 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
-      Name: !Sub '${AWS::StackName}-webtarget'
+      Name: !Sub '${ProjectName}-webtarget'
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
@@ -136,7 +263,7 @@ Resources:
           Value: 120
       VpcId:
         Fn::ImportValue:
-          !Sub "${AWS::StackName}-vpc:VPC"
+          !Sub "${ProjectName}:VPC"
 
   PublicLoadBalancerListener:
     DependsOn:
@@ -190,12 +317,12 @@ Resources:
             Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
         - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AWS::StackName}-ecr-feapp'
+          Image: !Ref FrontAppImage
           Essential: true
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Sub '${AWS::StackName}-log-group'
+              awslogs-group: !Sub '${ProjectName}-log-group'
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'feapp'
           PortMappings:
@@ -203,9 +330,11 @@ Resources:
               Protocol: 'tcp'
           Environment:
             - Name: 'COLOR_HOST'
-              Value: !Sub 'color.${AWS::StackName}-mesh.local:8080'
+              Value: !Sub 'color.${ProjectName}.local:8080'
+            - Name: 'FORWARD_HEADER'
+              Value: 'statuscode-header'
         - Name: envoy
-          Image: !Sub '111345817488.dkr.ecr.${AWS::Region}.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod'
+          Image: !Ref EnvoyImage
           Essential: true
           User: '1337'
           Ulimits:
@@ -229,14 +358,12 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Sub '${AWS::StackName}-log-group'
+              awslogs-group: !Sub '${ProjectName}-log-group'
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'feapp-envoy'
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-              Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/front-node'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
+              Value: !Sub 'mesh/${ProjectName}/virtualNode/front-node'
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'
             - Name: 'FORWARD_HEADER'
@@ -269,7 +396,7 @@ Resources:
             Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
         - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AWS::StackName}-ecr-colorapp'
+          Image: !Ref ColorAppImage
           Essential: true
           DependsOn:
             - ContainerName: 'envoy'
@@ -277,7 +404,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Sub ${AWS::StackName}-log-group
+              awslogs-group: !Sub ${ProjectName}-log-group
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'blue'
           PortMappings:
@@ -287,7 +414,7 @@ Resources:
             - Name: 'COLOR'
               Value: 'blue'
         - Name: envoy
-          Image: !Sub '111345817488.dkr.ecr.${AWS::Region}.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod'
+          Image: !Ref EnvoyImage
           Essential: true
           User: '1337'
           Ulimits:
@@ -311,14 +438,12 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Sub '${AWS::StackName}-log-group'
+              awslogs-group: !Sub '${ProjectName}-log-group'
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'blue-envoy'
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-              Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/blue-node'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
+              Value: !Sub 'mesh/${ProjectName}/virtualNode/blue-node'
 
   FrontService:
     Type: AWS::ECS::Service
@@ -340,9 +465,9 @@ Resources:
             - !Ref SecurityGroup
           Subnets:
             - Fn::ImportValue:
-                !Sub '${AWS::StackName}-vpc:PrivateSubnet1'
+                !Sub '${ProjectName}:PrivateSubnet1'
             - Fn::ImportValue:
-                !Sub '${AWS::StackName}-vpc:PrivateSubnet2'
+                !Sub '${ProjectName}:PrivateSubnet2'
       TaskDefinition: !Ref FrontTaskDef
       LoadBalancers:
         - ContainerName: app
@@ -367,9 +492,9 @@ Resources:
             - !Ref SecurityGroup
           Subnets:
             - Fn::ImportValue:
-                !Sub '${AWS::StackName}-vpc:PrivateSubnet1'
+                !Sub '${ProjectName}:PrivateSubnet1'
             - Fn::ImportValue:
-                !Sub '${AWS::StackName}-vpc:PrivateSubnet2'
+                !Sub '${ProjectName}:PrivateSubnet2'
       TaskDefinition: !Ref BlueTaskDef
 
 Outputs:
@@ -377,4 +502,4 @@ Outputs:
     Description: 'Public endpoint for Frontend service'
     Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
     Export:
-      Name: !Sub '${AWS::StackName}:FrontendEndpoint'
+      Name: !Sub '${ProjectName}:FrontendEndpoint'

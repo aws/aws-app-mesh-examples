@@ -22,6 +22,6 @@ The following articles demonstrate how to use an App Mesh feature
 
 * [Service Discovery with AWS Cloud Map](./howto-servicediscovery-cloudmap)
 * [HTTP Header Based Routing and Route Priority](./howto-http-headers)
-* [HTTP Retry Policy](./http-retry-policy)
+* [HTTP Retry Policy](./howto-http-retries)
 
 

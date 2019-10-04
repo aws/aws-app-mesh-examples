@@ -32,11 +32,11 @@ class Handler(BaseHTTPRequestHandler):
             if FORWARD_HEADER is not None:
               header = self.headers.get(FORWARD_HEADER)
               if header is not None:
-                  req.add_header(FORWARD_HEADER, header)
+                req.add_header(FORWARD_HEADER, header)
             res = urlopen(req)
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(res.read())
+            self.wfile.write(res.read() + b'\n')
 
         except HTTPError as e:
             print(f'[ERROR] {e}')
