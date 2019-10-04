@@ -62,7 +62,7 @@ delete_images() {
         echo "deleting repository..."
         aws ecr delete-repository \
            --repository-name $PROJECT_NAME/$app \
-           --force true
+           --force
     done
 }
 
