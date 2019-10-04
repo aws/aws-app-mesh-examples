@@ -59,24 +59,10 @@ delete_cfn_stack() {
 
 delete_images() {
     for app in colorapp feapp; do
-        image_details_text=$(aws ecr describe-images \
-            --repository-name="$PROJECT_NAME/$app" \
-            --query="imageDetails" \
-            --output=json \
-            | jq '.[] | .imageDigest')
-
-        for sha in $image_details_text; do
-            sha=$(sed -e 's/^"//' -e 's/"$//' <<<"$sha")
-
-            echo "delete image $sha..."
-            aws ecr batch-delete-image \
-               --repository-name $PROJECT_NAME/$app \
-               --image-ids imageDigest=$sha
-        done
-
         echo "deleting repository..."
         aws ecr delete-repository \
-           --repository-name $PROJECT_NAME/$app
+           --repository-name $PROJECT_NAME/$app \
+           --force true
     done
 }
 
