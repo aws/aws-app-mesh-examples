@@ -126,12 +126,6 @@ Resources:
             WeightedTargets:
               - VirtualNode: 'blue-node'
                 Weight: 100
-          RetryPolicy:
-            MaxRetries: 4
-            PerRetryTimeout:
-              Value: 15
-              Unit: "ms"
-            HttpRetryEvents: ["server-error"]
 
   Cluster:
     Type: AWS::ECS::Cluster
@@ -331,8 +325,6 @@ Resources:
           Environment:
             - Name: 'COLOR_HOST'
               Value: !Sub 'color.${ProjectName}.local:8080'
-            - Name: 'FORWARD_HEADER'
-              Value: 'statuscode-header'
         - Name: envoy
           Image: !Ref EnvoyImage
           Essential: true
@@ -366,8 +358,6 @@ Resources:
               Value: !Sub 'mesh/${ProjectName}/virtualNode/front-node'
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'
-            - Name: 'FORWARD_HEADER'
-              Value: 'statuscode-header'
 
   BlueTaskDef:
     Type: AWS::ECS::TaskDefinition

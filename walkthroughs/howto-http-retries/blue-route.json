@@ -16,9 +16,9 @@
         ]
       },
       "retryPolicy" : {
-        "maxRetries" : 2,
+        "maxRetries" : 10,
         "perRetryTimeout" : {
-          "value" : 15,
+          "value" : 100,
           "unit" : "ms"
         },
         "httpRetryEvents" : [
