@@ -33,11 +33,15 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-6. **ENVOY_IMAGE** environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+6. **ENVOY_IMAGE** set to the location of the App Mesh Envoy docker image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
     export ENVOY_IMAGE=...
     ```
-7. Setup using cloudformation
+7. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+    ```
+    export KEY_PAIR=...
+    ```
+8. Setup using cloudformation
     ```
     ./deploy.sh
     ```
@@ -46,17 +50,23 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
    GO_PROXY=direct ./deploy.sh
    ```
 
-## Verification
+## gRPC Routing
 
 1. After a few minutes, the applications should be deployed and you will see an output such as:
     ```
     Successfully created/updated stack - howto-grpc-app
+    Bastion endpoint:
+    12.345.6.789
     Public endpoint:
-    http://howto-Publi-5555555.us-west-2.elb.amazonaws.com
+    http://howto-Publi-55555555.us-west-2.elb.amazonaws.com
     ```
-   This is the public endpoint to access the Color Client APIs. Export it.
+    Export the public endpoint to access the Color Client APIs.
     ```
-    export COLOR_ENDPOINT=<your_public_endpoint>
+    export COLOR_ENDPOINT=<your_public_endpoint e.g. http://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
+    ```
+    And export the bastion endpoint for use later.
+    ```
+    export BASTION_ENDPOINT=<your_bastion_endpoint e.g. 12.345.6.789>
     ```
 2. Try curling the `/getColor` API
     ```
@@ -78,10 +88,10 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     x-envoy-upstream-service-time: 1
     server: envoy
 
-    rpc error: code = Unimplemented desc = 
+    rpc error: code = Unimplemented desc =
     ```
    This is because our current mesh is only configured to route the gRPC Method `GetColor`:
-   
+
    (from [mesh/route.json](./mesh/route.json))
     ```json
     {
@@ -116,7 +126,71 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     curl $COLOR_ENDPOINT/getColor
     ```
 
+### gRPC Retries
+
+The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakiness` and `GetFlakiness`. They are accessible through `/setFlakiness` and `/getFlakiness` on the Color Client. These can be used to test gRPC retry policies.
+
+1. First we'll need to add a basic gRPC retry policy to our existing route. It will retry up to 3 times whenever the Color Server returns a gRPC `Internal` [status code](https://github.com/grpc/grpc/blob/master/doc/statuscodes.md). Update our route to [mesh/route-retries.json](./mesh/route-retries.json):
+    ```
+    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-retries.json
+    ```
+2. Now we have a retry policy. We'll need to make the Color Server give the Color Client reason to retry requests using the flakiness APIs. Query the current flakiness configuration:
+    ```
+    curl $COLOR_ENDPOINT/getFlakiness
+    ```
+   You should see something like `flakiness:<>`. This is an empty configuration.
+3. Update the flakiness config to make 50% of requests return the `Internal` status code (13).
+    ```
+    curl -X POST "$COLOR_ENDPOINT/setFlakiness?code=13&rate=0.5"
+    ```
+   Here the `rate` query parameter is a percentage of requests to fail, and `code` can be any gRPC status code.
+   Like the `/setColor` API, this one returns the previous state of the Color Server. Query the configuration to ensure it applied.
+    ```
+    curl $COLOR_ENDPOINT/getFlakiness
+    ```
+   You should see `flakiness:<rate:0.5 code:13 >`.
+4. Now before we test our new new flaky API, we should access the Envoy sidecar of the Color Client to verify we are actually applying the retry policy.
+    ```
+    ssh -i <path/to/your/key/pair.pem> ec2-user@$BASTION_ENDPOINT
+    ```
+   If you get any errors about file permissions on your key pair. You can make it only readable by you by running.
+    ```
+    chmod 400 <path/to/your/key/pair.pem>
+    ```
+5. On the EC2 bastion host we can access the `/stats` endpoint of the Envoy by curling it directly:
+    ```
+    curl color_client.grpc.local:9901/stats
+    ```
+   Here is a lot of information. But we can glean some useful stats about our simple mesh. For example we should see that the gRPC health checks from the Color Client to the Color Server are working just fine:
+    ```
+    curl -s color_client.grpc.local:9901/stats | grep health_check
+    ```
+   Namely stats similar to this:
+    ```
+    cluster.cds_egress_howto-grpc-mesh_color_server_grpc_8080.health_check.attempt: 229
+    cluster.cds_egress_howto-grpc-mesh_color_server_grpc_8080.health_check.success: 229
+    ```
+6. Now make some requests to your color client from within your bastion or on your original host
+    ```
+    curl color_client.grpc.local:8080/getColor # On Bastion host
+    ```
+   Due to our retry policy the vast majority of requests will succeed. You can run `/getColor` as many times as you like.
+7. Now check the retry stats.
+    ```
+    curl -s color_client.grpc.local:9901/stats | grep upstream_rq_retry
+    ```
+   You'll see something like:
+    ```
+    cluster.cds_egress_howto-grpc-mesh_color_server_grpc_8080.upstream_rq_retry: 10
+    cluster.cds_egress_howto-grpc-mesh_color_server_grpc_8080.upstream_rq_retry_success: 5
+    ```
+   The `upstream_rq_retry` stat represents the number of requests that we made when applying a retry policy and the `upstream_rq_retry_success` is the number of retry requests that succeeded.
+8. Lastly you can reset the stats of the Envoy by calling the `/reset_counters` API from within the bastion. This can help verify behaivor while you experiment further.
+    ```
+    curl -X POST -s color_client.grpc.local:9901/reset_counters
+    ```
 ### Teardown
+
 When you are done with the example you can delete everything we created by running:
 ```
 ./deploy.sh delete
