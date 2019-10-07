@@ -2,7 +2,7 @@ package main
 
 import (
 	"crypto/tls"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -30,14 +30,14 @@ func main() {
 			AllowHTTP: true,
 			// Make the transport *not-actually* use TLS
 			DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-				return net.Dial(network, addr)			
+				return net.Dial(network, addr)
 			},
 		},
 	}
 	http.HandleFunc("/ping", func(w http.ResponseWriter, req *http.Request) {})
 
 	http.HandleFunc("/color", func(w http.ResponseWriter, req *http.Request) {
-		resp, err := client.Get("http://"+color_host)
+		resp, err := client.Get("http://" + color_host)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			log.Fatalf("Could not get color: %v", err)
@@ -48,8 +48,28 @@ func main() {
 			http.Error(w, err.Error(), 400)
 			log.Printf("Could not read response body: %v", err)
 		}
-		log.Printf("Got color response: %v", string(color))
-		io.WriteString(w, string(color))
+		log.Printf("Got color response: %s", string(color))
+		fmt.Fprintf(w, "%s", string(color))
+	})
+
+	http.HandleFunc("/setFlake", func(w http.ResponseWriter, req *http.Request) {
+		resp, err := client.Get("http://" + color_host + req.URL.RequestURI())
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			log.Fatalf("Could not set flakiness: %v", err)
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			log.Printf("Could not read response body: %v", err)
+		}
+		log.Printf("Got setFlake response: %s", string(body))
+		if resp.StatusCode != 200 {
+			http.Error(w, string(body), resp.StatusCode)
+			return
+		}
+		fmt.Fprintf(w, "%s", string(body))
 	})
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
 }

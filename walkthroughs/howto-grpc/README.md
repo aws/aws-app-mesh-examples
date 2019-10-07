@@ -33,7 +33,7 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-6. **ENVOY_IMAGE** set to the location of the App Mesh Envoy docker image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+6. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
     export ENVOY_IMAGE=...
     ```

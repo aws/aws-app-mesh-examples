@@ -98,7 +98,7 @@ func main() {
 		rates, ok := query["rate"]
 		if !ok {
 			http.Error(w, "rate must be specified", 400)
-			log.Printf("Could not read rate parameter: %v", err)
+			log.Printf("Could not read rate parameter")
 			return
 		}
 		rate, err := strconv.ParseFloat(rates[0], 32)

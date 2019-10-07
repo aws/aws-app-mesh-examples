@@ -22,6 +22,11 @@ if [ -z $ENVOY_IMAGE ]; then
     exit 1
 fi
 
+if [ -z $KEY_PAIR ]; then
+    echo "KEY_PAIR environment variable is not set. This must be the name of an SSH key pair, see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html"
+    exit 1
+fi
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 ECR_IMAGE_PREFIX=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}
 
@@ -40,7 +45,7 @@ deploy_infra() {
         --stack-name "${PROJECT_NAME}-infra"\
         --template-file "${DIR}/infra.yaml" \
         --capabilities CAPABILITY_IAM \
-        --parameter-overrides "ProjectName=${PROJECT_NAME}"
+        --parameter-overrides "ProjectName=${PROJECT_NAME}" "KeyPair=${KEY_PAIR}"
 }
 
 deploy_app() {
@@ -62,6 +67,15 @@ deploy_mesh() {
     aws appmesh-preview create-virtual-router --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/virtual-router.json
     aws appmesh-preview create-virtual-service --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/virtual-service.json
     aws appmesh-preview create-route --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/route-red.json
+}
+
+print_bastion() {
+    echo "Bastion endpoint:"
+    ip=$(aws cloudformation describe-stacks \
+        --stack-name="${PROJECT_NAME}-infra" \
+        --query="Stacks[0].Outputs[?OutputKey=='BastionIp'].OutputValue" \
+        --output=text)
+    echo "${ip}"
 }
 
 print_endpoint() {
@@ -86,6 +100,7 @@ deploy_stacks() {
     echo "deploy app..."
     deploy_app
 
+    print_bastion
     print_endpoint
 }
 

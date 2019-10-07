@@ -1,0 +1,27 @@
+{
+    "routeName": "route",
+    "spec": {
+        "http2Route": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "color_server-red",
+                        "weight": 1
+                    }
+                ]
+            },
+            "match": {
+		"prefix": "/"
+            },
+	    "retryPolicy": {
+	    	"httpRetryEvents": [ "server-error" ],
+	    	"maxRetries": 3,
+		"perRetryTimeout": {
+			"unit": "s",
+			"value": 2
+		}
+	    }
+        }
+    },
+    "virtualRouterName": "virtual-router"
+}
