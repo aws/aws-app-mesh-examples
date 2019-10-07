@@ -126,7 +126,7 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     curl $COLOR_ENDPOINT/getColor
     ```
 
-### gRPC Retries
+## gRPC Retries
 
 The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakiness` and `GetFlakiness`. They are accessible through `/setFlakiness` and `/getFlakiness` on the Color Client. These can be used to test gRPC retry policies.
 
@@ -189,7 +189,7 @@ The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakine
     ```
     curl -X POST -s color_client.grpc.local:9901/reset_counters
     ```
-### Teardown
+## Teardown
 
 When you are done with the example you can delete everything we created by running:
 ```
