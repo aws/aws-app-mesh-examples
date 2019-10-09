@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -59,7 +59,7 @@ func main() {
 			return
 		}
 		log.Printf("Got GetColor response: %v", resp)
-		io.WriteString(w, strings.ToLower(resp.GetColor().String()))
+		fmt.Fprint(w, strings.ToLower(resp.GetColor().String()))
 	})
 
 	http.HandleFunc("/setColor", func(w http.ResponseWriter, req *http.Request) {
@@ -78,7 +78,7 @@ func main() {
 			return
 		}
 		log.Printf("Got SetColor response: %v", resp)
-		io.WriteString(w, strings.ToLower(resp.GetColor().String()))
+		fmt.Fprint(w, strings.ToLower(resp.GetColor().String()))
 	})
 
 	http.HandleFunc("/getFlakiness", func(w http.ResponseWriter, req *http.Request) {
@@ -89,7 +89,7 @@ func main() {
 			return
 		}
 		log.Printf("Got GetFlakiness response: %v", resp)
-		io.WriteString(w, resp.String())
+		fmt.Fprint(w, resp.String())
 	})
 
 	http.HandleFunc("/setFlakiness", func(w http.ResponseWriter, req *http.Request) {
@@ -134,7 +134,7 @@ func main() {
 			return
 		}
 		log.Printf("Got SetFlakiess response: %v", resp)
-		io.WriteString(w, resp.String())
+		fmt.Fprint(w, resp.String())
 	})
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
 }

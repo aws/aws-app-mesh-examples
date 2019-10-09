@@ -40,36 +40,40 @@ func main() {
 		resp, err := client.Get("http://" + color_host)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			log.Fatalf("Could not get color: %v", err)
+			log.Printf("Could not get color: %v", err)
+			return
 		}
 		defer resp.Body.Close()
 		color, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 			log.Printf("Could not read response body: %v", err)
+			return
 		}
 		log.Printf("Got color response: %s", string(color))
-		fmt.Fprintf(w, "%s", string(color))
+		fmt.Fprint(w, string(color))
 	})
 
 	http.HandleFunc("/setFlake", func(w http.ResponseWriter, req *http.Request) {
 		resp, err := client.Get("http://" + color_host + req.URL.RequestURI())
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			log.Fatalf("Could not set flakiness: %v", err)
+			log.Printf("Could not set flakiness: %v", err)
+			return
 		}
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 			log.Printf("Could not read response body: %v", err)
+			return
 		}
 		log.Printf("Got setFlake response: %s", string(body))
 		if resp.StatusCode != 200 {
 			http.Error(w, string(body), resp.StatusCode)
 			return
 		}
-		fmt.Fprintf(w, "%s", string(body))
+		fmt.Fprint(w, string(body))
 	})
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
 }

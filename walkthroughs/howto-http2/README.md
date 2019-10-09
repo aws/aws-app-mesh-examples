@@ -20,7 +20,10 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
         --service-name appmesh-preview \
         --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
     ```
-2. Clone this repository and navigate to the walkthrough/howto-http2 folder, all commands will be ran from this location
+2. Clone this repository and navigate to the walkthroughs/howto-http2 folder, all commands will be ran from this location.
+    ```
+    cd walkthroughs/howto-http2
+    ```
 3. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-http2
     ```
     export PROJECT_NAME=howto-http2

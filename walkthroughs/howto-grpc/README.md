@@ -20,7 +20,10 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
         --service-name appmesh-preview \
         --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
     ```
-2. Clone this repository and navigate to the walkthrough/howto-grpc folder, all commands will be ran from this location
+2. Clone this repository and navigate to the walkthroughs/howto-grpc folder, all commands will be ran from this location.
+    ```
+    cd walkthroughs/howto-grpc
+    ```
 3. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-grpc
     ```
     export PROJECT_NAME=howto-grpc
