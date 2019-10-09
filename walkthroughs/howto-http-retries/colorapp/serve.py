@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 try:
+    import time
     import os
     from http.server import BaseHTTPRequestHandler, HTTPServer
 except Exception as e:
@@ -18,16 +19,18 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             return
-        header = self.headers.get('statuscode-header')
-        if header is not None:
-            if header == '200':
-                self.send_response(200)
-            if header == '500':
-                self.send_response(500)
-            if header == '503':
-                self.send_response(503)
-        else:
+
+        req_time = float(self.headers.get('req-time'))
+        curr_time = time.time()
+        time_diff = curr_time - req_time
+
+        if time_diff > 1 :
+            print('success!')
             self.send_response(200)
+        else :
+            print('maybe next time!')
+            self.send_response(503)
+
         self.end_headers()
         self.wfile.write(bytes(COLOR, 'utf8'))
 
