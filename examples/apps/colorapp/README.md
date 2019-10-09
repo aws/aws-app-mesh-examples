@@ -70,7 +70,7 @@ Each template has a corresponding shell script with a `.sh` extension that you r
 * `MESH_NAME` - name to use to identify the mesh you create.
 * `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`).
 * `KEY_PAIR_NAME` - your [Amazon EC2 Key Pair].
-* `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image (currently: `111345817488.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod`)
+* `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image.
 * `COLOR_GATEWAY_IMAGE` - Docker image for the Color App gateway microservice in ECR.
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice in ECR.
 
@@ -303,7 +303,7 @@ We will now deploy our services on ECS. The following CloudFormation template wi
 
 In addition to the previously defined environment variables, you will also need to export the following:
 
-* `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image (currently: `111345817488.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod`)
+* `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image.
 * `COLOR_GATEWAY_IMAGE` - Docker image for the Color App gateway microservice (see example below).
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice (see example below).
   
@@ -319,7 +319,7 @@ $ export AWS_DEFAULT_REGION=us-west-2
 $ export ENVIRONMENT_NAME=DEMO
 $ export SERVICES_DOMAIN=demo.local
 $ export KEY_PAIR_NAME=tony_devbox2
-$ export ENVOY_IMAGE=111345817488.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod
+$ export ENVOY_IMAGE=12345689012.dkr.ecr.us-west-2.amazonzaws.com/appmesh-envoy:version
 $ export COLOR_GATEWAY_IMAGE=$(aws ecr describe-repositories --repository-names=gateway --query 'repositories[0].repositoryUri' --output text)
 $ export COLOR_TELLER_IMAGE=$(aws ecr describe-repositories --repository-names=colorteller --query 'repositories[0].repositoryUri' --output text)
 $ ./examples/apps/colorapp/ecs/ecs-colorapp.sh
@@ -562,7 +562,7 @@ AWS X-Ray is a valuable tool for providing insight into your application request
 
 The following is the condensed version of all the steps we performed to run the Color App.
 
-1. Export the following environment variables needed by our deployment scripts. You can use most of the example values below for your own demo, but you will need to modify the last three using your own EC2 key pair and ECR URLs for the color images (see [Deploy gateway and colorteller services]).
+1. Export the following environment variables needed by our deployment scripts. You can use most of the example values below for your own demo, but you will need to modify the last four using your own EC2 key pair and ECR URLs for the color images (see [Deploy gateway and colorteller services]) and Envoy (see [Envoy Image]).
 
 `.env`
 ```
@@ -571,7 +571,7 @@ export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=DEMO
 export MESH_NAME=appmesh-mesh
 export SERVICES_DOMAIN=demo.local
-export ENVOY_IMAGE=111345817488.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/aws-appmesh-envoy:v1.11.1.1-prod
+export ENVOY_IMAGE=12345689012.dkr.ecr.us-west-2.amazonzaws.com/appmesh-envoy:version
 export KEY_PAIR_NAME=tony_devbox2
 export COLOR_GATEWAY_IMAGE=226767807331.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/gateway
 export COLOR_TELLER_IMAGE=226767807331.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/colorteller:latest
