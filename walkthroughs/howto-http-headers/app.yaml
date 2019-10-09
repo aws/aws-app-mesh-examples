@@ -12,7 +12,6 @@ Parameters:
   EnvoyImage:
     Type: String
     Description: Envoy container image
-    Default: "111345817488.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.1.0-prod"
 
   FrontAppImage:
     Type: String
