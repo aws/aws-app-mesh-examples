@@ -1,13 +1,15 @@
 ## Overview
 This example shows how to use [ALB Ingress Controller](https://github.com/kubernetes-sigs/aws-alb-ingress-controller) with targets registered as virtual-nodes under App Mesh.
 
+![System Diagram](./howto-k8s-alb.png "System Diagram")
+
 ## Prerequisites
 - [Walkthrough: App Mesh with EKS](../eks/)
 - [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/)
 
 ## Setup
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-cloudmap folder, all commands will be ran from this location
+1. Clone this repository and navigate to the walkthrough/howto-k8s-alb folder, all commands will be run from this location
 2. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
