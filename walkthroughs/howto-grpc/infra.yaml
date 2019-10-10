@@ -3,6 +3,15 @@ Parameters:
     Type: String
     Description: Project name to link stacks
 
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: The EC2 Key Pair to allow SSH access to the bastion host
+
+  EC2Ami:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Description: EC2 AMI ID
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
   VpcCIDR: 
     Description: Please enter the IP range (CIDR notation) for this VPC
     Type: String
@@ -200,6 +209,27 @@ Resources:
       Name: grpc.local
       Vpc: !Ref VPC
 
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allows SSH access'
+      VpcId: !Ref VPC 
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  Bastion:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref EC2Ami
+      InstanceType: t2.micro
+      KeyName: !Ref KeyPair
+      SecurityGroupIds:
+      - !Ref BastionSecurityGroup
+      SubnetId: !Ref PublicSubnet1
+
 Outputs:
   VPC:
     Description: A reference to the created VPC
@@ -248,3 +278,9 @@ Outputs:
     Value: !GetAtt CloudMapNamespace.Id
     Export:
       Name: !Sub '${ProjectName}:CloudMapNamespaceId'
+
+  BastionIp:
+    Description: The ip address of the bastion host
+    Value: !GetAtt Bastion.PublicIp
+    Export:
+      Name: !Sub '${ProjectName}:BastionIp'

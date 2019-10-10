@@ -5,6 +5,8 @@ package color;
 service ColorService {
   rpc GetColor (GetColorRequest) returns (GetColorResponse) {}
   rpc SetColor (SetColorRequest) returns (SetColorResponse) {}
+  rpc GetFlakiness (GetFlakinessRequest) returns (GetFlakinessResponse) {}
+  rpc SetFlakiness (SetFlakinessRequest) returns (SetFlakinessResponse) {}
 }
 
 enum Color {
@@ -32,4 +34,23 @@ message SetColorRequest {
 
 message SetColorResponse {
   Color color = 1;
+}
+
+message Flakiness {
+  float rate = 1;
+  int32 code = 2;
+}
+
+message GetFlakinessRequest {}
+
+message GetFlakinessResponse {
+  Flakiness flakiness = 1;
+}
+
+message SetFlakinessRequest {
+  Flakiness flakiness = 1;
+}
+
+message SetFlakinessResponse {
+  Flakiness flakiness = 1;
 }

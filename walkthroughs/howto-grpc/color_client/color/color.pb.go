@@ -221,35 +221,242 @@ func (m *SetColorResponse) GetColor() Color {
 	return Color_NO_COLOR
 }
 
+type Flakiness struct {
+	Rate                 float32  `protobuf:"fixed32,1,opt,name=rate,proto3" json:"rate,omitempty"`
+	Code                 int32    `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Flakiness) Reset()         { *m = Flakiness{} }
+func (m *Flakiness) String() string { return proto.CompactTextString(m) }
+func (*Flakiness) ProtoMessage()    {}
+func (*Flakiness) Descriptor() ([]byte, []int) {
+	return fileDescriptor_83c7eb30498dece0, []int{4}
+}
+
+func (m *Flakiness) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Flakiness.Unmarshal(m, b)
+}
+func (m *Flakiness) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Flakiness.Marshal(b, m, deterministic)
+}
+func (m *Flakiness) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Flakiness.Merge(m, src)
+}
+func (m *Flakiness) XXX_Size() int {
+	return xxx_messageInfo_Flakiness.Size(m)
+}
+func (m *Flakiness) XXX_DiscardUnknown() {
+	xxx_messageInfo_Flakiness.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Flakiness proto.InternalMessageInfo
+
+func (m *Flakiness) GetRate() float32 {
+	if m != nil {
+		return m.Rate
+	}
+	return 0
+}
+
+func (m *Flakiness) GetCode() int32 {
+	if m != nil {
+		return m.Code
+	}
+	return 0
+}
+
+type GetFlakinessRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetFlakinessRequest) Reset()         { *m = GetFlakinessRequest{} }
+func (m *GetFlakinessRequest) String() string { return proto.CompactTextString(m) }
+func (*GetFlakinessRequest) ProtoMessage()    {}
+func (*GetFlakinessRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_83c7eb30498dece0, []int{5}
+}
+
+func (m *GetFlakinessRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetFlakinessRequest.Unmarshal(m, b)
+}
+func (m *GetFlakinessRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetFlakinessRequest.Marshal(b, m, deterministic)
+}
+func (m *GetFlakinessRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetFlakinessRequest.Merge(m, src)
+}
+func (m *GetFlakinessRequest) XXX_Size() int {
+	return xxx_messageInfo_GetFlakinessRequest.Size(m)
+}
+func (m *GetFlakinessRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetFlakinessRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetFlakinessRequest proto.InternalMessageInfo
+
+type GetFlakinessResponse struct {
+	Flakiness            *Flakiness `protobuf:"bytes,1,opt,name=flakiness,proto3" json:"flakiness,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *GetFlakinessResponse) Reset()         { *m = GetFlakinessResponse{} }
+func (m *GetFlakinessResponse) String() string { return proto.CompactTextString(m) }
+func (*GetFlakinessResponse) ProtoMessage()    {}
+func (*GetFlakinessResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_83c7eb30498dece0, []int{6}
+}
+
+func (m *GetFlakinessResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetFlakinessResponse.Unmarshal(m, b)
+}
+func (m *GetFlakinessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetFlakinessResponse.Marshal(b, m, deterministic)
+}
+func (m *GetFlakinessResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetFlakinessResponse.Merge(m, src)
+}
+func (m *GetFlakinessResponse) XXX_Size() int {
+	return xxx_messageInfo_GetFlakinessResponse.Size(m)
+}
+func (m *GetFlakinessResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetFlakinessResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetFlakinessResponse proto.InternalMessageInfo
+
+func (m *GetFlakinessResponse) GetFlakiness() *Flakiness {
+	if m != nil {
+		return m.Flakiness
+	}
+	return nil
+}
+
+type SetFlakinessRequest struct {
+	Flakiness            *Flakiness `protobuf:"bytes,1,opt,name=flakiness,proto3" json:"flakiness,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *SetFlakinessRequest) Reset()         { *m = SetFlakinessRequest{} }
+func (m *SetFlakinessRequest) String() string { return proto.CompactTextString(m) }
+func (*SetFlakinessRequest) ProtoMessage()    {}
+func (*SetFlakinessRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_83c7eb30498dece0, []int{7}
+}
+
+func (m *SetFlakinessRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetFlakinessRequest.Unmarshal(m, b)
+}
+func (m *SetFlakinessRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetFlakinessRequest.Marshal(b, m, deterministic)
+}
+func (m *SetFlakinessRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetFlakinessRequest.Merge(m, src)
+}
+func (m *SetFlakinessRequest) XXX_Size() int {
+	return xxx_messageInfo_SetFlakinessRequest.Size(m)
+}
+func (m *SetFlakinessRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetFlakinessRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SetFlakinessRequest proto.InternalMessageInfo
+
+func (m *SetFlakinessRequest) GetFlakiness() *Flakiness {
+	if m != nil {
+		return m.Flakiness
+	}
+	return nil
+}
+
+type SetFlakinessResponse struct {
+	Flakiness            *Flakiness `protobuf:"bytes,1,opt,name=flakiness,proto3" json:"flakiness,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *SetFlakinessResponse) Reset()         { *m = SetFlakinessResponse{} }
+func (m *SetFlakinessResponse) String() string { return proto.CompactTextString(m) }
+func (*SetFlakinessResponse) ProtoMessage()    {}
+func (*SetFlakinessResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_83c7eb30498dece0, []int{8}
+}
+
+func (m *SetFlakinessResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetFlakinessResponse.Unmarshal(m, b)
+}
+func (m *SetFlakinessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetFlakinessResponse.Marshal(b, m, deterministic)
+}
+func (m *SetFlakinessResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetFlakinessResponse.Merge(m, src)
+}
+func (m *SetFlakinessResponse) XXX_Size() int {
+	return xxx_messageInfo_SetFlakinessResponse.Size(m)
+}
+func (m *SetFlakinessResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetFlakinessResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SetFlakinessResponse proto.InternalMessageInfo
+
+func (m *SetFlakinessResponse) GetFlakiness() *Flakiness {
+	if m != nil {
+		return m.Flakiness
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("color.Color", Color_name, Color_value)
 	proto.RegisterType((*GetColorRequest)(nil), "color.GetColorRequest")
 	proto.RegisterType((*GetColorResponse)(nil), "color.GetColorResponse")
 	proto.RegisterType((*SetColorRequest)(nil), "color.SetColorRequest")
 	proto.RegisterType((*SetColorResponse)(nil), "color.SetColorResponse")
+	proto.RegisterType((*Flakiness)(nil), "color.Flakiness")
+	proto.RegisterType((*GetFlakinessRequest)(nil), "color.GetFlakinessRequest")
+	proto.RegisterType((*GetFlakinessResponse)(nil), "color.GetFlakinessResponse")
+	proto.RegisterType((*SetFlakinessRequest)(nil), "color.SetFlakinessRequest")
+	proto.RegisterType((*SetFlakinessResponse)(nil), "color.SetFlakinessResponse")
 }
 
 func init() { proto.RegisterFile("color.proto", fileDescriptor_83c7eb30498dece0) }
 
 var fileDescriptor_83c7eb30498dece0 = []byte{
-	// 264 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4e, 0xce, 0xcf, 0xc9,
-	0x2f, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x05, 0x73, 0x94, 0x04, 0xb9, 0xf8, 0xdd,
-	0x53, 0x4b, 0x9c, 0x41, 0xec, 0xa0, 0xd4, 0xc2, 0xd2, 0xd4, 0xe2, 0x12, 0x25, 0x33, 0x2e, 0x01,
-	0x84, 0x50, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x90, 0x12, 0x17, 0x44, 0xbd, 0x04, 0xa3, 0x02,
-	0xa3, 0x06, 0x9f, 0x11, 0x8f, 0x1e, 0xc4, 0x28, 0x88, 0x22, 0xa8, 0x51, 0xa6, 0x5c, 0xfc, 0xc1,
-	0xa8, 0x46, 0x11, 0xa5, 0xcd, 0x8c, 0x4b, 0x20, 0x98, 0x0c, 0xeb, 0xb4, 0xca, 0xb9, 0x58, 0xc1,
-	0x7c, 0x21, 0x1e, 0x2e, 0x0e, 0x3f, 0xff, 0x78, 0x67, 0x7f, 0x1f, 0xff, 0x20, 0x01, 0x06, 0x21,
-	0x76, 0x2e, 0xe6, 0x20, 0x57, 0x17, 0x01, 0x46, 0x21, 0x0e, 0x2e, 0x16, 0x27, 0x9f, 0x50, 0x57,
-	0x01, 0x26, 0x21, 0x4e, 0x2e, 0x56, 0xf7, 0x20, 0x57, 0x57, 0x3f, 0x01, 0x66, 0x21, 0x2e, 0x2e,
-	0xb6, 0x48, 0x57, 0x1f, 0x1f, 0xff, 0x70, 0x01, 0x16, 0x10, 0xdb, 0x3f, 0xc8, 0xd1, 0xcf, 0xdd,
-	0x55, 0x80, 0x15, 0xc4, 0x0e, 0x08, 0x0d, 0x0a, 0xf0, 0x71, 0x15, 0x60, 0x03, 0x69, 0x0c, 0xf0,
-	0xf4, 0xf3, 0x16, 0x60, 0x07, 0x69, 0x74, 0xf2, 0x71, 0x74, 0xf6, 0x16, 0xe0, 0x00, 0x31, 0xc3,
-	0x3d, 0x3c, 0x43, 0x5c, 0x05, 0x38, 0x8d, 0x7a, 0x18, 0xb9, 0x78, 0xc0, 0x36, 0x07, 0xa7, 0x16,
-	0x95, 0x65, 0x26, 0xa7, 0x0a, 0xd9, 0x72, 0x71, 0xc0, 0x02, 0x4c, 0x48, 0x0c, 0xea, 0x54, 0xb4,
-	0x40, 0x95, 0x12, 0xc7, 0x10, 0x87, 0x78, 0x55, 0x89, 0x01, 0xa4, 0x3d, 0x18, 0x5d, 0x7b, 0x30,
-	0x0e, 0xed, 0xc1, 0x18, 0xda, 0x93, 0xd8, 0xc0, 0xf1, 0x69, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff,
-	0x42, 0x63, 0xf3, 0xd5, 0xde, 0x01, 0x00, 0x00,
+	// 374 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x93, 0xcf, 0x4f, 0xe2, 0x40,
+	0x1c, 0xc5, 0x69, 0xa1, 0xd0, 0x7e, 0x69, 0x96, 0xd9, 0x81, 0xdd, 0x25, 0xec, 0x85, 0xf4, 0x44,
+	0x3c, 0x70, 0x80, 0xc8, 0xcd, 0x03, 0xe0, 0x50, 0x09, 0x4d, 0x4b, 0x66, 0x24, 0xc4, 0x93, 0x41,
+	0x1c, 0x13, 0x22, 0xa1, 0xd8, 0x56, 0xfd, 0x7f, 0xfc, 0x4b, 0xcd, 0x4c, 0x8b, 0xe5, 0x97, 0x46,
+	0x8d, 0xb7, 0xd7, 0xd7, 0xf7, 0x3e, 0xf3, 0x9d, 0xce, 0x14, 0x8a, 0x73, 0x7f, 0xe9, 0x07, 0xcd,
+	0x75, 0xe0, 0x47, 0x3e, 0xd6, 0xe4, 0x83, 0xf5, 0x1b, 0x4a, 0x36, 0x8f, 0xfa, 0x42, 0x53, 0xfe,
+	0xf0, 0xc8, 0xc3, 0xc8, 0xea, 0x00, 0x4a, 0xad, 0x70, 0xed, 0xaf, 0x42, 0x8e, 0x2d, 0x88, 0xf3,
+	0x55, 0xa5, 0xae, 0x34, 0x7e, 0xb5, 0xcc, 0x66, 0x8c, 0x8a, 0x43, 0x09, 0xea, 0x14, 0x4a, 0x6c,
+	0x17, 0xf5, 0xa9, 0x5a, 0x07, 0x10, 0xfb, 0xce, 0x72, 0x6d, 0x30, 0x06, 0xcb, 0xd9, 0xfd, 0x62,
+	0xc5, 0xc3, 0x10, 0x63, 0xc8, 0x05, 0xb3, 0x88, 0xcb, 0xbc, 0x4a, 0xa5, 0x16, 0xde, 0xdc, 0xbf,
+	0xe5, 0x55, 0xb5, 0xae, 0x34, 0x34, 0x2a, 0xb5, 0xf5, 0x07, 0xca, 0x36, 0x8f, 0xde, 0x7a, 0x9b,
+	0x2d, 0x0f, 0xa0, 0xb2, 0x6b, 0x27, 0x73, 0x34, 0xc1, 0xb8, 0xdb, 0x98, 0x92, 0x5d, 0x6c, 0xa1,
+	0x64, 0x96, 0x34, 0x9c, 0x46, 0x2c, 0x02, 0x65, 0x76, 0x88, 0xff, 0x32, 0x66, 0x00, 0x15, 0xf6,
+	0x03, 0xe3, 0x9c, 0x3c, 0x83, 0x26, 0x3f, 0x19, 0x36, 0x41, 0x77, 0xbd, 0xeb, 0xbe, 0xe7, 0x78,
+	0x14, 0x65, 0x70, 0x01, 0xb2, 0x94, 0x9c, 0x23, 0x05, 0xeb, 0x90, 0xeb, 0x39, 0x13, 0x82, 0x54,
+	0x6c, 0x80, 0x66, 0x53, 0x42, 0x5c, 0x94, 0xc5, 0x00, 0xf9, 0x2b, 0xe2, 0x38, 0xde, 0x14, 0xe5,
+	0x84, 0xf6, 0x68, 0xd7, 0xb5, 0x09, 0xd2, 0x84, 0x1e, 0x4f, 0xe8, 0xd8, 0x21, 0x28, 0x2f, 0x8a,
+	0xe3, 0xa1, 0x3b, 0x42, 0x05, 0x51, 0xec, 0x39, 0xdd, 0xfe, 0x08, 0xe9, 0x42, 0x4e, 0x2f, 0x86,
+	0x97, 0x04, 0x19, 0xad, 0x17, 0x15, 0x4c, 0xb9, 0x32, 0xe3, 0xc1, 0xd3, 0x62, 0xce, 0xf1, 0x19,
+	0xe8, 0x9b, 0x3b, 0x85, 0xff, 0x26, 0x23, 0xef, 0xdd, 0xbb, 0xda, 0xbf, 0x03, 0x3f, 0xde, 0xb6,
+	0x95, 0x11, 0x75, 0xb6, 0x5f, 0x67, 0xef, 0xd4, 0xd9, 0x61, 0x7d, 0x08, 0xe6, 0xf6, 0xf1, 0xe2,
+	0x5a, 0xba, 0xd2, 0xfe, 0x59, 0xd5, 0xfe, 0x1f, 0x7d, 0xb7, 0x8d, 0x62, 0xc7, 0x50, 0xec, 0x03,
+	0x14, 0x3b, 0x8a, 0xba, 0xc9, 0xcb, 0x1f, 0xb1, 0xfd, 0x1a, 0x00, 0x00, 0xff, 0xff, 0xc3, 0x77,
+	0xf0, 0xd9, 0x97, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -266,6 +473,8 @@ const _ = grpc.SupportPackageIsVersion4
 type ColorServiceClient interface {
 	GetColor(ctx context.Context, in *GetColorRequest, opts ...grpc.CallOption) (*GetColorResponse, error)
 	SetColor(ctx context.Context, in *SetColorRequest, opts ...grpc.CallOption) (*SetColorResponse, error)
+	GetFlakiness(ctx context.Context, in *GetFlakinessRequest, opts ...grpc.CallOption) (*GetFlakinessResponse, error)
+	SetFlakiness(ctx context.Context, in *SetFlakinessRequest, opts ...grpc.CallOption) (*SetFlakinessResponse, error)
 }
 
 type colorServiceClient struct {
@@ -294,10 +503,30 @@ func (c *colorServiceClient) SetColor(ctx context.Context, in *SetColorRequest, 
 	return out, nil
 }
 
+func (c *colorServiceClient) GetFlakiness(ctx context.Context, in *GetFlakinessRequest, opts ...grpc.CallOption) (*GetFlakinessResponse, error) {
+	out := new(GetFlakinessResponse)
+	err := c.cc.Invoke(ctx, "/color.ColorService/GetFlakiness", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *colorServiceClient) SetFlakiness(ctx context.Context, in *SetFlakinessRequest, opts ...grpc.CallOption) (*SetFlakinessResponse, error) {
+	out := new(SetFlakinessResponse)
+	err := c.cc.Invoke(ctx, "/color.ColorService/SetFlakiness", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ColorServiceServer is the server API for ColorService service.
 type ColorServiceServer interface {
 	GetColor(context.Context, *GetColorRequest) (*GetColorResponse, error)
 	SetColor(context.Context, *SetColorRequest) (*SetColorResponse, error)
+	GetFlakiness(context.Context, *GetFlakinessRequest) (*GetFlakinessResponse, error)
+	SetFlakiness(context.Context, *SetFlakinessRequest) (*SetFlakinessResponse, error)
 }
 
 // UnimplementedColorServiceServer can be embedded to have forward compatible implementations.
@@ -309,6 +538,12 @@ func (*UnimplementedColorServiceServer) GetColor(ctx context.Context, req *GetCo
 }
 func (*UnimplementedColorServiceServer) SetColor(ctx context.Context, req *SetColorRequest) (*SetColorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetColor not implemented")
+}
+func (*UnimplementedColorServiceServer) GetFlakiness(ctx context.Context, req *GetFlakinessRequest) (*GetFlakinessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFlakiness not implemented")
+}
+func (*UnimplementedColorServiceServer) SetFlakiness(ctx context.Context, req *SetFlakinessRequest) (*SetFlakinessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetFlakiness not implemented")
 }
 
 func RegisterColorServiceServer(s *grpc.Server, srv ColorServiceServer) {
@@ -351,6 +586,42 @@ func _ColorService_SetColor_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ColorService_GetFlakiness_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFlakinessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ColorServiceServer).GetFlakiness(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/color.ColorService/GetFlakiness",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ColorServiceServer).GetFlakiness(ctx, req.(*GetFlakinessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ColorService_SetFlakiness_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetFlakinessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ColorServiceServer).SetFlakiness(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/color.ColorService/SetFlakiness",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ColorServiceServer).SetFlakiness(ctx, req.(*SetFlakinessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ColorService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "color.ColorService",
 	HandlerType: (*ColorServiceServer)(nil),
@@ -362,6 +633,14 @@ var _ColorService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetColor",
 			Handler:    _ColorService_SetColor_Handler,
+		},
+		{
+			MethodName: "GetFlakiness",
+			Handler:    _ColorService_GetFlakiness_Handler,
+		},
+		{
+			MethodName: "SetFlakiness",
+			Handler:    _ColorService_SetFlakiness_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

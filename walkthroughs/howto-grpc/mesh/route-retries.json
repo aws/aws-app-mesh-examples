@@ -1,0 +1,27 @@
+{
+    "routeName": "route",
+    "spec": {
+        "grpcRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "color_server",
+                        "weight": 100
+                    }
+                ]
+            },
+            "match": {
+		"serviceName": "color.ColorService"
+            },
+	    "retryPolicy": {
+	    	"grpcRetryEvents": [ "internal" ],
+	    	"maxRetries": 3,
+		"perRetryTimeout": {
+			"unit": "s",
+			"value": 2
+		}
+	    }
+        }
+    },
+    "virtualRouterName": "virtual-router"
+}

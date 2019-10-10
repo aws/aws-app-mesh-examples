@@ -20,7 +20,10 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
         --service-name appmesh-preview \
         --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
     ```
-2. Clone this repository and navigate to the walkthrough/howto-http2 folder, all commands will be ran from this location
+2. Clone this repository and navigate to the walkthroughs/howto-http2 folder, all commands will be ran from this location.
+    ```
+    cd walkthroughs/howto-http2
+    ```
 3. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-http2
     ```
     export PROJECT_NAME=howto-http2
@@ -33,11 +36,15 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-6. **ENVOY_IMAGE** environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+6. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
     export ENVOY_IMAGE=...
     ```
-7. Setup using cloudformation
+7. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+    ```
+    export KEY_PAIR=...
+    ```
+8. Setup using cloudformation
     ```
     ./deploy.sh
     ```
@@ -46,24 +53,30 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
    GO_PROXY=direct ./deploy.sh
    ```
 
-## Verification
+## HTTP2 Routing
 
 1. After a few minutes, the applications should be deployed and you will see an output such as:
     ```
-    Successfully created/updated stack - howto-grpc-app
+    Successfully created/updated stack - howto-http2-app
+    Bastion endpoint:
+    12.345.6.789
     Public endpoint:
-    http://howto-Publi-5555555.us-west-2.elb.amazonaws.com
+    http://howto-Publi-55555555.us-west-2.elb.amazonaws.com
     ```
-   This is the public endpoint to access the Color Client APIs. Export it.
+    Export the public endpoint to access the Color Client APIs.
     ```
-    export COLOR_ENDPOINT=<your_public_endpoint>
+    export COLOR_ENDPOINT=<your_public_endpoint e.g. http://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
+    ```
+    And export the bastion endpoint for use later.
+    ```
+    export BASTION_ENDPOINT=<your_bastion_endpoint e.g. 12.345.6.789>
     ```
 2. Try curling the `/color` API
     ```
     curl $COLOR_ENDPOINT/color
     ```
    You should see `red`. This is because our current mesh is only configured to route http2 requests to the `color_server-red` virtual-node:
-   
+
    (from [mesh/route.json](./mesh/route-red.json))
     ```json
     {
@@ -101,7 +114,63 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
     aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-blue-green.json
     ```
 
-### Teardown
+## HTTP2 Retries
+
+The Color Server also exposes an APIs to simulate a flaky HTTP2 service: `/setFlake`. It is accessible through `/setFlake` on the Color Client. These can be used to test HTTP2 retry policies.
+
+1. First we'll need to add a basic HTTP retry policy to our existing route. It will retry up to 3 times whenever the `red` Color Server returns a server error (5xx). Update our route to [mesh/route-red-retries.json](./mesh/route-red-retries.json):
+    ```
+    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-retries.json
+    ```
+2. Update the flakiness config to make 50% of requests return a 500 status code.
+    ```
+    curl -X POST "$COLOR_ENDPOINT/setFlake?code=500&rate=0.5"
+    ```
+   Here the `rate` query parameter is a percentage of requests to fail, and `code` can be any HTTP status code.
+   This API returns the previous state of the Color Server so you'll see the default output of `rate: 0, code: 200`.
+3. Now before we test our new new flaky API, we should access the Envoy sidecar of the Color Client to verify we are actually applying the retry policy.
+    ```
+    ssh -i <path/to/your/key/pair.pem> ec2-user@$BASTION_ENDPOINT
+    ```
+   If you get any errors about file permissions on your key pair. You can make it only readable by you by running.
+    ```
+    chmod 400 <path/to/your/key/pair.pem>
+    ```
+4. On the EC2 bastion host we can access the `/stats` endpoint of the Envoy by curling it directly:
+    ```
+    curl color_client.http2.local:9901/stats
+    ```
+   Here is a lot of information. But we can glean some useful stats about our simple mesh. For example we should see that the HTTP2 health checks from the Color Client to the Color Server are working just fine:
+    ```
+    curl -s color_client.http2.local:9901/stats | grep health_check
+    ```
+   Namely stats similar to this:
+    ```
+    cluster.cds_egress_howto-http2-mesh_color_server-red_http2_8080.health_check.attempt: 73
+    cluster.cds_egress_howto-http2-mesh_color_server-red_http2_8080.health_check.success: 73
+    ```
+5. Now make some requests to your color client from within your bastion or on your original host
+    ```
+    curl color_client.http2.local:8080/color # On Bastion host
+    ```
+   Due to our retry policy the vast majority of requests will succeed. You can run `/color` as many times as you like.
+6. Now check the retry stats.
+    ```
+    curl -s color_client.http2.local:9901/stats | grep upstream_rq_retry
+    ```
+   You'll see something like:
+    ```
+    cluster.cds_egress_howto-http2-mesh_color_server-red_http2_8080.upstream_rq_retry: 52
+    cluster.cds_egress_howto-http2-mesh_color_server-red_http2_8080.upstream_rq_retry_success: 29
+    ```
+   The `upstream_rq_retry` stat represents the number of requests that we made when applying a retry policy and the `upstream_rq_retry_success` is the number of retry requests that succeeded.
+8. Lastly you can reset the stats of the Envoy by calling the `/reset_counters` API from within the bastion. This can help verify behaivor while you experiment further.
+    ```
+    curl -X POST -s color_client.http2.local:9901/reset_counters
+    ```
+
+## Teardown
+
 When you are done with the example you can delete everything we created by running:
 ```
 ./deploy.sh delete
