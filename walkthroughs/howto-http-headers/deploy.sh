@@ -88,7 +88,7 @@ print_endpoint() {
     echo "${prefix}"
 }
 
-deploy_stacks() {
+deploy_resources() {
 
     echo "deploy images..."
     deploy_images
@@ -103,7 +103,7 @@ deploy_stacks() {
     print_endpoint
 }
 
-delete_stacks() {
+delete_resources() {
     echo "delete app..."
     delete_cfn_stack "${PROJECT_NAME}-app"
 
@@ -112,12 +112,14 @@ delete_stacks() {
 
     echo "delete images..."
     delete_images
+
+    echo "all resources from this tutorial have been removed"
 }
 
 action=${1:-"deploy"}
 if [ "$action" == "delete" ]; then
-    delete_stacks
+    delete_resources
     exit 0
 fi
 
-deploy_stacks
+deploy_resources

@@ -72,7 +72,7 @@ print_endpoint() {
     echo "${prefix}/color"
 }
 
-deploy_stacks() {
+deploy_resources() {
 
     if [ -z $SKIP_IMAGES ]; then
         echo "deploy images..."
@@ -89,18 +89,32 @@ deploy_stacks() {
     print_endpoint
 }
 
-delete_stacks() {
+delete_images() {
+    for app in colorapp feapp; do
+        echo "deleting repository..."
+        aws ecr delete-repository \
+           --repository-name $PROJECT_NAME/$app \
+           --force
+    done
+}
+
+delete_resources() {
     echo "delete app..."
     delete_cfn_stack "${PROJECT_NAME}-app"
 
     echo "delete infra..."
     delete_cfn_stack "${PROJECT_NAME}-infra"
+
+    echo "delete images..."
+    delete_images
+
+    echo "all resources from this tutorial have been removed"
 }
 
 action=${1:-"deploy"}
 if [ "$action" == "delete" ]; then
-    delete_stacks
+    delete_resources
     exit 0
 fi
 
-deploy_stacks
+deploy_resources
