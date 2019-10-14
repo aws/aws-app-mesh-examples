@@ -12,7 +12,7 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 
 ## Setup
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-cloudmap folder, all commands will be ran from this location
+1. Clone this repository and navigate to the walkthrough/howto-k8s-retry-policy folder, all commands will be ran from this location
 2. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
