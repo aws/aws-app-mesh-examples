@@ -125,7 +125,7 @@ delete_mesh() {
 
 delete_images() {
     for app in color_client color_server; do
-        echo "deleting repository..."
+        echo "deleting repository \"${app}\"..."
         aws ecr delete-repository \
            --repository-name $PROJECT_NAME/$app \
            --force
@@ -133,17 +133,12 @@ delete_images() {
 }
 
 delete_stacks() {
-
-    echo "delete app..."
     delete_cfn_stack "${PROJECT_NAME}-app"
 
-    echo "delete infra"
     delete_cfn_stack "${PROJECT_NAME}-infra"
 
-    echo "delete mesh..."
     delete_mesh
 
-    echo "delete images..."
     delete_images
 
     echo "all resources from this tutorial have been removed"
