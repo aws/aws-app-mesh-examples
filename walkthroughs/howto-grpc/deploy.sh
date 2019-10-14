@@ -119,10 +119,25 @@ delete_mesh() {
     aws appmesh-preview delete-mesh --mesh-name $mesh_name
 }
 
+delete_images() {
+    for app in color_client color_server; do
+        echo "deleting repository \"${app}\"..."
+        aws ecr delete-repository \
+           --repository-name $PROJECT_NAME/$app \
+           --force
+    done
+}
+
 delete_stacks() {
     delete_cfn_stack "${PROJECT_NAME}-app"
+
     delete_cfn_stack "${PROJECT_NAME}-infra"
+
     delete_mesh
+
+    delete_images
+
+    echo "all resources from this tutorial have been removed"
 }
 
 action=${1:-"deploy"}
