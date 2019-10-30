@@ -76,6 +76,7 @@ You have now setup the two clusters and pointing kubectl to respective clusters.
 In order to automatically inject AppMesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that. We need install tiller on both the clusters and run the following commands on both clusters for that.
 
 *Install tiller*
+
 Run the following series of commands in order
 ```
 kubectl create -f helm/tiller-rbac.yml --record --save-config
@@ -86,6 +87,7 @@ Note: The last command will tell you if the rollout is finished
 ```
 
 *Install AppMesh Components*
+
 Run the following set of commands to install the AppMesh controller and Injector components 
 
 ```
