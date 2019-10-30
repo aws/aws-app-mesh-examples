@@ -10,12 +10,10 @@ In this example there are two EKS clusters within a VPC and a mesh spanning both
 
 We will spin up two EKS clusters in the same VPC for simplicity and configure a Mesh as we deploy the clusters components.
 
-*Color*
+*DEPLOYMENTS*
 
 There are two deployments of colorapp, blue and red. Pods of both these deployments are registered behind service colorapp.appmesh-demo.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS CloudMap as service-discovery, hence the IP addresses of these pods are registered with the CloudMap service with corresponding attributes.
 Additionally a colorapp virtual-service is defined that routes traffic to blue and red virtual-nodes.  
-
-*Front*
 
 Front app acts as a gateway that makes remote calls to colorapp. Front app has single deployment with pods registered with the mesh as front virtual-node. This virtual-node uses colorapp virtual-service as backend. This configures Envoy injected into front pod to use App Mesh's EDS to discover colorapp endpoints.
 
@@ -30,7 +28,7 @@ As we create the mesh we will use service discovery attributes which will automa
 
 So, Lets get started..
 
-##Prerequisites
+## Prerequisites
 
 In order to successfully carry out the base deployment:
 
@@ -42,7 +40,7 @@ In order to successfully carry out the base deployment:
 
 Note that this walkthrough assumes throughout to operate in the us-east-1 region.
 
-###Cluster provisioning
+### Cluster provisioning
 
 Create an EKS cluster with eksctl using the following command:
 ```
@@ -73,7 +71,7 @@ Note: Do this respective tabs
 
 You have now setup the two clusters and pointing kubectl to respective clusters. Congratulations.
 
-###Deploy AppMesh Custom Components
+### Deploy AppMesh Custom Components
 
 In order to automatically inject AppMesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that. We need install tiller on both the clusters and run the following commands on both clusters for that.
 
