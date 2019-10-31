@@ -83,6 +83,11 @@ Clone the repo and cd into the appropriate directory. We will be running all com
 >> cd aws-app-mesh-examples/walkthroughs/howto-cross-ekscluster-appmesh-with-cloudmap/
 ```
 
+*Install Helm*
+
+```
+>>brew install kubernetes-helm
+```
 
 *Install tiller*
 
@@ -101,6 +106,8 @@ Run the following set of commands to install the AppMesh controller and Injector
 
 ```
 helm repo add eks https://aws.github.io/eks-charts
+kubectl create ns appmesh-system
+kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/appmesh-controller/crds/crds.yaml
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=global
 
