@@ -80,11 +80,12 @@ spec:
           weightedTargets:
             - virtualNodeName: blue
               weight: 1
-        retryPolicy:
-          maxRetries: 4
-          perRetryTimeoutMillis: 2000
-          httpRetryEvents:
-            - server-error
+        # UNCOMMENT below to enable retries
+        # retryPolicy:
+        #   maxRetries: 4
+        #   perRetryTimeoutMillis: 2000
+        #   httpRetryEvents:
+        #     - server-error
 ---
 apiVersion: v1
 kind: Service
@@ -127,8 +128,6 @@ spec:
               value: "color.${APP_NAMESPACE}.svc.cluster.local:8080"
             - name: "PORT"
               value: "8080"
-            - name: "FORWARD_HEADER"
-              value: "statuscode-header"
 ---
 apiVersion: v1
 kind: Service
@@ -173,5 +172,3 @@ spec:
               value: "blue"
             - name: "PORT"
               value: "8080"
-            - name: "FORWARD_HEADER"
-              value: "statuscode-header"

@@ -2,6 +2,7 @@
 
 try:
     import os
+    import random
     from http.server import BaseHTTPRequestHandler, HTTPServer
 except Exception as e:
     print(f'[ERROR] {e}')
@@ -12,25 +13,17 @@ print(f'COLOR is {COLOR}')
 PORT = int(os.environ.get('PORT', '8080'))
 print(f'PORT is {PORT}')
 
-FORWARD_HEADER = os.environ.get('FORWARD_HEADER')
-print(f'FORWARD_HEADER is {FORWARD_HEADER}')
-
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/ping':
             self.send_response(200)
             self.end_headers()
             return
-        header = self.headers.get(FORWARD_HEADER)
-        if header is not None:
-            if header == '200':
-                self.send_response(200)
-            if header == '500':
-                self.send_response(500)
-            if header == '503':
-                self.send_response(503)
-        else:
-            self.send_response(200)
+        r = random.randint(1, 100)
+        status_code=200
+        if r <= 50:
+            status_code=503
+        self.send_response(status_code)
         self.end_headers()
         self.wfile.write(bytes(COLOR, 'utf8'))
 

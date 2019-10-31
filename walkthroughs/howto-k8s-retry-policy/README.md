@@ -29,3 +29,34 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
     ```.
     ./deploy.sh
     ```
+
+## Verify
+1. Port-forward front pod
+   ```
+   kubectl get pod -n howto-k8s-retry-policy
+   NAME                     READY   STATUS    RESTARTS   AGE
+   blue-55d5bf6bb9-4n7hc    3/3     Running   0          11s
+   front-5dbdcbc896-l8bnz   3/3     Running   0          11s
+   ...
+
+   kubectl -n howto-k8s-retry-policy port-forward deployment/front 8080:8080
+   ```
+
+2. In a new terminal, use curl to send a bunch of requests to the front service. You should see almost equal number of 200 (OK) and 503 (Server Error) responses.
+    ```
+    while true; do curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 ; sleep 0.5; echo ; done
+    ```
+
+3. Back in the original terminal, uncomment retryPolicy in manifest.yaml.template and run `./deploy.sh`
+   ```
+      # UNCOMMENT below to enable retries
+        retryPolicy:
+          maxRetries: 4
+          perRetryTimeoutMillis: 2000
+          httpRetryEvents:
+            - server-error
+   ```
+
+4. You should now see more 200 OK responses due to retries.
+
+No go to https://www.envoyproxy.io/docs/envoy/v1.8.0/api-v1/route_config/route#config-http-conn-man-route-table-route-retry and https://www.envoyproxy.io/learn/automatic-retries for details on how retries work in Envoy.
