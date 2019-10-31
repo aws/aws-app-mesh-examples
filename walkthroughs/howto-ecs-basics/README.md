@@ -1,7 +1,7 @@
 ## Overview
-This tutorial provides a walkthrough of the basics of App Mesh service. This interactive tutorial will let you progress from an existing simple microservices application running in Fargate using ALB to adopting Envoy service mesh powered by App Mesh. Using this tutorial you can learn to:
+This tutorial provides a walkthrough of the basics of App Mesh service. This interactive tutorial will let you progress from an existing simple microservices application running in ECS with Fargate using ALB to adopting Envoy service mesh powered by App Mesh. Using this tutorial you can learn to:
 
-1. Migrate an existing backend service sitting behind an internal ALB to Cloud Map service discovery. Along the way you will learn about Cloud Map's HttpNamespace, and how Fargate service integrates with Cloud Map service discovery.
+1. Migrate an existing backend service sitting behind an internal ALB to Cloud Map service discovery. Along the way you will learn about Cloud Map's HttpNamespace, and how ECS service integrates with Cloud Map service discovery.
 2. Adopt App Mesh for service to service communication via Envoy proxy. This will build on Cloud Map service discovery integration.
 
 ## Bootstrap
@@ -38,12 +38,12 @@ Public endpoint:
 http://appme-.....us-west-2.elb.amazonaws.com/color
 ```
 - **What happened?**
-  - Create ECS Cluster to run Fargate services
+  - Create ECS Cluster to run ECS services
   - Create VPC with two public subnets and two private subnets
   - Create Internal ALB for 'color' app
-  - Create Fargate service for 'color' app that registers targets behind above ALB.
+  - Create ECS service for 'color' app that registers targets behind above ALB.
   - Create Internet facing ALB for 'front' app
-  - Create Fargate service for 'front' app that registers targets behind above ALB.
+  - Create ECS service for 'front' app that registers targets behind above ALB.
   - To help us understand the flow, we add X-Ray daemon as sidecar container to collect tracing data.
 
 Now verify the above setup:
@@ -85,11 +85,11 @@ http://appme-.....us-west-2.elb.amazonaws.com/color
 - **What happened?**
   - Create Cloud Map PrivateDnsNamespace to support service-discovery
   - Create Cloud Map service for 'color' app under above namespace
-  - Update 'color' Fargate service to use Cloud Map service discovery instead of ALB.
+  - Update 'color' ECS service to use Cloud Map service discovery instead of ALB.
     - _Note that, this will remove the old 'color' service and create a new one. This is expected behavior because ECS does not allow updating a service with service-registry information._
-  - Update 'front' Fargate service to point to 'color' app's Cloud Map DNS name instead of ALB DNS name.
+  - Update 'front' ECS service to point to 'color' app's Cloud Map DNS name instead of ALB DNS name.
   - Cleanup
-    - _Delete old 'color' Fargate service and corresponding ALB_
+    - _Delete old 'color' ECS service and corresponding ALB_
 
 Now verify the above setup:
 
@@ -131,7 +131,7 @@ http://appme-.....us-west-2.elb.amazonaws.com/color
   - Create Mesh to define the configuration domain for our application
   - Create virtual-node and virtual-service for 'color' app.
   - Create a new task-definition for 'color' app that includes Envoy proxy sidecar container. This Envoy is configured to use virtual-node created above as node-id.
-  - Update 'color' app Fargate service with new task-definition
+  - Update 'color' app ECS service with new task-definition
 
 Now verify the above setup:
 
