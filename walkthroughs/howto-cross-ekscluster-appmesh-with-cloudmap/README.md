@@ -79,7 +79,7 @@ In order to automatically inject AppMesh components and proxies on pod creation 
 
 Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
 ```
->> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/smmallu/aws-app-mesh-examples).git
+>> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
 >> cd aws-app-mesh-examples/walkthroughs/howto-cross-ekscluster-appmesh-with-cloudmap/
 ```
 
@@ -142,6 +142,75 @@ We are now ready to deploy our front and colorapp applications to respective clu
     ```. 
     ./deploy.sh
     ```
+
+## Verify CloudMap and Mesh
+
+As a part of deploy command we have pushed the images to ECR, created a namespace in CloudMap and created the mesh and the DNS entries by virtue of adding the service discovery attributes.
+
+You may verify this, with the following command:
+```
+aws servicediscovery discover-instances --namespace appmesh-demo.pvt.aws.local
+ --service-name colorapp
+```
+This should resolve to the backend service.
+
+You can verify under AppMesh console to verify that the virtual nodes, virtual services, virtual router and routes are indeed created.
+
+## Test the application
+
+The front service in cluster1 has been exposed as a loadbalancer and can be used directly 
+```
+>>kubectl get svc -n appmesh-demo
+NAME    TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+front   LoadBalancer   10.100.145.29   af3c595c8fb3b11e987a30ab4de89fc8-1707174071.us-east-1.elb.amazonaws.com   80:31646/TCP   5h47m
+
+>>curl af3c595c8fb3b11e987a30ab4de89fc8-1707174071.us-east-1.elb.amazonaws.com/color
+blue
+```
+
+You can also test it using a simple curler pod, like so:
+```
+>>kubectl -n appmesh-demo run -it curler --image=tutum/curl /bin/bash
+root@curler-5bd7c8d767-x657t:/#curl front/color
+blue
+```
+
+*Note:* 
+For this to work, you need to open port 8080 on security group applied on the Cluster2 Node group to the cluster1’s Security group.
+
+Great! You have successfully tested the service communication across clusters using the AppMesh and CloudMap.
+
+Lets make a few requests and check that our x-ray side car is indeed capturing traces.
+
+Run the following command from a curler pod within Cluster1
+```
+$ for ((n=0;n<200;n++)); do echo "$n: $(curl front/color)"; done
+1: red
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     4  100     4    0     0    205      0 --:--:-- --:--:-- --:--:--   210
+2: blue
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     3  100     3    0     0    136      0 --:--:-- --:--:-- --:--:--   142
+......
+......
+196: blue
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     4  100     4    0     0    236      0 --:--:-- --:--:-- --:--:--   250
+197: blue
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     3  100     3    0     0    180      0 --:--:-- --:--:-- --:--:--   187
+198: red
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     4  100     4    0     0    212      0 --:--:-- --:--:-- --:--:--   222
+199: blue
+```
+
+You may now look at our X-Ray console:
 
 ## FAQ
 ### 1. My front app is unable to talk to colorapp on the seond cluster?
