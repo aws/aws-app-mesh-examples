@@ -75,6 +75,14 @@ You have now setup the two clusters and pointing kubectl to respective clusters.
 
 In order to automatically inject AppMesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that. We need install tiller on both the clusters and run the following commands on both clusters for that.
 
+*Code base*
+Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
+```
+>> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/smmallu/aws-app-mesh-examples).git
+>> cd aws-app-mesh-examples/walkthroughs/howto-cross-ekscluster-appmesh-with-cloudmap/
+```
+
+
 *Install tiller*
 
 Run the following series of commands in order
@@ -104,7 +112,10 @@ We are now ready to deploy our front and colorapp applications to respective clu
 
 ## Setup
 
-1. Clone this repository and navigate to the walkthrough/howto-k8s-cloudmap folder, all commands will be ran from this location
+1. You can run all commands from this location
+   ```
+   walkthroughs/howto-cross-ekscluster-appmesh-with-cloudmap/
+   ```
 2. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
