@@ -217,7 +217,7 @@ $ for ((n=0;n<200;n++)); do echo "$n: $(curl front/color)"; done
 199: blue
 ```
 
-You may now look at our X-Ray console:
+You may now look at our X-Ray console to see the service map and traces.
 
 ## FAQ
 ### 1. My front app is unable to talk to colorapp on the seond cluster?
