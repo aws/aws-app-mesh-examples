@@ -75,7 +75,7 @@ You have now setup the two clusters and pointing kubectl to respective clusters.
 
 In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. 
 
-Follow the instructions provided [here](../eks/base.md#Install-App-Mesh-Kubernetes-components) to install the App Mesh components in both the clusters.
+Follow the instructions provided [here](../eks/base.md#install-app-mesh--kubernetes-components) to install the App Mesh components in both the clusters.
 
 We are now ready to deploy our front and colorapp applications to respective clusters along with the App Mesh which will span both clusters.
 
@@ -84,7 +84,8 @@ We are now ready to deploy our front and colorapp applications to respective clu
 
 1. You can run all commands from this location
    ```
-   walkthroughs/howto-cross-ekscluster-appmesh-with-cloudmap/
+   >> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
+   >> cd aws-app-mesh-examples/walkthroughs/howto-k8s-cross-cluster
    ```
 2. **Your** account id:
     ```
