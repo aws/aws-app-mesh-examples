@@ -40,33 +40,46 @@ export KUBECONFIG=~/.kube/eksctl/clusters/appmeshtest
 
 ## Install App Mesh  Kubernetes components
 
-First, install [App Mesh Inject](https://github.com/awslabs/aws-app-mesh-inject), an API server webhook which injects Envoy containers as sidecars into your application pods:
+In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that. We need install tiller on both the clusters and run the following commands on both clusters for that.
 
-```sh
-export MESH_NAME=color-mesh
-export INJECT_XRAY_SIDECAR=true
-export ENABLE_STATS_TAGS=true
-export MESH_REGION=us-east-2
-curl https://raw.githubusercontent.com/aws/aws-app-mesh-inject/v0.1.3/hack/install.sh | bash
+*Code base*
+
+Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
+```
+>> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
+>> cd aws-app-mesh-examples/walkthroughs/eks/
 ```
 
-Validate if the Webhook is up and running:
+*Install Helm*
 
-```sh
-kubectl -n appmesh-inject get po
-# NAME                                  READY   STATUS    RESTARTS   AGE
-# aws-app-mesh-inject-c6f55c565-xtnh7   1/1     Running   0          20s
+```
+>>brew install kubernetes-helm
 ```
 
-Next, install the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s) along with the custom resources:
+*Install tiller*
 
-```sh
-curl https://raw.githubusercontent.com/aws/aws-app-mesh-controller-for-k8s/v0.1.0/deploy/v0.1.0/all.yaml | kubectl apply -f -
+Run the following series of commands in order
+```
+kubectl create -f helm/tiller-rbac.yml --record --save-config
+helm init --service-account tiller
+kubectl -n kube-system rollout status deploy tiller-deploy
 
-# wait until controller is up and running:
-kubectl wait $(kubectl get pods -n appmesh-system -o name) \
-          --for=condition=Ready --timeout=30s -n appmesh-system
-# pod/app-mesh-controller-65897498cb-kb254 condition met
+Note: The last command will tell you if the rollout is finished
+```
+
+*Install App Mesh Components*
+
+Run the following set of commands to install the App Mesh controller and Injector components 
+
+```
+helm repo add eks https://aws.github.io/eks-charts
+kubectl create ns appmesh-system
+kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/appmesh-controller/crds/crds.yaml
+helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
+helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=global
+
+Opitionally add tracing
+helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set tracing.enabled=true --set tracing.provider=x-ray
 ```
 
 Now you're all set, you've provisioned the EKS cluster and set up App Mesh components that automate injection of Envoy and take care of the life cycle management of the mesh resources such as virtual nodes, virtual services, and virtual routes.
@@ -88,7 +101,6 @@ We use the [colorapp](https://github.com/awslabs/aws-app-mesh-examples/tree/mast
 Install the example application from the location where you checked out the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s):
 
 ```sh
-git clone https://github.com/aws/aws-app-mesh-controller-for-k8s.git
 cd aws-app-mesh-controller-for-k8s
 make example
 ```

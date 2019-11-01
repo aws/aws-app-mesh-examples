@@ -150,19 +150,5 @@ spec:
             - name: "COLOR"
               value: "red"
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: colorapp
-  namespace: ${APP_NAMESPACE}
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8080
-    protocol: TCP
-    name: http
-  selector:
-    app: colorapp
 
 

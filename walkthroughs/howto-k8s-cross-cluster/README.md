@@ -1,9 +1,9 @@
 ## Overview
-In this article, we are going to start to explore how to use App Mesh across clusters. AppMesh is a service mesh that lets you control and monitor services spanning multiple AWS compute environments. We'll demonstrate this by using 2 EKS clusters within a VPC and a AppMesh that spans the clusters using CloudMap. This example shows how Kubernetes deployments can use AWS CloudMap for service-discovery when using App Mesh.
+In this article, we are going to start to explore how to use App Mesh across kubernetes clusters. App Mesh is a service mesh that lets you control and monitor services spanning multiple AWS compute environments. We'll demonstrate this by using 2 kubernetes clusters(EKS) within a VPC and a App Mesh that spans the clusters using Cloud Map. This example shows how Kubernetes deployments can use AWS Cloud Map for service-discovery when using App Mesh.
 
-We will use two EKS clusters in a single VPC to explain the concept of cross cluster mesh using Cloud Map. The diagram below illustrates the big picture. This is intentionally meant to be a simple example for clarity, but in the real world the AppMesh can span multiple different compute types like ECS, fargate, Kubernetes on EC2 etc.
+We will use two EKS clusters in a single VPC to explain the concept of cross cluster mesh using Cloud Map. The diagram below illustrates the big picture. This is intentionally meant to be a simple example for clarity, but in the real world the App Mesh can span multiple different compute types like ECS, fargate, Kubernetes on EC2 etc.
 
-In this example there are two EKS clusters within a VPC and a mesh spanning both clusters . The setup CloudMap services and three EKS Deployments as described below. The front container will be deployed in Cluster 1 and the color containers will be deployed in Cluster 2 . The Goal is to have a single Mesh across the clusters works via DNS resolution using CloudMap
+In this example there are two EKS clusters within a VPC and a mesh spanning both clusters . The setup Cloud Map services and three EKS Deployments as described below. The front container will be deployed in Cluster 1 and the color containers will be deployed in Cluster 2 . The Goal is to have a single Mesh across the clusters works via DNS resolution using Cloud Map.
 
 
 *CLUSTERS*
@@ -12,7 +12,7 @@ We will spin up two EKS clusters in the same VPC for simplicity and configure a 
 
 *DEPLOYMENTS*
 
-There are two deployments of colorapp, blue and red. Pods of both these deployments are registered behind service colorapp.appmesh-demo.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS CloudMap as service-discovery, hence the IP addresses of these pods are registered with the CloudMap service with corresponding attributes.
+There are two deployments of colorapp, blue and red. Pods of both these deployments are registered behind service colorapp.appmesh-demo.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS Cloud Map as service-discovery, hence the IP addresses of these pods are registered with the Cloud Map service with corresponding attributes.
 Additionally a colorapp virtual-service is defined that routes traffic to blue and red virtual-nodes.  
 
 Front app acts as a gateway that makes remote calls to colorapp. Front app has single deployment with pods registered with the mesh as front virtual-node. This virtual-node uses colorapp virtual-service as backend. This configures Envoy injected into front pod to use App Mesh's EDS to discover colorapp endpoints.
@@ -20,9 +20,9 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 
 *MESH*
 
-AppMesh components will be deployed from one of the two clusters. It does not really matter where you deploy it from. It will have various components deployed . A virtual node per service and a Virtual Service which will have a router with routes tied (provider) to route traffic between red and blue equally. We will use a custom CRD, mesh controller and  mesh inject components that will handle the mesh creation using the standard kubectl. This will auto inject proxy sidecars on pod creation.
+App Mesh components will be deployed from one of the two clusters. It does not really matter where you deploy it from. It will have various components deployed . A virtual node per service and a Virtual Service which will have a router with routes tied (provider) to route traffic between red and blue equally. We will use a custom CRD, mesh controller and  mesh inject components that will handle the mesh creation using the standard kubectl. This will auto inject proxy sidecars on pod creation.
 
-*CLOUDMAP*
+*CLOUD MAP*
 
 As we create the mesh we will use service discovery attributes which will automatically create the DNS records in the namespace that we have pre-created. The front application in cluster one will leverage this DNS entry in Cloud Map to talk to the colorapp on the second cluster.  
 
@@ -71,51 +71,13 @@ Note: Do this respective tabs
 
 You have now setup the two clusters and pointing kubectl to respective clusters. Congratulations.
 
-### Deploy AppMesh Custom Components
+### Deploy App Mesh Custom Components
 
-In order to automatically inject AppMesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that. We need install tiller on both the clusters and run the following commands on both clusters for that.
+In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. 
 
-*Code base*
+Follow the instructions provided [here](../eks/base.md#Install-App-Mesh-Kubernetes-components) to install the App Mesh components in both the clusters.
 
-Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
-```
->> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
->> cd aws-app-mesh-examples/walkthroughs/howto-cross-ekscluster-appmesh-with-cloudmap/
-```
-
-*Install Helm*
-
-```
->>brew install kubernetes-helm
-```
-
-*Install tiller*
-
-Run the following series of commands in order
-```
-kubectl create -f helm/tiller-rbac.yml --record --save-config
-helm init --service-account tiller
-kubectl -n kube-system rollout status deploy tiller-deploy
-
-Note: The last command will tell you if the rollout is finished
-```
-
-*Install AppMesh Components*
-
-Run the following set of commands to install the AppMesh controller and Injector components 
-
-```
-helm repo add eks https://aws.github.io/eks-charts
-kubectl create ns appmesh-system
-kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/appmesh-controller/crds/crds.yaml
-helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
-helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=global
-
-Opitionally add tracing
-helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set tracing.enabled=true --set tracing.provider=x-ray
-```
-
-We are now ready to deploy our front and colorapp applications to respective clusters along with the appmesh which will span both clusters.
+We are now ready to deploy our front and colorapp applications to respective clusters along with the App Mesh which will span both clusters.
 
 
 ## Setup
@@ -150,9 +112,9 @@ We are now ready to deploy our front and colorapp applications to respective clu
     ./deploy.sh
     ```
 
-## Verify CloudMap and Mesh
+## Verify Cloud Map and App Mesh
 
-As a part of deploy command we have pushed the images to ECR, created a namespace in CloudMap and created the mesh and the DNS entries by virtue of adding the service discovery attributes.
+As a part of deploy command we have pushed the images to ECR, created a namespace in Cloud Map and created the mesh and the DNS entries by virtue of adding the service discovery attributes.
 
 You may verify this, with the following command:
 ```
@@ -161,7 +123,7 @@ aws servicediscovery discover-instances --namespace appmesh-demo.pvt.aws.local
 ```
 This should resolve to the backend service.
 
-You can verify under AppMesh console to verify that the virtual nodes, virtual services, virtual router and routes are indeed created.
+You can verify under App Mesh console to verify that the virtual nodes, virtual services, virtual router and routes are indeed created.
 
 ## Test the application
 
@@ -185,7 +147,7 @@ blue
 *Note:* 
 For this to work, you need to open port 8080 on security group applied on the Cluster2 Node group to the cluster1’s Security group.
 
-Great! You have successfully tested the service communication across clusters using the AppMesh and CloudMap.
+Great! You have successfully tested the service communication across clusters using the App Mesh and Cloud Map.
 
 Lets make a few requests and check that our x-ray side car is indeed capturing traces.
 
