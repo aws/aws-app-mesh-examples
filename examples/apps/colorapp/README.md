@@ -40,7 +40,7 @@ Finally, we deploy the services that will comprise our application to ECS along 
 ![appmesh-color-app-demo-3](img/appmesh-color-app-demo-3.png)
 <p align="center"><b><i>Figure 3.</i></b> Amazon ECS perspective of the Color App.</p>
 
-The key thing to note about this is that actual routing configuration is completely transparent to the application code. The code deployed to the `gateway` containers will send requests to the DNS name `colorteller.demo.local`, which we configure as a virtual service in App Mesh. App Mesh will push updates to all the `envoy` sidecar containers to ensure traffic is sent directly to colorteller tasks running on EC2 instances according to the routing rules we specify through App Mesh configuration. There are no physical routers at runtime since App Mesh route rules are transformed to Envoy configuration and pushed directly to the `envoy` sidecars within the dependent tasks.
+The key thing to note about this is that actual routing configuration is completely transparent to the application code. The code deployed to the `gateway` containers will send requests to the DNS name `colorteller.demo.local`, which we configure as a virtual service in App Mesh. App Mesh will push updates to all of the `envoy` sidecar containers to ensure traffic is sent directly to colorteller tasks running on EC2 instances according to the routing rules we specify through App Mesh configuration. There are no physical routers at runtime since App Mesh route rules are transformed to Envoy configuration and pushed directly to the `envoy` sidecars within the dependent tasks.
 
 
 ## Overview
@@ -49,11 +49,11 @@ This brief guide will walk you through deploying the Color App on ECS. The proce
 
 Core networking and compute infrastructure doesn't need to be recreated each time the Color App is redeployed. Since this can be time-consuming, resource provisioning is divided among a layered set of CloudFormation stack templates.
 
-The App Mesh deployment is also partitioned into different stages as well, but this is for for performance reasons since App Mesh operations are very fast. The reason for the separation is simply so you can tear down the Color App without tearing down the demo mesh in case you also have other sample apps running in it for experimentation.
+The App Mesh deployment is also partitioned into different stages as well, but this is for for performance reasons, since App Mesh operations are very fast. The reason for the separation is simply so that you can tear down the Color App without tearing down the demo mesh in case you also have other sample apps running in it for experimentation.
 
 **Infrastructure templates:**
 
-* `examples/infrastructure/vpc.yaml` - creates the VPC and other core networking resources needed for the application independent of the specific compute environment (e.g., ECS) provisioned for cluster.
+* `examples/infrastructure/vpc.yaml` - creates the VPC and other core networking resources needed for the application that are independent of the specific compute environment (e.g., ECS) provisioned for the cluster.
 * `examples/infrastructure/ecs-cluster.yaml` - creates the compute instances and other resources needed for the cluster.
 * `examples/infrastructure/appmesh-mesh.yaml` - creates an App Mesh mesh.
 
@@ -62,10 +62,10 @@ The App Mesh deployment is also partitioned into different stages as well, but t
 * `examples/apps/colorapp/ecs/ecs-colorapp.yaml` - deploys application services and related resources for the Color App.
 * `examples/apps/colorapp/ecs/servicemesh/appmesh-colorapp.yaml` - creates mesh resources for the Color App.
 
-Each template has a corresponding shell script with a `.sh` extension that you run to create the CloudFormation stack. These scripts rely on the following environment variables values that must be exported before running:
+Each template has a corresponding shell script with a `.sh` extension that you run to create the CloudFormation stack. These scripts rely on the following environment variable values that must be exported before running:
 
 * `AWS_PROFILE` - your AWS CLI profile (set to `default` or a named profile).
-* `AWS_DEFAULT_REGION` - set to one of the [Currently available AWS regions for App Mesh].
+* `AWS_DEFAULT_REGION` - set to one of the [Currently available AWS Regions for App Mesh].
 * `ENVIRONMENT_NAME` - will be applied as a prefix to deployed CloudFormation stack names.
 * `MESH_NAME` - name to use to identify the mesh you create.
 * `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`).
@@ -88,6 +88,8 @@ See below for more detail and to see where these environment variables are used.
 
 5. You have [jq] installed.
 
+6. You have Docker installed.
+
 ## Deploy infrastructure for the application
 
 ### Create the VPC and other core Infrastructure
@@ -99,10 +101,10 @@ An [Amazon Virtual Private Cloud] (VPC) is a virtual network that provides isola
 Set the following environment variables:
 
 * `AWS_PROFILE` - your AWS CLI profile (set to `default` or a named profile)
-* `AWS_DEFAULT_REGION` - set to one of the [Currently available AWS regions for App Mesh]
+* `AWS_DEFAULT_REGION` - set to one of the [Currently available AWS Regions for App Mesh]
 * `ENVIRONMENT_NAME` - will be applied as a prefix to deployed CloudFormation stack names
 
-Run the `vpc.sh` script to create a VPC for the application in the region you specify. It will be configured for two availability zones (AZs); each AZ will be configured with a public and a private subnet. You can choose from one of the nineteen [Currently available AWS regions for App Mesh]. The deployment will include an [Internet Gateway] and a pair of [NAT Gateways] (one in each AZ) with default routes for them in the private subnets.
+Run the `vpc.sh` script to create a VPC for the application in the Region that you specify. It will be configured for two availability zones (AZs); each AZ will be configured with a public and a private subnet. You can choose from one of the [Currently available AWS Regions for App Mesh]. The deployment will include an [Internet Gateway] and a pair of [NAT Gateways] (one in each AZ) with default routes for them in the private subnets.
 
 ***Create the VPC***
 
@@ -124,7 +126,7 @@ $
 
 ### Create an App Mesh
 
-A service mesh a logical boundary for network traffic between services that reside in it. [AWS App Mesh] is a managed service mesh control plane. It provides application-level networking support, standardizing how you control and monitor your services across multiple types of compute infrastructure. The following CloudFormation template will be used to create an App Mesh mesh for our application:
+A service mesh is a logical boundary for network traffic between services that reside in it. [AWS App Mesh] is a managed service mesh control plane. It provides application-level networking support, standardizing how you control and monitor your services across multiple types of compute infrastructure. The following CloudFormation template will be used to create an App Mesh mesh for our application:
 
 `examples/infrastructure/appmesh-mesh.yaml`
 
@@ -243,13 +245,17 @@ Successfully created/updated stack - DEMO-appmesh-colorapp
 $
 ```
 
-> Note: the App Mesh resources for the Color App are created before the app itself is deployed in the final step; this is so Envoy, which is deployed as a task sidecar, is able to communicate with the Envoy Management Service. If the mesh itself isn't configured first, the sidecar will remain unhealthy and eventually the task will fail.
+> Note: The App Mesh resources for the Color App are created before the app itself is deployed in the final step. This is so Envoy, which is deployed as a task sidecar, is able to communicate with the Envoy Management Service. If the mesh itself isn't configured first, the sidecar will remain unhealthy and eventually the task will fail.
 
 ### Deploy services to ECS
 
 #### Deploy images to ECR for your account
 
 Before you can deploy the services, you will need to deploy the images that ECS will use for `gateway` and `colorteller` to ECR image repositories for your account. You can build these images from source under the `examples/apps/colorteller/src` and push them using the provided deploy scripts after you create repositories for them on ECR, as shown below.
+
+In addition to the previously defined environment variables, you will also need to export the following:
+
+* `AWS_ACCOUNT_ID` - Your AWS account ID.
 
 Deploy the `gateway` image:
 
@@ -258,6 +264,7 @@ Deploy the `gateway` image:
 $ cd examples/apps/colorapp/src/gateway
 $ aws ecr create-repository --repository-name=gateway
 $ export COLOR_GATEWAY_IMAGE=$(aws ecr describe-repositories --repository-names=gateway --query 'repositories[0].repositoryUri' --output text)
+$ export AWS_ACCOUNT_ID=<replace-with-your-account-id>
 $ ./deploy.sh
 + '[' -z 226767807331.dkr.ecr.us-west-2.amazonaws.com/gateway ']'
 + docker build -t 226767807331.dkr.ecr.us-west-2.amazonaws.com/gateway .
@@ -344,18 +351,18 @@ $ curl $colorapp/color
 {"color":"red", "stats": {"red":1}}
 ```
 
-> TIP: If you don't see a newline after curl responses, you might want to use `curl -w "\n"` or add `-w "\n"` to `$HOME/.curlrc`.
+> TIP: If you don't see a new line after curl responses, you might want to use `curl -w "\n"` or add `-w "\n"` to `$HOME/.curlrc`.
 
 ## Shape traffic
 
-Currently, the the app equally distributes traffic among blue, red, and white color teller virtual nodes through the default virtual router configuration, so if you run the curl command a few times, you might see something similar to this: 
+Currently, the app equally distributes traffic among blue, red, and white colorteller virtual nodes through the default virtual router configuration. If you run the curl command a few times, you might see something similar to this: 
 
 ```
 $ curl $colorapp/color
 {"color":"red", "stats": {"blue":0.33,"red":0.36,"white":0.31}}
 ```
 
-In the following section, we'll walk through how to modify traffic according to rules we set.
+In the following section, we'll walk through how to modify traffic according to the rules we set.
 
 ### Apply traffic rules
 
@@ -413,7 +420,7 @@ Waiting for stack create/update to complete
 Successfully created/updated stack - DEMO-appmesh-colorapp
 ```
 
-Now, when you curl the app, you will see a responses like the following:
+Now, when you curl the app, you will see a response like the following:
 
 ```
 $ curl $colorapp/color
@@ -435,7 +442,7 @@ $ curl $colorapp/color
 {"color":"black", "stats": {"black":1}}
 ```
 
-Since there are no other colors for the histogram, that's all you will see no matter how many times you repeat the query.
+Since there are no other colors for the histogram, that's all you will see, no matter how many times you repeat the query.
 
 Simulate A/B tests with a 50/50 split between red and blue:
 
@@ -456,7 +463,7 @@ Any integer proportion will work for the weights (as long as the sum doesn't exc
 
 In a similar manner, you can perform canary tests or automate rolling updates based on healthchecks or other criteria using weighted targets to have fine-grained control over how you shape traffic for your application.
 
-To prepare for the next section, go ahead and update the HttpRoute to send all traffic only to the blue colorteller.
+To prepare for the next section, go ahead and update the HttpRoute to send all traffic to the blue colorteller.
 
 `examples/apps/colorapp/servicemesh/appmesh-colorapp.yaml`
 ```
@@ -465,7 +472,7 @@ To prepare for the next section, go ahead and update the HttpRoute to send all t
                 Weight: 1
 ```
 
-Then deploy the update and then clear the color history for fresh histograms:
+Deploy the update and then clear the color history for fresh histograms:
 
 ```
 $ ./examples/apps/colorapp/servicemesh/appmesh-colorapp.sh
@@ -480,7 +487,7 @@ In the next section we'll experiment with updating the route using the App Mesh 
 
 [AWS X-Ray] helps us to monitor and analyze distributed microservice applications through request tracing, providing an end-to-end view of requests traveling through the application so we can identify the root cause of errors and performance issues. We'll use X-Ray to provide a visual map of how App Mesh is distributing traffic and inspect traffic latency through our routes.
 
-When you open the AWS X-Ray console the view might appear busier than you expected due to traffic from automated healthchecks. We'll create a filter to focus on the traffic we're sending to the application frontend (color gateway) when we request a color on the `/color` route.
+When you open the AWS X-Ray console the view might appear busier than you expected due to traffic from automated healthchecks. We'll create a filter to focus on the traffic we're sending to the application frontend (colorgateway) when we request a color on the `/color` route.
 
 The Color App has already been instrumented for X-Ray support and has created a [Segment] called "Default" to provide X-Ray with request context as it flows through the gateway service. Click on the "Default" button (shown in the figure below) to create a group to filter the visual map:
 
@@ -496,12 +503,12 @@ Choose "Create group", name the group "color", and enter an expression that filt
 ![appmesh-xray-create-group-2](img/appmesh-xray-create-group-2.png)
 <p align="center"><b><i>Figure 6.</i></b> Adding a group filter expression.</p>
 
-After creating the group, make sure to select it from the dropdown to apply it as the active filter. You should see somethng similar to the following:
+After creating the group, make sure to select it from the dropdown to apply it as the active filter. You should see something similar to the following:
 
 ![appmesh-xray-service-map-1](img/appmesh-xray-service-map-1.png)
 <p align="center"><b><i>Figure 7.</i></b> Analyzing the X-Ray service map.</p>
 
-What the map reveals is that
+What the map reveals is that:
 
 1. Our color request first flows through an Envoy proxy for ingress to the gateway service.
 2. Envoy passes the request to the gateway service, which makes a request to a colorteller.
@@ -516,7 +523,7 @@ Click on the `colorgateway-vn` node to display Service details:
 
 We can see an overview on latency and that 100% of the requests are "OK".
 
-Click on the "Traces" button:
+Click on the "View traces" button, then click on an ID under "Trace list":
 
 This provides us with a detailed view about how traffic flowed for the request.
 
@@ -555,7 +562,7 @@ And if you refresh the X-Ray Service map, you should see something like this:
 ![appmesh-xray-service-map-2](img/appmesh-xray-service-map-2.png)
 <p align="center"><b><i>Figure 14.</i></b> The updated service map with split traffic.</p>
 
-AWS X-Ray is a valuable tool for providing insight into your application request traffic. See the [AWS X-Ray docs] to learn more instrumenting your own microservice applications to analyze their performance and the effects of traffic shaping with App Mesh.
+AWS X-Ray is a valuable tool for providing insight into your application request traffic. See the [AWS X-Ray docs] to learn more about instrumenting your own microservice applications to analyze their performance and the effects of traffic shaping with App Mesh.
 
 
 ## Review
@@ -567,6 +574,7 @@ The following is the condensed version of all the steps we performed to run the 
 `.env`
 ```
 export AWS_PROFILE=default
+export AWS_ACCOUNT_ID=your-account-ID
 export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=DEMO
 export MESH_NAME=appmesh-mesh
@@ -623,7 +631,7 @@ In this demo, our services ran only on ECS. In the next post in this series, we'
 
 [Color App]
 
-[Currently available AWS regions for App Mesh]
+[Currently available AWS Regions for App Mesh]
 
 [Envoy Image]
 
@@ -643,7 +651,7 @@ In this demo, our services ran only on ECS. In the next post in this series, we'
 [Blue-Green deployments]: https://martinfowler.com/bliki/BlueGreenDeployment.html
 [Canary releases]: https://martinfowler.com/bliki/CanaryRelease.html
 [Color App]: https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp
-[Currently available AWS regions for App Mesh]: https://docs.aws.amazon.com/general/latest/gr/rande.html#appmesh_region
+[Currently available AWS Regions for App Mesh]: https://docs.aws.amazon.com/general/latest/gr/rande.html#appmesh_region
 [Elastic Load Balancing]: https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/what-is-load-balancing.html
 [Envoy]: https://www.envoyproxy.io/ 
 [Envoy documentation]: https://www.envoyproxy.io/docs/envoy/latest/
