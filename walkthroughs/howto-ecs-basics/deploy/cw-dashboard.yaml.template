@@ -1,0 +1,141 @@
+Parameters:
+    DashboardName:
+        Description: "The CloudWatch dashboard name."
+        Type: "String"
+Resources:
+    Dashboard:
+        Type: "AWS::CloudWatch::Dashboard"
+        Properties:
+            DashboardName: !Ref DashboardName
+            DashboardBody: !Sub |
+                {
+                    "widgets": [
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 0,
+                            "width": 12,
+                            "height": 9,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_total\" cds_ingress', 'Sum', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}] " } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Average",
+                                "period": 60,
+                                "title": "Ingress Request Count"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 12,
+                            "y": 0,
+                            "width": 12,
+                            "height": 9,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_total\" cds_egress', 'Sum', 60)", "period": 60, "label": "[avg: ${AVG}] ", "id": "e1" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Average",
+                                "period": 60,
+                                "title": "Egress Request Count"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 9,
+                            "width": 12,
+                            "height": 9,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_time\" cds_egress', 'p99', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}] " } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "title": "P99 Upstream Response Time (ms)",
+                                "period": 60,
+                                "stat": "Average"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 12,
+                            "y": 9,
+                            "width": 12,
+                            "height": 9,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_time\" cds_egress', 'p50', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}] " } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "title": "P50 Upstream Response Time (ms)",
+                                "period": 60,
+                                "stat": "Average"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 18,
+                            "width": 12,
+                            "height": 9,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" (envoy.response_code_class=\"4\" OR envoy.response_code_class=\"5\") envoy.http_conn_manager_prefix=\"egress\"', 'Sum', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}, last: ${LAST}] " } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Average",
+                                "period": 60,
+                                "title": "5xx and 4xx"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 12,
+                            "y": 18,
+                            "width": 12,
+                            "height": 9,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" (envoy.response_code_class=\"2\" OR envoy.response_code_class=\"3\") envoy.http_conn_manager_prefix=\"egress\"', 'Sum', 60)", "id": "e2", "period": 60, "label": "[avg: ${AVG}, last: ${LAST}] " } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Average",
+                                "period": 60,
+                                "title": "Upstream Success Response Count"
+                            }
+                        },
+                        {
+                            "type": "log",
+                            "x": 0,
+                            "y": 27,
+                            "width": 24,
+                            "height": 12,
+                            "properties": {
+                                "query": "SOURCE '${LOG_GROUP}' | fields http.response.status, http.request.method, http.request.url, http.request.user_agent\n| filter aws.app_mesh.virtual_node_name like /^${VIRTUAL_NODE_NAME}$/\n| filter aws.app_mesh.mesh_name like /^${MESH_NAME}$/",
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stacked": false,
+                                "view": "table"
+                            }
+                        }
+                    ]
+                }
+
+Outputs:
+    Dashboard:
+        Description: "Dashboard created to monitor Lambda function"
+        Value: !Sub |
+            "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home#dashboards:name=${DashboardName}"
