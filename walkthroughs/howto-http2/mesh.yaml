@@ -1,0 +1,152 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+Resources:
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Sub '${ProjectName}-mesh'
+
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Sub '${ProjectName}-mesh'
+
+  ColorClientNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_client
+      Spec:
+        Backends:
+        - VirtualService:
+            VirtualServiceName: !Sub 'color_server.${ProjectName}.local'
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: http
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_client
+
+  ColorServerBlueNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_server-blue
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: http2
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 3
+            Port: 8080
+            Path: /ping
+            Protocol: http2
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_server
+            Attributes:
+            - Key: ECS_TASK_DEFINITION_FAMILY
+              Value: blue
+
+  ColorServerGreenNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_server-green
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: http2
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 3
+            Port: 8080
+            Path: /ping
+            Protocol: http2
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_server
+            Attributes:
+            - Key: ECS_TASK_DEFINITION_FAMILY
+              Value: green
+
+  ColorServerRedNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_server-red
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: http2
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 3
+            Port: 8080
+            Path: /ping
+            Protocol: http2
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_server
+            Attributes:
+            - Key: ECS_TASK_DEFINITION_FAMILY
+              Value: red
+              
+  VirtualRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualRouterName: virtual-router
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: http2
+
+  VirtualService:
+    DependsOn:
+     - VirtualRouter
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: !Sub 'color_server.${ProjectName}.local'
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: virtual-router
+
+  Route:
+    DependsOn:
+     - VirtualRouter
+     - ColorServerRedNode
+    Type: AWS::AppMesh::Route
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualRouterName: virtual-router
+      RouteName: route
+      Spec:
+        Http2Route:
+          Action:
+            WeightedTargets:
+            - VirtualNode: color_server-red
+              Weight: 1
+          Match:
+            Prefix: /
