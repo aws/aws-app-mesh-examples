@@ -11,7 +11,7 @@
                 ]
             },
             "match": {
-		"serviceName": "color.ColorService"
+                "serviceName": "color.ColorService"
             }
         }
     },

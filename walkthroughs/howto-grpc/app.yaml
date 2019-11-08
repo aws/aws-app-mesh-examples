@@ -119,7 +119,6 @@ Resources:
       - arn:aws:iam::aws:policy/CloudWatchFullAccess
       - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
       - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
-      - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
@@ -232,7 +231,7 @@ Resources:
         - Name: 'PORT'
           Value: !Sub '${ContainerPort}'
         - Name: 'COLOR_HOST'
-          Value: !Sub 'color_server.grpc.local:${ContainerPort}'
+          Value: !Sub 'color_server.${ProjectName}.local:${ContainerPort}'
       - Name: envoy
         Image: !Ref EnvoyImage
         Essential: true
@@ -264,8 +263,6 @@ Resources:
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_client'
-        - Name: 'APPMESH_PREVIEW'
-          Value: '1'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 
@@ -343,8 +340,6 @@ Resources:
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_server'
-        - Name: 'APPMESH_PREVIEW'
-          Value: '1'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 
