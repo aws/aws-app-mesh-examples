@@ -14,37 +14,31 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
 
 ## Setup
 
-1. This example uses features in the [App Mesh Preview Channel](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html). You'll need to install the latest `appmesh-preview` model to deploy it
-    ```
-    aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-    ```
-2. Clone this repository and navigate to the walkthroughs/howto-http2 folder, all commands will be ran from this location.
+1. Clone this repository and navigate to the walkthroughs/howto-http2 folder, all commands will be ran from this location.
     ```
     cd walkthroughs/howto-http2
     ```
-3. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-http2
+2. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-http2
     ```
     export PROJECT_NAME=howto-http2
     ```
-4. **Your** account id:
+3. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
-5. **Region** e.g. us-west-2
+4. **Region** e.g. us-west-2
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-6. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+5. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
     export ENVOY_IMAGE=...
     ```
-7. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+6. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
     ```
     export KEY_PAIR=...
     ```
-8. Setup using cloudformation
+7. Setup using cloudformation
     ```
     ./deploy.sh
     ```
@@ -77,28 +71,27 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
     ```
    You should see `red`. This is because our current mesh is only configured to route http2 requests to the `color_server-red` virtual-node:
 
-   (from [mesh/route.json](./mesh/route-red.json))
+   (from [mesh.yaml](./mesh.yaml))
     ```json
-    {
-      "http2Route": {
-        "action": {
-          "weightedTargets": [
-            {
-              "virtualNode": "color_server-red",
-              "weight": 1
-            }
-          ]
-        },
-        "match": {
-          "prefix": "/"
-        }
-      }
-    }
+    Route:
+      Type: AWS::AppMesh::Route
+      Properties:
+        MeshName: !GetAtt Mesh.MeshName
+        VirtualRouterName: virtual_router
+        RouteName: route
+        Spec:
+          Http2Route:
+            Action:
+              WeightedTargets:
+              - VirtualNode: color_server-red
+                Weight: 1
+            Match:
+              Prefix: /
     ```
    We'll first update our route to send traffic equally to the `color_server-red` and `color_server-blue` virtual-nodes
 4. Update the route to [mesh/route-red-blue.json](./mesh/route-red-blue.json):
     ```
-    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-blue.json
+    aws appmesh update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-blue.json
     ```
 5. Now try curling the color again
     ```
@@ -107,11 +100,11 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
    If you run that a few times, you should get an about 50-50 mix of red and blue virtual-nodes
 6. Next update the route to remove the red node, and you'll see `blue` from now on
     ```
-    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-blue.json
+    aws appmesh update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-blue.json
     ```
 7. Finally update the routes to balance across all virtual-nodes
     ```
-    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-blue-green.json
+    aws appmesh update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-blue-green.json
     ```
 
 ## HTTP2 Retries
@@ -120,7 +113,7 @@ The Color Server also exposes an APIs to simulate a flaky HTTP2 service: `/setFl
 
 1. First we'll need to add a basic HTTP retry policy to our existing route. It will retry up to 3 times whenever the `red` Color Server returns a server error (5xx). Update our route to [mesh/route-red-retries.json](./mesh/route-red-retries.json):
     ```
-    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-retries.json
+    aws appmesh update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-red-retries.json
     ```
 2. Update the flakiness config to make 50% of requests return a 500 status code.
     ```
