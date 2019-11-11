@@ -61,8 +61,7 @@ deploy_app() {
 }
 
 deploy_mesh() {
-    mesh_name="${PROJECT_NAME}-mesh"
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-mesh\""
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --stack-name "${PROJECT_NAME}-mesh" \

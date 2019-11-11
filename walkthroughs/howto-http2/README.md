@@ -72,12 +72,15 @@ The Color Client is a HTTP/1.1 front-end webserver that communicates to the Colo
    You should see `red`. This is because our current mesh is only configured to route http2 requests to the `color_server-red` virtual-node:
 
    (from [mesh.yaml](./mesh.yaml))
-    ```json
+    ```yaml
     Route:
+      DependsOn:
+       - VirtualRouter
+       - ColorServerRedNode
       Type: AWS::AppMesh::Route
       Properties:
         MeshName: !GetAtt Mesh.MeshName
-        VirtualRouterName: virtual_router
+        VirtualRouterName: virtual-router
         RouteName: route
         Spec:
           Http2Route:

@@ -61,14 +61,13 @@ deploy_app() {
 }
 
 deploy_mesh() {
-    mesh_name="${PROJECT_NAME}-mesh"
-    echo "Creating Mesh: \"${mesh_name}\"..."
-    aws appmesh-preview create-mesh --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/mesh.json
-    aws appmesh-preview create-virtual-node --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/color-client-node.json
-    aws appmesh-preview create-virtual-node --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/color-server-node.json
-    aws appmesh-preview create-virtual-router --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/virtual-router.json
-    aws appmesh-preview create-virtual-service --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/virtual-service.json
-    aws appmesh-preview create-route --mesh-name $mesh_name --cli-input-json file://${DIR}/mesh/route.json
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-mesh\"..."
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --stack-name "${PROJECT_NAME}-mesh" \
+        --template-file "${DIR}/mesh.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides "ProjectName=${PROJECT_NAME}"
 }
 
 print_bastion() {
@@ -108,17 +107,6 @@ delete_cfn_stack() {
     echo 'Done'
 }
 
-delete_mesh() {
-    mesh_name="${PROJECT_NAME}-mesh"
-    echo "Deleting Mesh: \"${mesh_name}\"..."
-    aws appmesh-preview delete-route --mesh-name $mesh_name --virtual-router-name virtual-router --route-name route
-    aws appmesh-preview delete-virtual-service --mesh-name $mesh_name --virtual-service-name color_server.grpc.local
-    aws appmesh-preview delete-virtual-router --mesh-name $mesh_name --virtual-router-name virtual-router
-    aws appmesh-preview delete-virtual-node --mesh-name $mesh_name --virtual-node-name color_server
-    aws appmesh-preview delete-virtual-node --mesh-name $mesh_name --virtual-node-name color_client
-    aws appmesh-preview delete-mesh --mesh-name $mesh_name
-}
-
 delete_images() {
     for app in color_client color_server; do
         echo "deleting repository \"${app}\"..."
@@ -133,7 +121,7 @@ delete_stacks() {
 
     delete_cfn_stack "${PROJECT_NAME}-infra"
 
-    delete_mesh
+    delete_cfn_stack "${PROJECT_NAME}-mesh"
 
     delete_images
 

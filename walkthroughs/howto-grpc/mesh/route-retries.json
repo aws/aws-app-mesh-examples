@@ -11,16 +11,16 @@
                 ]
             },
             "match": {
-		"serviceName": "color.ColorService"
+                "serviceName": "color.ColorService"
             },
-	    "retryPolicy": {
-	    	"grpcRetryEvents": [ "internal" ],
-	    	"maxRetries": 3,
-		"perRetryTimeout": {
-			"unit": "s",
-			"value": 2
-		}
-	    }
+            "retryPolicy": {
+                "grpcRetryEvents": [ "internal" ],
+                "maxRetries": 3,
+                "perRetryTimeout": {
+                    "unit": "s",
+                    "value": 2
+                }
+            }
         }
     },
     "virtualRouterName": "virtual-router"

@@ -206,7 +206,7 @@ Resources:
   CloudMapNamespace:
     Type: AWS::ServiceDiscovery::PrivateDnsNamespace
     Properties:
-      Name: grpc.local
+      Name: !Sub '${ProjectName}.local'
       Vpc: !Ref VPC
 
   BastionSecurityGroup:

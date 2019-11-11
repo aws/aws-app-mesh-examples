@@ -14,37 +14,31 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
 
 ## Setup
 
-1. This example uses features in the [App Mesh Preview Channel](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html). You'll need to install the latest `appmesh-preview` model to deploy it
-    ```
-    aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-    ```
-2. Clone this repository and navigate to the walkthroughs/howto-grpc folder, all commands will be ran from this location.
+1. Clone this repository and navigate to the walkthroughs/howto-grpc folder, all commands will be ran from this location.
     ```
     cd walkthroughs/howto-grpc
     ```
-3. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-grpc
+2. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-grpc
     ```
     export PROJECT_NAME=howto-grpc
     ```
-4. **Your** account id:
+3. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
-5. **Region** e.g. us-west-2
+4. **Region** e.g. us-west-2
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-6. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+5. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
     export ENVOY_IMAGE=...
     ```
-7. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+6. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
     ```
     export KEY_PAIR=...
     ```
-8. Setup using cloudformation
+7. Setup using cloudformation
     ```
     ./deploy.sh
     ```
@@ -95,29 +89,31 @@ The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent g
     ```
    This is because our current mesh is only configured to route the gRPC Method `GetColor`:
 
-   (from [mesh/route.json](./mesh/route.json))
-    ```json
-    {
-      "grpcRoute": {
-        "action": {
-          "weightedTargets": [
-            {
-              "virtualNode": "color_server",
-              "weight": 100
-            }
-          ]
-        },
-        "match": {
-          "serviceName": "color.ColorService",
-          "methodName": "GetColor"
-        }
-      }
-    }
+   (from [mesh.yaml](./mesh.yaml))
+    ```yaml
+    Route:
+      DependsOn:
+       - VirtualRouter
+       - ColorServerNode
+      Type: AWS::AppMesh::Route
+      Properties:
+        MeshName: !GetAtt Mesh.MeshName
+        VirtualRouterName: virtual-router
+        RouteName: route
+        Spec:
+          GrpcRoute:
+            Action:
+              WeightedTargets:
+              - VirtualNode: color_server
+                Weight: 100
+            Match:
+              ServiceName: color.ColorService
+              MethodName: GetColor
     ```
    We'll remove the `methodName` match condition in the gRPC route to match all methods for `color.ColorService`.
 4. Update the route to [mesh/route-all-methods.json](./mesh/route-all-methods.json):
     ```
-    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-all-methods.json
+    aws appmesh update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-all-methods.json
     ```
 5. Now try updating the color again
     ```
@@ -135,7 +131,7 @@ The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakine
 
 1. First we'll need to add a basic gRPC retry policy to our existing route. It will retry up to 3 times whenever the Color Server returns a gRPC `Internal` [status code](https://github.com/grpc/grpc/blob/master/doc/statuscodes.md). Update our route to [mesh/route-retries.json](./mesh/route-retries.json):
     ```
-    aws appmesh-preview update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-retries.json
+    aws appmesh update-route --mesh-name $PROJECT_NAME-mesh --virtual-router-name virtual-router --route-name route --cli-input-json file://mesh/route-retries.json
     ```
 2. Now we have a retry policy. We'll need to make the Color Server give the Color Client reason to retry requests using the flakiness APIs. Query the current flakiness configuration:
     ```

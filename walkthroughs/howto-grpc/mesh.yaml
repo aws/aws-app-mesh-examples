@@ -1,0 +1,97 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+Resources:
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Sub '${ProjectName}-mesh'
+
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Sub '${ProjectName}-mesh'
+
+  ColorClientNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_client
+      Spec:
+        Backends:
+        - VirtualService:
+            VirtualServiceName: !Sub 'color_server.${ProjectName}.local'
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: http
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_client
+
+  ColorServerNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_server
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: grpc
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 3
+            Port: 8080
+            Protocol: grpc
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_server
+
+  VirtualRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualRouterName: virtual-router
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: grpc
+
+  VirtualService:
+    DependsOn:
+     - VirtualRouter
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: !Sub 'color_server.${ProjectName}.local'
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: virtual-router
+
+  Route:
+    DependsOn:
+     - VirtualRouter
+     - ColorServerNode
+    Type: AWS::AppMesh::Route
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualRouterName: virtual-router
+      RouteName: route
+      Spec:
+        GrpcRoute:
+          Action:
+            WeightedTargets:
+            - VirtualNode: color_server
+              Weight: 100
+          Match:
+            ServiceName: color.ColorService
+            MethodName: GetColor
