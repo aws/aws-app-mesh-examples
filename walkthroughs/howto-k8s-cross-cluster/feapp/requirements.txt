@@ -1,4 +1,4 @@
 flask
 requests
 aws-xray-sdk
-gunicorn
+gunicorn==19.9.0
