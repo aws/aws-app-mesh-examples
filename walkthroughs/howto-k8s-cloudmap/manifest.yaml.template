@@ -199,3 +199,42 @@ spec:
               value: "8080"
             - name: "COLOR"
               value: "red"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+  labels:
+    app: front
+    version: v1
+spec:
+  ports:
+    - port: 8080
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colorapp-blue
+  namespace: ${APP_NAMESPACE}
+  labels:
+    app: colorapp
+    version: blue
+spec:
+  ports:
+    - port: 8080
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colorapp-red
+  namespace: ${APP_NAMESPACE}
+  labels:
+    app: colorapp
+    version: red
+spec:
+  ports:
+    - port: 8080
+      name: http
