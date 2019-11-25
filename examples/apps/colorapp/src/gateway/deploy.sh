@@ -14,7 +14,7 @@ if [ -z $AWS_DEFAULT_REGION ]; then
 fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-COLOR_GATEWAY_IMAGE=${COLOR_GATEWAY_IMAGE:-"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/color/gateway"}
+COLOR_GATEWAY_IMAGE=${COLOR_GATEWAY_IMAGE:-"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/gateway"}
 GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
 
 # build
