@@ -36,17 +36,17 @@ Requesting red color -
 curl -H "color_header: red" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
 ```
 
-Requesting green color -
+Requesting green color (color_header with the text 'green' in it) -
 ```
 curl -H "color_header: requesting.green.color" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
 ```
 
-Getting yellow color -
+Getting yellow color (color_header is present with an unrecognized value) -
 ```
 curl -H "color_header: rainbow" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
 ```
 
-Getting white color -
+Getting white color (no color_header) -
 ```
 curl front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
 ```
