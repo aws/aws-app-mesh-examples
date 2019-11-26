@@ -26,6 +26,13 @@ This example shows how http routes can use headers for matching incoming request
    
 ## Using curl to test
 
+Add a curler to the namespace howto-k8s-http-headers on your cluster -
+```
+kubectl -n howto-k8s-http-headers run -it curler --image=tutum/curl /bin/bash
+```
+
+Run the commands on curler to test.
+
 Requesting blue color -
 ```
 curl -H "color_header: blue" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
