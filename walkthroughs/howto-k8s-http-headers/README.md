@@ -23,3 +23,30 @@ This example shows how http routes can use headers for matching incoming request
     ```.
     ./deploy.sh
     ```
+   
+## Using curl to test
+
+Requesting blue color -
+```
+curl -H "color_header: blue" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
+```
+
+Requesting red color -
+```
+curl -H "color_header: red" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
+```
+
+Requesting green color -
+```
+curl -H "color_header: requesting.green.color" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
+```
+
+Getting yellow color -
+```
+curl -H "color_header: rainbow" front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
+```
+
+Getting white color -
+```
+curl front.howto-k8s-http-headers.svc.cluster.local:8080/; echo;
+```
