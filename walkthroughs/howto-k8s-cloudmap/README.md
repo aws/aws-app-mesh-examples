@@ -1,5 +1,5 @@
 ## Overview
-This example shows how Kubernetes deployments can use AWS CloudMap for service-discovery when using App Mesh. 
+This example shows how Kubernetes deployments can use AWS CloudMap for service-discovery when using App Mesh. AWS Cloud Map is a cloud resource discovery service. With Cloud Map, you can define custom names for your application resources, and it maintains the updated location of these dynamically changing resources. This increases your application availability because your web service always discovers the most up-to-date locations of its resources.
 
 In this example there are two CloudMap services and three K8s Deployments as described below.
 
