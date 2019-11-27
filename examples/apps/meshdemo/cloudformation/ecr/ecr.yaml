@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Meshdemo repos"
+Resources: 
+  ColorsRepo: 
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: "meshdemo/colors"
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - "*"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+  FrontendRepo: 
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: "meshdemo/frontend"
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - "*"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+  CatsRepo: 
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: "meshdemo/cats"
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - "*"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+Outputs:
+  FrontendRepo:
+    Value: !GetAtt FrontendRepo.Arn
+  ColorsRepo:
+    Value: !GetAtt ColorsRepo.Arn
+  CatsRepo:
+    Value: !GetAtt CatsRepo.Arn

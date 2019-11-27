@@ -1,0 +1,37 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualNode
+metadata:
+  name: api.thecatapi.com
+  namespace: meshdemo
+spec:
+  meshName: meshdemo
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostName: api.thecatapi.com
+---
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualService
+metadata:
+  name: api.thecatapi.com
+  namespace: meshdemo
+spec:
+  meshName: meshdemo
+  virtualRouter:
+    listeners:
+      - portMapping:
+          port: 80
+          protocol: http
+  routes:
+    - name: catsapi-route
+      http:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeName: api.thecatapi.com
+              weight: 1

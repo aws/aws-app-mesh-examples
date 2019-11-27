@@ -1,0 +1,8 @@
+language: go
+go: 1.8
+services:
+- docker
+jobs:
+  include:
+    - stage: push to docker
+      script: make push

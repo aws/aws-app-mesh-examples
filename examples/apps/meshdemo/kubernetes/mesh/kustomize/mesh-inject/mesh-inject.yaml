@@ -1,0 +1,16 @@
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: appmesh-inject
+  namespace: appmesh-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: webhook
+          env:
+            - name: APPMESH_REGION
+              value: eu-west-1
+            - name: APPMESH_NAME
+              value: meshdemo

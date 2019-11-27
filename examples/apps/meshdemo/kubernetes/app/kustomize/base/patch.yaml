@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: not-important
+spec:
+  template:
+    spec:
+      containers:
+        - name: xray-daemon
+          image: 072792469044.dkr.ecr.eu-west-1.amazonaws.com/temporary/aws-xray-daemon:01
+          securityContext:
+            runAsUser: 1337
+          ports:
+          - containerPort: 2000
+            name: xray
+            protocol: UDP
+          env:
+          - name: AWS_REGION
+            value: eu-west-1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi

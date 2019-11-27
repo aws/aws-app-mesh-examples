@@ -1,0 +1,12 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: colors-blue
+  namespace: meshdemo
+spec:
+  template:
+    spec:
+      containers:
+      - name: colors-blue
+        args: ["--randomErrors", "--color", "blue"]

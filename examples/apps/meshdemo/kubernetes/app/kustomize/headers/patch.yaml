@@ -1,0 +1,32 @@
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualService
+metadata:
+  name: colors
+  namespace: meshdemo
+spec:
+  routes:
+    - name: color-route
+      http:
+        match:
+          prefix: /
+          headers:
+            - name: MyColor
+              invert: true
+              match:
+                exact: blue
+        action:
+          weightedTargets:
+            - virtualNodeName: colors-green
+              weight: 1
+    - name: blue-headers-route
+      http:
+        match:
+          prefix: /
+          headers:
+            - name: MyColor
+              match:
+                exact: blue
+        action:
+          weightedTargets:
+            - virtualNodeName: colors-blue
+              weight: 1

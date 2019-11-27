@@ -1,0 +1,20 @@
+apiVersion: appmesh.k8s.aws/v1beta1
+kind: VirtualService
+metadata:
+  name: colors
+  namespace: meshdemo
+spec:
+  routes:
+    - name: color-route
+      http:
+        match:
+          prefix: /
+        retryPolicy:
+          perRetryTimeoutMillis: 500
+          maxRetries: 8
+          httpRetryEvents:
+            - "server-error"
+        action:
+          weightedTargets:
+            - virtualNodeName: colors-blue
+              weight: 1

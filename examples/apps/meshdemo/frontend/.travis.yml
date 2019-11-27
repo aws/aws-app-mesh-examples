@@ -1,0 +1,7 @@
+language: generic
+services:
+- docker
+jobs:
+  include:
+    - stage: push to docker
+      script: make push

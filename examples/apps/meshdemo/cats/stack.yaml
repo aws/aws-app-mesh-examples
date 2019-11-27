@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Mesh Demo cats ecr repo"
+Resources: 
+  AppMeshInjRepository: 
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: "meshdemo-cats"
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - "arn:aws:iam::072792469044:user/appmesh_push_agent"
+                - "arn:aws:iam::072792469044:user/Admin"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:PutImage"
+              - "ecr:InitiateLayerUpload"
+              - "ecr:UploadLayerPart"
+              - "ecr:CompleteLayerUpload"
+          - 
+            Sid: AllowPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - "*"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
