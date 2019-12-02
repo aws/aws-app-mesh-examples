@@ -10,6 +10,11 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
+Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=0.2.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v020). Run the following to check the version of controller you are running.
+```
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+```
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/howto-k8s-retry-policy folder, all commands will be ran from this location
