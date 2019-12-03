@@ -4,10 +4,12 @@
 
 * [Requirements](#requirements)
 * [Setup](#setup)
+	* [Set the Region](#set-the-region)
 	* [Deploy a cluster](#deploy-a-cluster)
 	* [OIDC Provider for IAM Service Accounts](#oidc-provider-for-iam-service-accounts)
 	* [Clone](#clone)
 	* [Deploy the AWS App Mesh Controller](#deploy-the-aws-app-mesh-controller)
+	* [Set the Region](#set-the-region-1)
 	* [Create a Service Account](#create-a-service-account)
 * [The Demo](#the-demo)
 * [Running The Services](#running-the-services)
@@ -33,10 +35,17 @@ The tools needed for this demo are:
 
 ## Setup
 
+### Set the Region
+Adjust this value to your preference
+
+```bash
+export REGION=eu-west-1
+```
+
 ### Deploy a cluster
 Create a cluster using eksctl
 ```bash
-eksctl create cluster --name=meshdemo --region=eu-west-1 --nodes 1 --appmesh-access --version 1.14
+eksctl create cluster --name=meshdemo --region=$REGION --nodes 1 --appmesh-access --version 1.14
 ```
 
 ### OIDC Provider for IAM Service Accounts
@@ -57,6 +66,11 @@ cd aws-app-mesh-examples/walkthroughs/howto-k8s-meshdemo
 kubectl apply -k kubernetes/mesh/kustomize/mesh-controller
 ```
 This also creates a namespace "meshdemo" for the below service account, and creates a mesh called "meshdemo".
+
+### Set the Region
+```bash
+kubectl create configmap region -n meshdemo --from-literal=AWS_REGION=$REGION
+```
 
 ### Create a Service Account
 We create a service account so the X-Ray daemon can push to the X-Ray endpoint. 
