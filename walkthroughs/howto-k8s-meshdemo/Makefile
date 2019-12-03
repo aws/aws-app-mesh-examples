@@ -4,7 +4,6 @@ REGION=eu-west-1
 ACCOUNT=072792469044
 REPOFAMILY=${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/meshdemo
 VERSION=$(shell cat VERSION)
-HASH=$(shell git log --pretty=format:'%H' -n 1)
 TAG=${VERSION}
 
 build:
