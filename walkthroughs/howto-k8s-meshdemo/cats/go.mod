@@ -1,4 +1,4 @@
-module github.com/jasonrichardsmith/meshdemo/cats
+module github.com/aws/aws-app-mesh-examples/walkthroughs/howto-k8s-meshdemo/cats
 
 go 1.13
 

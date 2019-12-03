@@ -1,4 +1,4 @@
-FROM node:9.11.1
+FROM node:13.2.0
 
 RUN npm install -g local-web-server && mkdir /var/meshdemo-site
 

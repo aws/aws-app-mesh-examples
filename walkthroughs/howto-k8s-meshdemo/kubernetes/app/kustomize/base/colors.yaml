@@ -42,6 +42,7 @@ spec:
       containers:
       - name: colors-blue
         image: 072792469044.dkr.ecr.eu-west-1.amazonaws.com/meshdemo/colors:1.0.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         args: ["--color", "blue"]

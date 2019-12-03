@@ -1,4 +1,4 @@
-module github.com/jasonrichardsmith/meshdemo/colors
+module github.com/aws/aws-app-mesh-examples/walkthroughs/howto-k8s-meshdemo/colors
 
 go 1.13
 
