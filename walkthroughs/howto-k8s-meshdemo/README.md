@@ -1,6 +1,31 @@
 # Graphic AWS App Mesh Demo
 
+<!-- vim-markdown-toc GFM -->
+
+* [Requirements](#requirements)
+* [Setup](#setup)
+	* [Deploy a cluster](#deploy-a-cluster)
+	* [OIDC Provider for IAM Service Accounts](#oidc-provider-for-iam-service-accounts)
+	* [Clone](#clone)
+	* [Deploy the AWS App Mesh Controller](#deploy-the-aws-app-mesh-controller)
+	* [Create a Service Account](#create-a-service-account)
+* [The Demo](#the-demo)
+* [Running The Services](#running-the-services)
+	* [Frontend](#frontend)
+	* [Colors](#colors)
+	* [Cats](#cats)
+	* [X-Ray](#x-ray)
+* [AWS App Mesh Features](#aws-app-mesh-features)
+	* [External services](#external-services)
+	* [Weighted routing](#weighted-routing)
+	* [Header Routing](#header-routing)
+	* [Retries](#retries)
+* [Teardown](#teardown)
+
+<!-- vim-markdown-toc -->
 In this demo we will deploy AWS App Mesh with the X-Ray daemon using tools like IAM Service Accounts with kubectl -k (kustomize) to demonstrate some of the AWS App Mesh features.
+
+## Requirements
 
 The tools needed for this demo are:
 - eksctl
@@ -24,16 +49,16 @@ eksctl utils associate-iam-oidc-provider --name meshdemo --approve
 Clone this repository
 ```
 git clone git@github.com:aws/aws-app-mesh-examples.git
-cd aws-app-mesh-examples/examples/apps/meshdemo
+cd aws-app-mesh-examples/walkthroughs/howto-k8s-meshdemo
 ```
 
-Deploy the [AWS App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s).
+### Deploy the [AWS App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s)
 ```bash
 kubectl apply -k kubernetes/mesh/kustomize/mesh-controller
 ```
 This also creates a namespace "meshdemo" for the below service account, and creates a mesh called "meshdemo".
 
-## Create a Service Account
+### Create a Service Account
 We create a service account so the X-Ray daemon can push to the X-Ray endpoint. 
 ```bash
 eksctl create iamserviceaccount --name xray-access --namespace meshdemo --cluster meshdemo \
@@ -53,7 +78,7 @@ it cannot reach the external service.
 
 All the code for the applications can be found in the cat, colors and frontend folders of this folder.
 
-### Running the services
+## Running The Services
 First we will start the base of the services.  This deploys the services, with an AWS X-Ray sidecar and an App Mesh sidecar.
 
 ```bash
@@ -70,15 +95,15 @@ Then open your browser to [localhost:8080](http://localhost:8080/)
 You should see the following screen.
 ![](images/mainscreen.png)
 
-#### Frontend Interactions
+### Frontend
 You have 3 actions you can perform with this screen.
 - Rate: change the rate of requests
 - Header MyColor: every request sends a header value "MyColor", this drop down sets the color in that header.
 - Cats: changes to the cats tab, which is also sending requests according to the rate
-##### Colors
+### Colors
 The Colors tab is showing you all the requests to the colors services.
 
-##### Cats
+### Cats
 The Cats tabs is reloading the image in the screen with whatever the cats service returns.  If the cats service returns an error you will get this image:
 ![](frontend/error.jpg)
 When you start this will be the first problem to solve.
@@ -151,7 +176,7 @@ If we drill down into the X-Ray traces we will see this:
 Cats is the only service that has X-Ray instrumentation for the external API.  All other services are being traced with the built in App Mesh capabilities.
 
 
-### Weighted routing.
+### Weighted routing
 
 Currently all requests for "/colors" are being routed to blue but there is a green pod running as well.
 
