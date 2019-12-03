@@ -55,7 +55,10 @@ spec:
           protocol: UDP
         env:
         - name: AWS_REGION
-          value: eu-west-1
+          valueFrom:
+            configMapKeyRef:
+              name: region
+              key: AWS_REGION
         resources:
           requests:
             cpu: 100m
@@ -67,7 +70,10 @@ spec:
         - name: ENVOY_LOG_LEVEL
           value: info
         - name: AWS_REGION
-          value: eu-west-1
+          valueFrom:
+            configMapKeyRef:
+              name: region
+              key: AWS_REGION
         - name: ENABLE_ENVOY_XRAY_TRACING
           value: "1"
         image: 840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.12.1.0-prod
@@ -165,7 +171,10 @@ spec:
           protocol: UDP
         env:
         - name: AWS_REGION
-          value: eu-west-1
+          valueFrom:
+            configMapKeyRef:
+              name: region
+              key: AWS_REGION
         resources:
           requests:
             cpu: 100m
@@ -177,7 +186,10 @@ spec:
         - name: ENVOY_LOG_LEVEL
           value: info
         - name: AWS_REGION
-          value: eu-west-1
+          valueFrom:
+            configMapKeyRef:
+              name: region
+              key: AWS_REGION
         - name: ENABLE_ENVOY_XRAY_TRACING
           value: "1"
         image: 840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.12.1.0-prod

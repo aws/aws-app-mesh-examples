@@ -16,7 +16,10 @@ spec:
             protocol: UDP
           env:
           - name: AWS_REGION
-            value: eu-west-1
+            valueFrom:
+            configMapKeyRef:
+              name: region
+              key: AWS_REGION
           resources:
             requests:
               cpu: 100m
