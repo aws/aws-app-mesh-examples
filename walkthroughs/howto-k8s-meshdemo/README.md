@@ -87,7 +87,7 @@ kubectl apply -k kubernetes/app/kustomize/base
 
 To view the frontend we can port-forward the service using kubectl.
 ```bash
-k port-forward -n meshdemo svc/frontend 8080:8000
+kubectl port-forward -n meshdemo svc/frontend 8080:8000
 ```
 
 Then open your browser to [localhost:8080](http://localhost:8080/)
@@ -161,7 +161,7 @@ This will allow the cats service to connect to the external service running on t
 
 You can run this to apply these changes:
 ```bash
-k apply -k kubernetes/app/kustomize/cats-virtual-service
+kubectl apply -k kubernetes/app/kustomize/cats-virtual-service
 ```
 After a few seconds you will see a constant stream of new cat gifs.  This means the cats pod can reach the external url.
 
@@ -183,7 +183,7 @@ Currently all requests for "/colors" are being routed to blue but there is a gre
 If we want to split the traffic we would want to change the route in App Mesh.  We can do this by applying a patch with kustomize.
 
 ```bash
-k apply -k kubernetes/app/kustomize/blue-50
+kubectl apply -k kubernetes/app/kustomize/blue-50
 ```
 
 Which applies the following patch to the color-route
@@ -215,7 +215,7 @@ Your Colors tab should now generally have split the traffic.
 Alternatively you could change it to 90/10 traffic.
 
 ```bash
-k apply -k kubernetes/app/kustomize/blue-90
+kubectl apply -k kubernetes/app/kustomize/blue-90
 ```
 
 Which applies the following patch to the color-route
@@ -290,7 +290,7 @@ This rule makes every request go to blue unless there is a MyColor header in the
 
 You can apply that by running
 ```bash
-k apply -k kubernetes/app/kustomize/headers
+kubectl apply -k kubernetes/app/kustomize/headers
 ```
 
 Now if you change the "Header MyColor" drop down to green, your requests will be green, all other choices return blue.
@@ -319,7 +319,7 @@ When random errors is turned on for the colors container what will happen is, th
 
 We can see this by running.
 ```bash
-k apply -k kubernetes/app/kustomize/errors
+kubectl apply -k kubernetes/app/kustomize/errors
 ```
 
 ![](images/demo-errors.png)
@@ -354,7 +354,7 @@ spec:
 
 You can apply this by running
 ```bash
-k apply -k kubernetes/app/kustomize/retry
+kubectl apply -k kubernetes/app/kustomize/retry
 ```
 
 Now if we visit our page again we will see the requests are turning blue again but the milliseconds
