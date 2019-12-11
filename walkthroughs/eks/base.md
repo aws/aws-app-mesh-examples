@@ -76,7 +76,7 @@ helm repo add eks https://aws.github.io/eks-charts
 kubectl create ns appmesh-system
 kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/appmesh-controller/crds/crds.yaml
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
-helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=global
+helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=color-mesh
 
 Opitionally add tracing
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set tracing.enabled=true --set tracing.provider=x-ray
