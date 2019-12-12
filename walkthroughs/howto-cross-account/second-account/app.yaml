@@ -1,0 +1,203 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+  MeshOwner:
+    Type: String
+    Description: Owner of the Mesh
+
+  VPC:
+    Description: VPC shared from the master account
+    Type: String
+
+  PrivateSubnet1:
+    Description: PrivateSubnet1 shared from the master account
+    Type: String
+
+  PrivateSubnet2:
+    Description: PrivateSubnet2 shared from the master account
+    Type: String
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  EnvoyImage:
+    Type: String
+    Description: Envoy container image
+
+  BackendImage:
+    Type: String
+    Description: Color client app container image
+
+  ContainerPort:
+    Type: Number
+    Description: Port number to use for applications
+    Default: 80
+
+Resources:
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for the tasks"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - CidrIp: !Ref VpcCIDR
+        IpProtocol: -1
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${ProjectName}-log-group'
+      RetentionInDays: 30
+
+  TaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+            "Action": [ "sts:AssumeRole" ]
+          }]
+        }
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/CloudWatchFullAccess
+      - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+
+  TaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+            "Action": [ "sts:AssumeRole" ]
+          }]
+        }
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for the instances"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - CidrIp: !Ref VpcCIDR
+        IpProtocol: -1
+
+  BackendRegistry:
+      Type: AWS::ServiceDiscovery::Service
+      Properties:
+        Name: 'backend'
+        DnsConfig:
+          NamespaceId:
+            Fn::ImportValue: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
+          DnsRecords:
+          - Type: A
+            TTL: 300
+        HealthCheckCustomConfig:
+          FailureThreshold: 1
+
+  BackendTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+      - 'FARGATE'
+      Family: 'backend'
+      NetworkMode: 'awsvpc'
+      Cpu: 256
+      Memory: 512
+      TaskRoleArn: !Ref TaskIamRole
+      ExecutionRoleArn: !Ref TaskExecutionIamRole
+      ProxyConfiguration:
+        Type: 'APPMESH'
+        ContainerName: 'envoy'
+        ProxyConfigurationProperties:
+        - Name: 'IgnoredUID'
+          Value: '1337'
+        - Name: 'ProxyIngressPort'
+          Value: '15000'
+        - Name: 'ProxyEgressPort'
+          Value: '15001'
+        - Name: 'AppPorts'
+          Value: !Sub '${ContainerPort}'
+        - Name: 'EgressIgnoredIPs'
+          Value: '169.254.170.2,169.254.169.254'
+      ContainerDefinitions:
+      - Name: 'app'
+        Image: !Ref BackendImage
+        Essential: true
+        LogConfiguration:
+          LogDriver: 'awslogs'
+          Options:
+            awslogs-group: !Sub '${ProjectName}-log-group'
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: 'backend'
+        PortMappings:
+        - ContainerPort: !Ref ContainerPort
+          Protocol: 'tcp'
+      - Name: envoy
+        Image: !Ref EnvoyImage
+        Essential: true
+        User: '1337'
+        Ulimits:
+        - Name: "nofile"
+          HardLimit: 15000
+          SoftLimit: 15000
+        PortMappings:
+        - ContainerPort: 9901
+          Protocol: 'tcp'
+        - ContainerPort: 15000
+          Protocol: 'tcp'
+        - ContainerPort: 15001
+          Protocol: 'tcp'
+        HealthCheck:
+          Command:
+          - 'CMD-SHELL'
+          - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
+          Interval: 5
+          Timeout: 2
+          Retries: 3
+        LogConfiguration:
+          LogDriver: 'awslogs'
+          Options:
+            awslogs-group: !Sub '${ProjectName}-log-group'
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: 'backend-envoy'
+        Environment:
+        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+          Value: !Sub 'mesh/${ProjectName}-mesh@${MeshOwner}/virtualNode/backend-2'
+        - Name: 'ENVOY_LOG_LEVEL'
+          Value: 'debug'
+
+  BackendService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Fn::ImportValue: !Sub '${ProjectName}:ECSCluster'
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: 'FARGATE'
+      ServiceRegistries:
+      - RegistryArn: !GetAtt 'BackendRegistry.Arn'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+          - !Ref SecurityGroup
+          Subnets:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      TaskDefinition: !Ref BackendTaskDef

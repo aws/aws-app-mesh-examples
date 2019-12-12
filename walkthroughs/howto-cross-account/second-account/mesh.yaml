@@ -1,0 +1,28 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+  MeshName:
+    Type: String
+    Description: Mesh name owned by the master account
+
+  MasterAccount:
+    Type: String
+    Description: Master account ID
+
+Resources:
+  BackendNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref MeshName
+      MeshOwner: !Ref MasterAccount
+      VirtualNodeName: backend-2
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 80
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "backend.cross.${ProjectName}.local"
