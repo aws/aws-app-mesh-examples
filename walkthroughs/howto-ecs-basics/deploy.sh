@@ -98,7 +98,7 @@ delete_stacks() {
 }
 
 action=${1:-"deploy"}
-stage=${2:-"prelude"}
+stage=${2:-"0-prelude"}
 if [ "$action" == "delete" ]; then
     delete_stacks
     exit 0

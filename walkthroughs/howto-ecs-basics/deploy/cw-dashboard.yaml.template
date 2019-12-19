@@ -14,121 +14,437 @@ Resources:
                             "type": "metric",
                             "x": 0,
                             "y": 0,
-                            "width": 12,
-                            "height": 9,
+                            "width": 9,
+                            "height": 6,
                             "properties": {
                                 "metrics": [
-                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_total\" cds_ingress', 'Sum', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}] " } ]
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_http_downstream_rq_total appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" envoy.http_conn_manager_prefix=\"ingress\"', 'Sum', 60)",
+                                            "label": "rps"
+                                        }
+                                    ]
                                 ],
                                 "view": "timeSeries",
                                 "stacked": false,
                                 "region": "${AWS_DEFAULT_REGION}",
-                                "stat": "Average",
+                                "stat": "Maximum",
                                 "period": 60,
-                                "title": "Ingress Request Count"
+                                "title": "Ingress: Request Count"
                             }
                         },
                         {
                             "type": "metric",
-                            "x": 12,
+                            "x": 9,
                             "y": 0,
-                            "width": 12,
-                            "height": 9,
+                            "width": 9,
+                            "height": 6,
                             "properties": {
                                 "metrics": [
-                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_total\" cds_egress', 'Sum', 60)", "period": 60, "label": "[avg: ${AVG}] ", "id": "e1" } ]
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_cluster_upstream_rq_total appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress', 'Sum', 60)",
+                                            "label": "rps"
+                                        }
+                                    ]
                                 ],
                                 "view": "timeSeries",
                                 "stacked": false,
                                 "region": "${AWS_DEFAULT_REGION}",
-                                "stat": "Average",
+                                "stat": "Maximum",
                                 "period": 60,
-                                "title": "Egress Request Count"
+                                "title": "Egress: Request Count"
                             }
                         },
                         {
                             "type": "metric",
                             "x": 0,
-                            "y": 9,
-                            "width": 12,
-                            "height": 9,
+                            "y": 6,
+                            "width": 9,
+                            "height": 6,
                             "properties": {
                                 "metrics": [
-                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_time\" cds_egress', 'p99', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}] " } ]
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy.response_code_class=\"2\" envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_http_downstream_rq_xx\"', 'Sum', 60)",
+                                            "label": "2xx"
+                                        }
+                                    ]
                                 ],
                                 "view": "timeSeries",
                                 "stacked": false,
                                 "region": "${AWS_DEFAULT_REGION}",
-                                "title": "P99 Upstream Response Time (ms)",
+                                "stat": "Sum",
                                 "period": 60,
-                                "stat": "Average"
+                                "title": "Ingress: 2xx"
                             }
                         },
                         {
                             "type": "metric",
-                            "x": 12,
-                            "y": 9,
-                            "width": 12,
-                            "height": 9,
+                            "x": 9,
+                            "y": 6,
+                            "width": 9,
+                            "height": 6,
                             "properties": {
                                 "metrics": [
-                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_cluster_upstream_rq_time\" cds_egress', 'p50', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}] " } ]
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress MetricName=\"envoy_cluster_upstream_rq_xx\" envoy.response_code_class=\"2\"', 'Sum', 60)",
+                                            "label": "2xx"
+                                        }
+                                    ]
                                 ],
                                 "view": "timeSeries",
                                 "stacked": false,
                                 "region": "${AWS_DEFAULT_REGION}",
-                                "title": "P50 Upstream Response Time (ms)",
+                                "stat": "Maximum",
                                 "period": 60,
-                                "stat": "Average"
+                                "title": "Egress: 2xx"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 12,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy.response_code_class=\"4\" envoy.http_conn_manager_prefix=\"ingress\" MetricName=\"envoy_http_downstream_rq_xx\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\"', 'Sum', 60)",
+                                            "label": "4xx"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy.response_code_class=\"5\" envoy.http_conn_manager_prefix=\"ingress\" MetricName=\"envoy_http_downstream_rq_xx\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\"', 'Sum', 60)",
+                                            "label": "5xx"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Sum",
+                                "period": 60,
+                                "title": "Ingress: 4xx, 5xx"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 9,
+                            "y": 12,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy.response_code_class=\"4\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress MetricName=\"envoy_cluster_upstream_rq_xx\"', 'Sum', 60)",
+                                            "label": "4xx"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress MetricName=\"envoy_cluster_upstream_rq_xx\" envoy.response_code_class=\"5\"', 'Sum', 60)",
+                                            "label": "5xx"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Maximum",
+                                "period": 60,
+                                "title": "Egress: 4xx, 5xx"
                             }
                         },
                         {
                             "type": "metric",
                             "x": 0,
                             "y": 18,
-                            "width": 12,
-                            "height": 9,
+                            "width": 18,
+                            "height": 6,
                             "properties": {
                                 "metrics": [
-                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" (envoy.response_code_class=\"4\" OR envoy.response_code_class=\"5\") envoy.http_conn_manager_prefix=\"egress\"', 'Sum', 60)", "id": "e1", "period": 60, "label": "[avg: ${AVG}, last: ${LAST}] " } ]
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_http_downstream_rq_time envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\"', 'p50', 60)",
+                                            "label": "p50"
+                                        }
+                                    ]
                                 ],
                                 "view": "timeSeries",
                                 "stacked": false,
                                 "region": "${AWS_DEFAULT_REGION}",
-                                "stat": "Average",
+                                "stat": "p50",
                                 "period": 60,
-                                "title": "5xx and 4xx"
+                                "title": "Ingress: Downstream Response Time (ms) p50"
                             }
                         },
                         {
                             "type": "metric",
-                            "x": 12,
-                            "y": 18,
-                            "width": 12,
-                            "height": 9,
+                            "x": 0,
+                            "y": 24,
+                            "width": 18,
+                            "height": 6,
                             "properties": {
                                 "metrics": [
-                                    [ { "expression": "SEARCH('{CWAgent,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,metric_type} appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" (envoy.response_code_class=\"2\" OR envoy.response_code_class=\"3\") envoy.http_conn_manager_prefix=\"egress\"', 'Sum', 60)", "id": "e2", "period": 60, "label": "[avg: ${AVG}, last: ${LAST}] " } ]
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_http_downstream_rq_time envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\"', 'p90', 60)",
+                                            "label": "p90"
+                                        }
+                                    ]
                                 ],
                                 "view": "timeSeries",
                                 "stacked": false,
                                 "region": "${AWS_DEFAULT_REGION}",
-                                "stat": "Average",
+                                "stat": "p90",
                                 "period": 60,
-                                "title": "Upstream Success Response Count"
+                                "title": "Ingress: Downstream Response Time (ms) p90"
                             }
                         },
                         {
-                            "type": "log",
+                            "type": "metric",
                             "x": 0,
-                            "y": 27,
-                            "width": 24,
-                            "height": 12,
+                            "y": 30,
+                            "width": 18,
+                            "height": 6,
                             "properties": {
-                                "query": "SOURCE '${LOG_GROUP}' | fields http.response.status, http.request.method, http.request.url, http.request.user_agent\n| filter aws.app_mesh.virtual_node_name like /^${VIRTUAL_NODE_NAME}$/\n| filter aws.app_mesh.mesh_name like /^${MESH_NAME}$/",
-                                "region": "${AWS_DEFAULT_REGION}",
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_http_downstream_rq_time envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\"', 'p99', 60)",
+                                            "label": "p99"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
                                 "stacked": false,
-                                "view": "table"
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "p99",
+                                "period": 60,
+                                "title": "Ingress: Downstream Response Time (ms) p99"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 36,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_cluster_upstream_rq_total appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress', 'p50', 60)",
+                                            "label": "p50"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "p50",
+                                "period": 60,
+                                "title": "Egress: Upstream Response Time (ms) P50"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 42,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_cluster_upstream_rq_time appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress', 'p90', 60)",
+                                            "label": "p90"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "p90",
+                                "period": 60,
+                                "title": "Egress: Upstream Response Time (ms) P90"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 48,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_cluster_upstream_rq_time appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" egress', 'p99', 60)",
+                                            "label": "p99"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "p99",
+                                "period": 60,
+                                "title": "Egress: Upstream Response Time (ms) P99"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 54,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" envoy_http_downstream_cx_active appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" envoy.http_conn_manager_prefix=\"ingress\"', 'Maximum', 60)",
+                                            "label": "ingress"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" envoy_cluster_upstream_cx_total egress', 'Average', 60)",
+                                            "label": "egress"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Maximum",
+                                "period": 60,
+                                "title": "Connections per second"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 60,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_listener_manager_total_listeners_active\"', 'Maximum', 60)"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_listener_manager_total_listeners_warming\"', 'Maximum', 60)"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_listener_manager_total_listeners_draining\"', 'Maximum', 60)"
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "expression": "SEARCH('Namespace=\"${CLOUDWATCH_NAMESPACE}\" appmesh.mesh=\"${MESH_NAME}\" appmesh.virtual_node=\"${VIRTUAL_NODE_NAME}\" MetricName=\"envoy_listener_manager_listener_create_failure\"', 'Maximum', 60)"
+                                        }
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Maximum",
+                                "period": 60,
+                                "title": "Envoy: Listener Manager"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 66,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [
+                                        "${CLOUDWATCH_NAMESPACE}",
+                                        "envoy_cluster_manager_cluster_added",
+                                        "appmesh.mesh",
+                                        "${MESH_NAME}",
+                                        "appmesh.virtual_node",
+                                        "${VIRTUAL_NODE_NAME}",
+                                        "metric_type",
+                                        "counter",
+                                        {}
+                                    ],
+                                    [
+                                        "${CLOUDWATCH_NAMESPACE}",
+                                        "envoy_cluster_manager_cluster_modified",
+                                        "appmesh.mesh",
+                                        "${MESH_NAME}",
+                                        "appmesh.virtual_node",
+                                        "${VIRTUAL_NODE_NAME}",
+                                        "metric_type",
+                                        "counter",
+                                        {}
+                                    ],
+                                    [
+                                        "${CLOUDWATCH_NAMESPACE}",
+                                        "envoy_cluster_manager_cluster_removed",
+                                        "appmesh.mesh",
+                                        "${MESH_NAME}",
+                                        "appmesh.virtual_node",
+                                        "${VIRTUAL_NODE_NAME}",
+                                        "metric_type",
+                                        "counter",
+                                        {}
+                                    ],
+                                    [
+                                        "${CLOUDWATCH_NAMESPACE}",
+                                        "envoy_cluster_manager_cluster_updated",
+                                        "appmesh.mesh",
+                                        "${MESH_NAME}",
+                                        "appmesh.virtual_node",
+                                        "${VIRTUAL_NODE_NAME}",
+                                        "metric_type",
+                                        "counter",
+                                        {}
+                                    ],
+                                    [
+                                        "${CLOUDWATCH_NAMESPACE}",
+                                        "envoy_cluster_manager_active_clusters",
+                                        "appmesh.mesh",
+                                        "${MESH_NAME}",
+                                        "appmesh.virtual_node",
+                                        "${VIRTUAL_NODE_NAME}",
+                                        "metric_type",
+                                        "gauge",
+                                        {}
+                                    ],
+                                    [
+                                        "${CLOUDWATCH_NAMESPACE}",
+                                        "envoy_cluster_manager_warming_clusters",
+                                        "appmesh.mesh",
+                                        "${MESH_NAME}",
+                                        "appmesh.virtual_node",
+                                        "${VIRTUAL_NODE_NAME}",
+                                        "metric_type",
+                                        "gauge",
+                                        {}
+                                    ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "${AWS_DEFAULT_REGION}",
+                                "stat": "Maximum",
+                                "period": 60,
+                                "title": "Envoy: Cluster Manager"
                             }
                         }
                     ]
@@ -136,6 +452,6 @@ Resources:
 
 Outputs:
     Dashboard:
-        Description: "Dashboard created to monitor Lambda function"
+        Description: "Dashboard created to monitor virtual node ${VIRTUAL_NODE_NAME}"
         Value: !Sub |
             "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home#dashboards:name=${DashboardName}"
