@@ -1,0 +1,257 @@
+Parameters:
+    DashboardName:
+        Description: "The CloudWatch dashboard name."
+        Type: "String"
+Resources:
+    Dashboard:
+        Type: "AWS::CloudWatch::Dashboard"
+        Properties:
+            DashboardName: !Ref DashboardName
+            DashboardBody: !Sub |
+                {
+                    "widgets": [
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 18,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,host,metric_type} envoy_http_downstream_rq_time_mean envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\"', 'p50', 60)", "id": "e1", "label": "p50", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "us-east-2",
+                                "stat": "p50",
+                                "period": 300,
+                                "title": "Ingress: Downstream Response Time (ms) p50"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 6,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,host,metric_type} envoy.response_code_class=\"2\" envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" MetricName=\"envoy_http_downstream_rq_xx_value\"', 'Sum', 60)", "id": "e1", "region": "us-east-2", "label": "2xx" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "Ingress: 2xx",
+                                "region": "us-east-2",
+                                "stat": "Sum",
+                                "period": 300
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 12,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,host,metric_type} envoy.response_code_class=\"4\" envoy.http_conn_manager_prefix=\"ingress\" MetricName=\"envoy_http_downstream_rq_xx_value\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\"', 'Sum', 300)", "id": "e1", "period": 300, "region": "us-east-2", "label": "4xx" } ],
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,envoy.response_code_class,host,metric_type} envoy.response_code_class=\"5\" envoy.http_conn_manager_prefix=\"ingress\" MetricName=\"envoy_http_downstream_rq_xx_value\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\"', 'Sum', 300)", "id": "e2", "period": 300, "region": "us-east-2", "label": "5xx" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "Ingress: 4xx, 5xx",
+                                "region": "us-east-2",
+                                "stat": "Sum",
+                                "period": 300
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 9,
+                            "y": 0,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,host,metric_type} envoy_cluster_upstream_rq_total_value appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress', 'Sum', 60)", "id": "e1", "label": "rps", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "Egress: Request Count",
+                                "region": "us-east-2",
+                                "stat": "Maximum",
+                                "period": 300
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 36,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,host,metric_type} envoy_cluster_upstream_rq_time_mean appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress', 'p50', 60)", "id": "e1", "label": "p50", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "us-east-2",
+                                "stat": "p99",
+                                "period": 300,
+                                "title": "Egress: Upstream Response Time (ms) P50"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 54,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,host,metric_type} envoy_http_downstream_cx_active_value appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" envoy.http_conn_manager_prefix=\"ingress\"', 'Maximum', 60)", "id": "e1", "label": "ingress" } ],
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,host,metric_type} appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" envoy_cluster_upstream_cx_total_value egress', 'Average', 300)", "id": "e2", "period": 300, "label": "egress" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "CPS",
+                                "region": "us-east-2",
+                                "stat": "Maximum",
+                                "period": 60
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 0,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,host,metric_type} envoy_http_downstream_rq_total_value appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" envoy.http_conn_manager_prefix=\"ingress\"', 'Sum', 60)", "id": "e1", "region": "us-east-2", "label": "rps" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "Ingress: Request Count",
+                                "region": "us-east-2",
+                                "stat": "Maximum",
+                                "period": 300
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 9,
+                            "y": 6,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,envoy.response_code_class,host,metric_type} appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress MetricName=\"envoy_cluster_upstream_rq_xx_value\" envoy.response_code_class=\"2\"', 'Sum', 60)", "id": "e1", "region": "us-east-2", "label": "2xx" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "Egress: 2xx",
+                                "region": "us-east-2",
+                                "stat": "Maximum",
+                                "period": 300
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 9,
+                            "y": 12,
+                            "width": 9,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,envoy.response_code_class,host,metric_type} appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress MetricName=\"envoy_cluster_upstream_rq_xx_value\" envoy.response_code_class=\"5\"', 'Sum', 60)", "id": "e1", "label": "5xx", "region": "us-east-2" } ],
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,envoy.response_code_class,host,metric_type} envoy.response_code_class=\"4\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress MetricName=\"envoy_cluster_upstream_rq_xx_value\"', 'Sum', 60)", "id": "e2", "label": "4xx", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "title": "Egress: 4xx, 5xx",
+                                "region": "us-east-2",
+                                "stat": "Maximum",
+                                "period": 300
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 48,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,host,metric_type} envoy_cluster_upstream_rq_time_mean appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress', 'p99', 60)", "id": "e1", "label": "p99", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "us-east-2",
+                                "stat": "p99",
+                                "period": 300,
+                                "title": "Egress: Upstream Response Time (ms) P99"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 42,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.cluster_name,host,metric_type} envoy_cluster_upstream_rq_time_mean appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\" egress', 'p90', 60)", "id": "e1", "label": "p90", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "us-east-2",
+                                "stat": "p99",
+                                "period": 300,
+                                "title": "Egress: Upstream Response Time (ms) P90"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 24,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,host,metric_type} envoy_http_downstream_rq_time_mean envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\"', 'p90', 60)", "id": "e2", "label": "p90", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "us-east-2",
+                                "stat": "p50",
+                                "period": 300,
+                                "title": "Ingress: Downstream Response Time (ms) p90"
+                            }
+                        },
+                        {
+                            "type": "metric",
+                            "x": 0,
+                            "y": 30,
+                            "width": 18,
+                            "height": 6,
+                            "properties": {
+                                "metrics": [
+                                    [ { "expression": "SEARCH('{howto-ecs-basics-20200109-statsd,appmesh.mesh,appmesh.virtual_node,envoy.http_conn_manager_prefix,host,metric_type} envoy_http_downstream_rq_time_mean envoy.http_conn_manager_prefix=\"ingress\" appmesh.mesh=\"howto-ecs-basics\" appmesh.virtual_node=\"howto-ecs-basics-color-v2-node\"', 'p99', 60)", "id": "e3", "label": "p99", "region": "us-east-2" } ]
+                                ],
+                                "view": "timeSeries",
+                                "stacked": false,
+                                "region": "us-east-2",
+                                "stat": "p50",
+                                "period": 300,
+                                "title": "Ingress: Downstream Response Time (ms) p99"
+                            }
+                        }
+                    ]
+                }
+
+Outputs:
+    Dashboard:
+        Description: "Dashboard created to monitor Lambda function"
+        Value: !Sub |
+            "https://.console.aws.amazon.com/cloudwatch/home#dashboards:name="
