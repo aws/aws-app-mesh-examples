@@ -1,0 +1,8 @@
+ARG AWS_ENVOY_IMAGE
+FROM ${AWS_ENVOY_IMAGE}
+
+RUN mkdir /keys
+
+COPY keys/* /keys/
+
+CMD ["/usr/bin/envoy-wrapper"]
