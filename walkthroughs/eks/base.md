@@ -56,17 +56,6 @@ Clone the repo and cd into the appropriate directory. We will be running all com
 >>brew install kubernetes-helm
 ```
 
-*Install tiller*
-
-Run the following series of commands in order
-```
-kubectl create -f helm/tiller-rbac.yml --record --save-config
-helm init --service-account tiller
-kubectl -n kube-system rollout status deploy tiller-deploy
-
-Note: The last command will tell you if the rollout is finished
-```
-
 *Install App Mesh Components*
 
 Run the following set of commands to install the App Mesh controller and Injector components 
