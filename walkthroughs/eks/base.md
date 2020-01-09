@@ -40,7 +40,7 @@ export KUBECONFIG=~/.kube/eksctl/clusters/appmeshtest
 
 ## Install App Mesh  Kubernetes components
 
-In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that. We need install tiller on both the clusters and run the following commands on both clusters for that.
+In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that.
 
 *Code base*
 
