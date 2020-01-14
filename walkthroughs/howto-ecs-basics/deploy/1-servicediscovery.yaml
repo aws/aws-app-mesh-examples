@@ -437,7 +437,7 @@ Resources:
       Cluster: !Ref ECSCluster
       DeploymentConfiguration:
         MaximumPercent: 200
-        MinimumHealthyPercent: 100`
+        MinimumHealthyPercent: 100
       DesiredCount: 3
       LaunchType: 'FARGATE'
       TaskDefinition: !Ref FrontTaskDef
