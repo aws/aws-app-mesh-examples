@@ -214,7 +214,7 @@ main() {
         update_route "${TEST_MESH_DIR}/colorTellerGreen/colorteller-updated-route.json" "colorteller-vr" "colorteller-route"
         ;;
     updateGateway)
-        update_vnode "${TEST_MESH_DIR}/colorGatewayValidation/colorgateway-vn-update.json" "colorgateway-vn" "colorgateway"
+        update_vnode "${TEST_MESH_DIR}/colorGatewayValidation/colorgateway-vn-update_1.json" "colorgateway-vn" "colorgateway"
         ;;
     updateGateway2)
         update_vnode "${TEST_MESH_DIR}/colorGatewayValidation/colorgateway-vn-update_2.json" "colorgateway-vn" "colorgateway"
