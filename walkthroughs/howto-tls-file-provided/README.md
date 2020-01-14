@@ -190,7 +190,7 @@ Enabling TLS communication from your virtual node is the first step to securing 
 
 This first step will first add a new virtual node, the Green Color Teller. The TLS configuration looks almost identical to the first, but now we are using the `colorteller_green` related certificates.
 
-```
+```json
 "tls": {
     "mode": "STRICT",
     "certificate": {
@@ -204,7 +204,7 @@ This first step will first add a new virtual node, the Green Color Teller. The T
 
 We will also need to update our route to serve traffic to both color tellers:
 
-```
+```json
 {
     "spec": {
         "httpRoute": {
