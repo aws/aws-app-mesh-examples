@@ -26,4 +26,4 @@ docker build -t $IMAGE $DIR -f $DIR/Dockerfile-envoy-wrapper --build-arg AWS_ENV
 $(aws ecr get-login --no-include-email)
 docker push $IMAGE
 
-echo "export ENVOY_IMAGE=$IMAGE"
+echo $IMAGE

@@ -1,16 +1,16 @@
 # Configuring TLS with File Provided TLS Certificates
 
-In this walkthrough we'll enable TLS encryption between two services in App Mesh using X.509 certificates packaged with your envoy application. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp).
+In this walkthrough we'll enable TLS encryption between two services in App Mesh using X.509 certificates packaged with your Envoy container. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp).
 
 ## Introduction
 
 In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
 
-App Mesh allows you to provide the TLS Certificate to envoy in a couple different ways
+App Mesh allows you to provide the TLS Certificate to Envoy in a couple different ways
 
-1. through a Secret Discovery Service call to App Mesh to get ACM provided certificates
+1. Through a Secret Discovery Service (SDS) call to App Mesh to get ACM provided certificates
 1. Through a secret discovery request to your own SDS
-1. Through a file path accessible to your envoy
+1. Through a file path accessible to your Envoy
 
 In this guide, we will be configuring Envoy to use the file based strategy.
 
@@ -85,9 +85,9 @@ For this demo, we are going to set up two separate Certificate Authorities. The 
 
 This generates a few different files
 
-- *_cert.pem: These files are the public side of our certificates
+- *_cert.pem: These files are the public side of the certificates
 - *_key.pem: These files are the private key for the certificates
-- *_cert_chain: These files are an ordered list of the public certificates used to sign the key
+- *_cert_chain: These files are an ordered list of the public certificates used to sign a private key
 - ca_1_ca_2_bundle.pem: This file contains the public certificates for both CAs.
 
 You can verify that the White Color Teller certificate was signed by CA 1 using this command.
@@ -182,9 +182,9 @@ You should see output similar to: `listener.0.0.0.0_15000.ssl.handshake: 1`, ind
 
 Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
 
-## Client Validation Tutorial
+## Client TLS Validation Tutorial
 
-Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the color gateway is also responsible for saying what certificates are trusted. App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
+Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the Color Gateway should also be responsible for defining what certificate authorities are trusted. App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
 
 ## Step 7: Add the Green Color Teller
 
@@ -270,23 +270,31 @@ We are going to update the Color Gateway backend to have this configuration:
 ]
 ```
 
-This will only allow certificates signed by CA 1 to be accepted.
+This instructs Envoy to only allow certificates signed by CA 1 to be accepted.
 
 ```bash
 ./mesh/mesh.sh updateGateway
 ```  
 
-Now when you run `curl "${COLORAPP_ENDPOINT}/color"` you will see both `white` is working properly, but you will start to see `upstream connect error or disconnect/reset before headers. reset reason: connection failure` from the Green Colorteller.
+Now when call the service, you will see `white` is working properly, but you will start to see `upstream connect error or disconnect/reset before headers. reset reason: connection failure` from the Green Colorteller.
+
+```bash
+curl "${COLORAPP_ENDPOINT}/color"
+```
 
 ### Step 9: Restore Communication to Green Color Teller
 
-We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the certificates public certificates for CA 1 and CA 2, which will allow communication to the Green Color Teller to resume.
+We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the certificates public certificates for CA 1 and CA 2, which will instructs Envoy to accept certificates signed by both CA 1 and CA 2.
 
 ```bash
 ./mesh/mesh.sh updateGateway2
 ```
 
-Now running `curl "${COLORAPP_ENDPOINT}/color"` will return green again.
+Now when you call the service, you will see both `white` and `green` again.
+
+```bash
+curl "${COLORAPP_ENDPOINT}/color"
+```
 
 ### Step 10: Clean Up
 
