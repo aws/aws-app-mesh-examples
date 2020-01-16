@@ -247,9 +247,9 @@ curl "${COLORAPP_ENDPOINT}/color"
 
 ### Step 8: Add TLS Validation to the Gateway
 
-As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem.  In the client/server relationship, if the server decides to turn on TLS, App Mesh configures the client Envoys to accept the certificate offered.
+As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem.  
 
-App Mesh allows you to define a client policy for TLS Validation.  We recommend that when TLS is enabled on a backend, that TLS Validation is set to use the CA, or group of CAs that you trust.
+In the client/server relationship, if the server decides to turn on TLS, App Mesh configures the client Envoys to accept the certificate offered. However, clients should also validate that the certificate offered by the server is from a certificate authority they trust. App Mesh allows you to define a client policy for TLS validation to ensure that the certificate is valid and issued from a trustworthy source.
 
 If you recall, the Green Color Teller certificates were signed by a different CA than the White Color Teller certificates.  Perhaps this is not the intended behavior and we want to reject certificates from any CA that is not CA 1.
 
