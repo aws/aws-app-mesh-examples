@@ -50,6 +50,7 @@ create_vnode() {
     vnode_name=$2
     dns_hostname="$3.${SERVICES_DOMAIN}"
     cli_input=$( jq -n \
+        --arg ROOT_CA_ARN "${ROOT_CA_ARN}" \
         --arg CERTIFICATE_ARN "${CERTIFICATE_ARN}" \
         --arg DNS_HOSTNAME "$3.${SERVICES_DOMAIN}" \
         --arg COLOR_TELLER_VS "colorteller.${SERVICES_DOMAIN}" \

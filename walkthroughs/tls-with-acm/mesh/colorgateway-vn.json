@@ -14,7 +14,24 @@
             }
         },
         "backends": [
-            {"virtualService": {"virtualServiceName": $COLOR_TELLER_VS }}
+            {
+                "virtualService": {
+                    "virtualServiceName": $COLOR_TELLER_VS,
+                    "clientPolicy": {
+                        "tls": {
+                            "validation": {
+                                "trust": {
+                                    "acm": {
+                                        "certificateAuthorityArns": [
+                                            $ROOT_CA_ARN
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         ]
     }
 }
