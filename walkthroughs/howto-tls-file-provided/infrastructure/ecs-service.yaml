@@ -131,6 +131,8 @@ Resources:
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-white-vn'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
+            - Name: CERTIFICATE_NAME
+              Value: 'colorteller_white'
 
   ColorTellerWhiteService:
     Type: 'AWS::ECS::Service'
@@ -252,6 +254,8 @@ Resources:
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-green-vn'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
+            - Name: CERTIFICATE_NAME
+              Value: 'colorteller_green'
 
   ColorTellerGreenService:
     Type: 'AWS::ECS::Service'
@@ -375,6 +379,8 @@ Resources:
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorgateway-vn'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
+            - Name: CERTIFICATE_NAME
+              Value: 'colorgateway'
 
   ColorGatewayService:
     Type: 'AWS::ECS::Service'

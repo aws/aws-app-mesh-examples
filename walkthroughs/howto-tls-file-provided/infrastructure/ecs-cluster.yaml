@@ -71,21 +71,12 @@ Resources:
                 "Action": [ "sts:AssumeRole" ]
             }]
         }
-      Policies:
-      - PolicyName: ACMExportCertificateAccess
-        PolicyDocument: |
-          {
-            "Statement": [{
-              "Effect": "Allow",
-              "Action": ["acm:ExportCertificate"],
-              "Resource": ["*"]
-            }]
-          }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
         - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
         - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+        - arn:aws:iam::aws:policy/SecretsManagerReadWrite
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role

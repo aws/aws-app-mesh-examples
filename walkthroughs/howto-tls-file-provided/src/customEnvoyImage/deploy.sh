@@ -20,7 +20,7 @@ $(aws ecr get-login --no-include-email --registry-id 840364872350)
 IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COLOR_TELLER_IMAGE_NAME}-envoy:latest"
 
 # build
-docker build -t $IMAGE $DIR -f $DIR/Dockerfile-envoy-wrapper --build-arg AWS_ENVOY_IMAGE=$AWS_ENVOY_IMAGE
+docker build -t $IMAGE $DIR --build-arg AWS_ENVOY_IMAGE=$AWS_ENVOY_IMAGE
 
 # push
 $(aws ecr get-login --no-include-email)

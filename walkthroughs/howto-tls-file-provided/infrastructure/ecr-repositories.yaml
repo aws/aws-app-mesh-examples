@@ -19,7 +19,7 @@ Resources:
     Properties:
       RepositoryName: !Ref ColorTellerImageName
 
-  ColorTellerEnvoyImageName:
+  ColorTellerEnvoyRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Sub "${ColorTellerImageName}-envoy"

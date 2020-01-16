@@ -6,9 +6,8 @@ In this walkthrough we'll enable TLS encryption between two services in App Mesh
 
 In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
 
-App Mesh allows you to provide the TLS Certificate to Envoy in a couple different ways
+App Mesh allows you to provide TLS Certificates to Envoy in a few different ways:
 
-1. Through a Secret Discovery Service (SDS) call to App Mesh to get ACM provided certificates
 1. Through a secret discovery request to your own SDS
 1. Through a file path accessible to your Envoy
 
@@ -80,7 +79,7 @@ Before we can encrypt traffic between services in the mesh, we need to generate 
 For this demo, we are going to set up two separate Certificate Authorities. The first one will be used to sign the certificate for the White Color Teller, the second will be used to sign the certificate for the Green Color Teller.
 
 ```bash
-./src/customEnvoyImage/keys/certs.sh
+./src/tlsCertificates/certs.sh
 ```
 
 This generates a few different files
@@ -93,12 +92,18 @@ This generates a few different files
 You can verify that the White Color Teller certificate was signed by CA 1 using this command.
 
 ```bash
-openssl verify -verbose -CAfile src/customEnvoyImage/keys/ca_1_cert.pem  src/customEnvoyImage/keys/colorteller_white_cert.pem
+openssl verify -verbose -CAfile src/tlsCertificates/ca_1_cert.pem  src/tlsCertificates/colorteller_white_cert.pem
+```
+
+We are going to store these certificates in [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/). This will allow us to securely retrieve them at a later time.
+
+```bash
+./src/tlsCertificates/deploy.sh
 ```
 
 ## Step 4: Export our Custom Docker Image
 
-Finally, we can build and deploy our custom docker image:
+Finally, we can build and deploy our custom docker image. This container has a `/keys` directory and a custom startup script that will pull the necessary certificates from `AWS Secrets Manager`.
 
 ```bash
 ./src/customEnvoyImage/deploy.sh
@@ -174,7 +179,7 @@ Finally, let's log in to the bastion host and check the SSL handshake statistics
 BASTION_IP=$(aws cloudformation describe-stacks \
     --stack-name $ENVIRONMENT_NAME-ecs-cluster \
     | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="BastionIP") | .OutputValue')
-ssh -i ~/.ssh/$KEY_PAIR_NAME ec2-user@$BASTION_IP
+ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
 curl -s http://colorteller.default.svc.cluster.local:9901/stats | grep ssl.handshake
 ```
 
@@ -234,7 +239,7 @@ Let's update our mesh
 ./mesh/mesh.sh addGreen
 ```
 
-Now when you hit the service, you should see both green and white returned. Note, you may have to call it a few times
+After a couple seconds, when you hit the servic, you should see both green and white returned. Note, you may have to call it a few times.
 
 ```bash
 curl "${COLORAPP_ENDPOINT}/color"
@@ -242,7 +247,9 @@ curl "${COLORAPP_ENDPOINT}/color"
 
 ### Step 8: Add TLS Validation to the Gateway
 
-As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem. By default, App Mesh configures Envoy to accept any TLS certificate to maintain communication between your services.
+As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem.  In the client/server relationship, if the server decides to turn on TLS, App Mesh configures the client Envoys to accept the certificate offered.
+
+App Mesh allows you to define a client policy for TLS Validation.  We recommend that when TLS is enabled on a backend, that TLS Validation is set to use the CA, or group of CAs that you trust.
 
 If you recall, the Green Color Teller certificates were signed by a different CA than the White Color Teller certificates.  Perhaps this is not the intended behavior and we want to reject certificates from any CA that is not CA 1.
 
@@ -284,7 +291,7 @@ curl "${COLORAPP_ENDPOINT}/color"
 
 ### Step 9: Restore Communication to Green Color Teller
 
-We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the certificates public certificates for CA 1 and CA 2, which will instructs Envoy to accept certificates signed by both CA 1 and CA 2.
+We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instructs Envoy to accept certificates signed by both CA 1 and CA 2.
 
 ```bash
 ./mesh/mesh.sh updateGateway2
@@ -320,5 +327,5 @@ Delete the mesh.
 And finally delete the certificates.
 
 ```bash
-rm src/customEnvoyImage/keys/*.pem
+./src/tlsCertificates/cleanup.sh
 ```
