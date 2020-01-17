@@ -7,6 +7,10 @@ Parameters:
   ColorTellerImageName:
     Description: The name for the color teller image
     Type: String
+  
+  ColorAppEnvoyImageName:
+    Description: The name for the color app envoy image
+    Type: String
 
 Resources:
   GatewayRepository:
@@ -22,4 +26,4 @@ Resources:
   ColorTellerEnvoyRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Sub "${ColorTellerImageName}-envoy"
+      RepositoryName: !Ref ColorAppEnvoyImageName

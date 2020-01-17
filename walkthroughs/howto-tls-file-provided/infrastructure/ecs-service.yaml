@@ -23,6 +23,10 @@ Parameters:
   ColorTellerImageName:
     Description: The name for the color teller image
     Type: String
+  
+  ColorAppEnvoyImageName:
+    Description: The name for the color app envoy image
+    Type: String  
 
   LoadBalancerPath:
     Type: String
@@ -98,7 +102,7 @@ Resources:
             - Name: 'COLOR'
               Value: 'white'
         - Name: envoy
-          Image: !Ref EnvoyImage
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorAppEnvoyImageName}'
           Essential: true
           User: '1337'
           Ulimits:
@@ -221,7 +225,7 @@ Resources:
             - Name: 'COLOR'
               Value: 'green'
         - Name: envoy
-          Image: !Ref EnvoyImage
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorAppEnvoyImageName}'
           Essential: true
           User: '1337'
           Ulimits:
@@ -346,7 +350,7 @@ Resources:
             - Name: TCP_ECHO_ENDPOINT
               Value: unused
         - Name: envoy
-          Image: !Ref EnvoyImage
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorAppEnvoyImageName}'
           Essential: true
           User: '1337'
           Ulimits:

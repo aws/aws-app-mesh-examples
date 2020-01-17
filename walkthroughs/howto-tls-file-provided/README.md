@@ -6,11 +6,6 @@ In this walkthrough we'll enable TLS encryption between two services in App Mesh
 
 In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
 
-App Mesh allows you to provide TLS Certificates to Envoy in a few different ways:
-
-1. Through a secret discovery request to your own SDS
-1. Through a file path accessible to your Envoy
-
 In this guide, we will be configuring Envoy to use the file based strategy.
 
 ## Step 1: Download the App Mesh Preview CLI
@@ -46,10 +41,11 @@ export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=AppMeshTLSExample
 export MESH_NAME=ColorApp-TLS
-export AWS_ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
+export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
 export GATEWAY_IMAGE_NAME="gateway"
 export COLOR_TELLER_IMAGE_NAME="colorteller"
+export COLOR_APP_ENVOY_IMAGE_NAME="colorapp-envoy"
 ```
 
 First, create the VPC.
@@ -109,15 +105,9 @@ Finally, we can build and deploy our custom docker image. This container has a `
 ./src/customEnvoyImage/deploy.sh
 ```
 
-The script will print the image location in ECR. Export it as:
-
-```bash
-export ENVOY_IMAGE=<output of last command>
-```
-
 ## Step 5: Create a Mesh with TLS enabled
 
-We are going to start with a single colorteller enabled.
+We are going to start with a both a White Color Teller and a Green Color Teller. Initially, we will only serve traffic to the White Color Teller.
 
 Let's create the mesh.
 
@@ -193,7 +183,7 @@ Enabling TLS communication from your virtual node is the first step to securing 
 
 ## Step 7: Add the Green Color Teller
 
-This first step will first add a new virtual node, the Green Color Teller. The TLS configuration looks almost identical to the first, but now we are using the `colorteller_green` related certificates.
+We previously added two color tellers, the White Color Teller and the Green Color Teller. The TLS configuration for the Green Color Teller looks almost identical to the White, but now we are using the `colorteller_green` related certificates.
 
 ```json
 "tls": {
@@ -207,7 +197,7 @@ This first step will first add a new virtual node, the Green Color Teller. The T
 }
 ```
 
-We will also need to update our route to serve traffic to both color tellers:
+The route we have currently, only routes to the White Color Teller. We will also need to update the to serve traffic to both color tellers:
 
 ```json
 {
@@ -239,7 +229,7 @@ Let's update our mesh
 ./mesh/mesh.sh addGreen
 ```
 
-After a couple seconds, when you hit the servic, you should see both green and white returned. Note, you may have to call it a few times.
+After a couple seconds, when you hit the service, you should see both green and white returned. Note, you may have to call it a few times.
 
 ```bash
 curl "${COLORAPP_ENDPOINT}/color"
@@ -311,9 +301,9 @@ Run the following commands to clean up and tear down the resources that we’ve 
 ```bash
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
-aws ecr delete-repository --force --repository-name colorteller
-aws ecr delete-repository --force --repository-name gateway
-aws ecr delete-repository --force --repository-name colorteller-envoy
+aws ecr delete-repository --force --repository-name $COLOR_TELLER_IMAGE_NAME
+aws ecr delete-repository --force --repository-name $GATEWAY_IMAGE_NAME
+aws ecr delete-repository --force --repository-name $COLOR_APP_ENVOY_IMAGE_NAME
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 ```

@@ -199,6 +199,7 @@ main() {
         create_vrouter "${TEST_MESH_DIR}/colorteller-vr.json" "colorteller-vr"
         create_route "${TEST_MESH_DIR}/colorteller-route.json" "colorteller-vr" "colorteller-route"
         create_vservice "${TEST_MESH_DIR}/colorteller-vs.json" "colorteller.${SERVICES_DOMAIN}"
+        create_vnode "${TEST_MESH_DIR}/colortellerGreen/colorteller-green-vn.json" "colorteller-green-vn" "colorteller-green"
         ;;
     down)
         delete_vservice "colorteller.${SERVICES_DOMAIN}"
@@ -210,7 +211,6 @@ main() {
         delete_mesh
         ;;
     addGreen)
-        create_vnode "${TEST_MESH_DIR}/colorTellerGreen/colorteller-green-vn.json" "colorteller-green-vn" "colorteller-green"
         update_route "${TEST_MESH_DIR}/colorTellerGreen/colorteller-updated-route.json" "colorteller-vr" "colorteller-route"
         ;;
     updateGateway)
