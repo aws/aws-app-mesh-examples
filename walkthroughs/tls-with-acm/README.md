@@ -140,7 +140,9 @@ With managed certificates, ACM will automatically renew certificates that are ne
 
 ## Step 4: Create a Mesh with TLS enabled
 
-This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white). We'll be encrypting traffic from the gateway to the color teller node. As such, our color teller white Virtual Node spec looks like this:
+This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white).
+
+We'll be encrypting traffic from the gateway to the color teller node. Our color teller white Virtual Node will be terminating TLS with a certificate provided by ACM. The spec looks like this:
 
 ```json
 "listeners": [
@@ -172,6 +174,44 @@ This mesh will be a simplified version of the original Color App Example, so we'
         "hostname": "colorteller.${SERVICES_DOMAIN}"
     }
 }
+```
+
+Additionally, the gateway service will be configured to validate the certificate of the color teller node by specifying the CA that issued it. The spec for the gateway looks like this:
+
+```json
+"listeners": [
+    {
+        "portMapping": {
+            "port": 9080,
+            "protocol": "http"
+        }
+    }
+],
+"serviceDiscovery": {
+    "dns": {
+        "hostname": "colorgateway.${SERVICES_DOMAIN}"
+    }
+},
+"backends": [
+    {
+        "virtualService": {
+            "virtualServiceName": "colorteller.${SERVICE_DOMAIN}",
+            "clientPolicy": {
+                "tls": {
+                    "validation": {
+                        "trust": {
+                            "acm": {
+                                "certificateAuthorityArns": [
+                                    "$ROOT_CA_ARN"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
 ```
 
 For more information on what TLS settings you can provide for a Virtual Node, see the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation.
@@ -249,7 +289,7 @@ aws acm-pca delete-certificate-authority --certificate-authority-arn $ROOT_CA_AR
 
 ### 1. What permissions does the IAM role used by the Envoy need in order to retrieve a certificate and private key from ACM?
 
-The IAM role used by the Envoy needs the ability to connect to App Mesh (`appmesh:StreamAggregatedResources`) and export certificates from ACM (`acm:ExportCertificate`). An example policy (as a CloudFormation role) is provided below and is available in `./infrastructure/ecs-cluster.yaml`:
+The IAM role used by the Envoy needs the ability to connect to App Mesh (`appmesh:StreamAggregatedResources`) and export certificates from ACM (`acm:ExportCertificate`). An example policy is provided below and is available in `./infrastructure/ecs-cluster.yaml`:
 
 ```yaml
 TaskIamRole:
@@ -288,6 +328,45 @@ In a production setting, you should set more specific policies to scope down wha
 
 Yes, App Mesh will export your certificate using the `ExportCerticate` API. See [AWS Certificate Manager Pricing](https://aws.amazon.com/certificate-manager/pricing/) for information on the cost associated with exporting a certificate.
 
-### 3. How can I specify explicit TLS validation context on the client virtual node?
+### 3. What permissions does the IAM role used by the Envoy need in order to retrieve a certificate authority certificate?
 
-By default, App Mesh automatically distributes the certificate chain required to validate a TLS connection to all clients of a Virtual Node with TLS enabled. In a zero-trust environment, you may wish to explicitly set the certificate validation chain for a given Virtual Node's backends. This capability is coming soon. Follow [this GitHub issue](https://github.com/aws/aws-app-mesh-roadmap/issues/38) for status updates.
+When using an ACM Private Certificate Authority in a client policy for a Virtual Node's backend, the IAM role used by the Envoy needs the ability to connect to App Mesh (`appmesh:StreamAggregatedResources`) and retrieve certificate authority certificates from ACM (`acm-pca:GetCertificateAuthorityCertificate`). An example policy is provided below and is available in `./infrastructure/ecs-cluster.yaml`:
+
+```yaml
+TaskIamRole:
+  Type: AWS::IAM::Role
+  Properties:
+    Path: /
+    AssumeRolePolicyDocument: |
+      {
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+            "Action": [ "sts:AssumeRole" ]
+        }]
+      }
+    Policies:
+    - PolicyName: ACMCertificateAuthorityAccess
+      PolicyDocument: |
+        {
+          "Statement": [{
+              "Effect": "Allow",
+              "Action": ["acm-pca:GetCertificateAuthorityCertificate"],
+              "Resource": ["*"]
+          }]
+        }
+    ManagedPolicyArns:
+    - arn:aws:iam::aws:policy/CloudWatchFullAccess
+    - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+    - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
+```
+
+The policy above uses the App Mesh managed policy `AppMeshPreviewEnvoyAccess` which provides permissions for the action `appmesh:StreamAggregatedResources` for all Virtual Nodes in the mesh.
+
+In a production setting, you should set more specific policies to scope down what Virtual Nodes and Certificate Authorities an Envoy has access to.
+
+### 4. What happens if I don't specify a client policy to enforce TLS, but the backend has TLS enabled?
+
+To preserve connectivity and provide for a smooth migration to TLS between services, App Mesh automatically distributes the certificate chain required to validate a TLS connection to all clients of a Virtual Node with TLS enabled when a client policy is not provided. This allows the backend to enable TLS termination, and ensures that the certificate offered by the backend is what was intended by the service owner. This is not meant to serve as sufficient configuration to support trust between services. When a client policy is provided, the default behavior is overridden with the specifications of the policy.
+
+We recommend you specify client policies for backends when TLS is required between services so you can ensure the TLS certificate presented during TLS negotiation is from a certificate authority you trust.

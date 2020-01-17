@@ -81,6 +81,15 @@ Resources:
               "Resource": ["*"]
             }]
           }
+      - PolicyName: ACMCertificateAuthorityAccess
+        PolicyDocument: |
+          {
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": ["acm-pca:GetCertificateAuthorityCertificate"],
+              "Resource": ["*"]
+            }]
+          }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
