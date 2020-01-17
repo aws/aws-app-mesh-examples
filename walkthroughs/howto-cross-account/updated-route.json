@@ -4,11 +4,7 @@
       "action": {
         "weightedTargets": [
           {
-            "virtualNode": "backend-1",
-            "weight": 1
-          },
-          {
-            "virtualNode": "backend-2",
+            "virtualNode": "backend-2-vn",
             "weight": 1
           }
         ]

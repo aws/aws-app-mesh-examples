@@ -118,7 +118,7 @@ Resources:
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/CloudWatchFullAccess
       - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
-      - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+      - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
@@ -228,7 +228,9 @@ Resources:
               awslogs-stream-prefix: 'gateway-envoy'
           Environment:
           - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-            Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/gateway'
+            Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/gateway-vn'
+          - Name: 'APPMESH_PREVIEW'
+            Value: 1
           - Name: 'ENVOY_LOG_LEVEL'
             Value: 'debug'
 
@@ -341,7 +343,9 @@ Resources:
             awslogs-stream-prefix: 'backend-envoy'
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-          Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/backend-1'
+          Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/backend-1-vn'
+        - Name: 'APPMESH_PREVIEW'
+          Value: 1
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 

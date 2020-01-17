@@ -7,23 +7,23 @@ if [ -z $PROJECT_NAME ]; then
     exit 1
 fi
 
-if [ -z $AWS_MASTER_ACCOUNT_ID ]; then
-    echo "AWS_MASTER_ACCOUNT_ID environment variable is not set."
+if [ -z $AWS_PRIMARY_ACCOUNT_ID ]; then
+    echo "AWS_PRIMARY_ACCOUNT_ID environment variable is not set."
     exit 1
 fi
 
-if [ -z $AWS_SECOND_ACCOUNT_ID ]; then
-    echo "AWS_SECOND_ACCOUNT_ID environment variable is not set."
+if [ -z $AWS_SECONDARY_ACCOUNT_ID ]; then
+    echo "AWS_SECONDARY_ACCOUNT_ID environment variable is not set."
     exit 1
 fi
 
-if [ -z $AWS_MASTER_PROFILE ]; then
-    echo "AWS_MASTER_PROFILE environment variable is not set."
+if [ -z $AWS_PRIMARY_PROFILE ]; then
+    echo "AWS_PRIMARY_PROFILE environment variable is not set."
     exit 1
 fi
 
-if [ -z $AWS_SECOND_PROFILE ]; then
-    echo "AWS_SECOND_PROFILE environment variable is not set."
+if [ -z $AWS_SECONDARY_PROFILE ]; then
+    echo "AWS_SECONDARY_PROFILE environment variable is not set."
     exit 1
 fi
 
@@ -53,21 +53,27 @@ if [ -z $KEY_PAIR ]; then
 fi
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-MASTER_ACCOUNT_DIR="${DIR}/master-account"
-SECOND_ACCOUNT_DIR="${DIR}/second-account"
+PRIMARY_ACCOUNT_DIR="${DIR}/primary-account"
+SECONDARY_ACCOUNT_DIR="${DIR}/secondary-account"
+
+print_endpoint() {
+    echo "Public endpoint:"
+    endpoint=$(aws cloudformation describe-stacks \
+        --stack-name="${PROJECT_NAME}-app" \
+        --query="Stacks[0].Outputs[?OutputKey=='PublicEndpoint'].OutputValue" \
+        --output=text)
+    echo "Application is available at ${endpoint}"
+}
 
 action=${1:-"deploy"}
 if [ "$action" == "delete" ]; then
-    ${SECOND_ACCOUNT_DIR}/deploy.sh delete
-    ${MASTER_ACCOUNT_DIR}/deploy.sh delete
+    ${SECONDARY_ACCOUNT_DIR}/deploy.sh delete
+    ${PRIMARY_ACCOUNT_DIR}/deploy.sh delete
     exit 0
 fi
 
-source ${MASTER_ACCOUNT_DIR}/deploy.sh deploy
-${SECOND_ACCOUNT_DIR}/deploy.sh deploy
-
-echo "Bastion Address:"
-echo "${BASTION_IP}"
-
-+echo "DNS Endpoint:"
-echo "${DNS_ENDPOINT}"
+if [ "$action" == "deploy" ]; then
+    ${PRIMARY_ACCOUNT_DIR}/deploy.sh deploy
+    ${SECONDARY_ACCOUNT_DIR}/deploy.sh deploy
+    print_endpoint
+fi

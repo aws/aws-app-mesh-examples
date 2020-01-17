@@ -8,15 +8,15 @@ Parameters:
     Description: Owner of the Mesh
 
   VPC:
-    Description: VPC shared from the master account
+    Description: VPC shared from the primary account
     Type: String
 
   PrivateSubnet1:
-    Description: PrivateSubnet1 shared from the master account
+    Description: PrivateSubnet1 shared from the primary account
     Type: String
 
   PrivateSubnet2:
-    Description: PrivateSubnet2 shared from the master account
+    Description: PrivateSubnet2 shared from the primary account
     Type: String
 
   VpcCIDR:
@@ -68,7 +68,7 @@ Resources:
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/CloudWatchFullAccess
       - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
-      - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+      - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
@@ -176,7 +176,9 @@ Resources:
             awslogs-stream-prefix: 'backend-envoy'
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-          Value: !Sub 'mesh/${ProjectName}-mesh@${MeshOwner}/virtualNode/backend-2'
+          Value: !Sub 'mesh/${ProjectName}-mesh@${MeshOwner}/virtualNode/backend-2-vn'
+        - Name: 'APPMESH_PREVIEW'
+          Value: 1
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 

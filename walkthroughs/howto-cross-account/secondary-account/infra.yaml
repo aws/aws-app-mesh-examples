@@ -4,7 +4,7 @@ Parameters:
     Description: Project name to link stacks
 
   VPC:
-    Description: Please enter the VPC shared from the master account
+    Description: Please enter the VPC shared from the primary account
     Type: String
 
 Resources:
@@ -16,7 +16,7 @@ Resources:
   ECSServiceDiscoveryNamespace:
     Type: AWS::ServiceDiscovery::PrivateDnsNamespace
     Properties:
-      Name: !Sub 'cross.${ProjectName}.local'
+      Name: !Sub 'secondary.${ProjectName}.local'
       Vpc: !Ref VPC
 
 Outputs:
