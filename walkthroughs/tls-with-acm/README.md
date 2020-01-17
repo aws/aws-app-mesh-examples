@@ -33,7 +33,7 @@ aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color
 ```
 
 This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
-`~/.ssh/color-app.pem`. 
+`~/.ssh/color-app.pem`.
 
 Next, we need to set a few environment variables before provisioning the
 infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, and `ENVOY_IMAGE` below.
@@ -247,7 +247,7 @@ Finally, let's log in to the bastion host and check the SSL handshake statistics
 BASTION_IP=$(aws cloudformation describe-stacks \
     --stack-name $ENVIRONMENT_NAME-ecs-cluster \
     | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="BastionIP") | .OutputValue')
-ssh ec2-user@$BASTION_IP
+ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
 curl -s http://colorteller.default.svc.cluster.local:9901/stats | grep ssl.handshake
 ```
 
