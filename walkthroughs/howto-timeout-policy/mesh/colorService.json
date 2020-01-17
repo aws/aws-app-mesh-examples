@@ -1,0 +1,10 @@
+{
+    "spec": {
+        "provider": {
+            "virtualRouter": {
+                "virtualRouterName": "color-router"
+            }
+        }
+    },
+    "virtualServiceName": "color.http.local"
+}

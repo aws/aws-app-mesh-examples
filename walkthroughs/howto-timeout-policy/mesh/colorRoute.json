@@ -1,0 +1,20 @@
+{
+  "virtualRouterName": "color-router",
+  "routeName": "color-route",
+  "spec": {
+    "priority": 1,
+    "httpRoute": {
+      "match": {
+        "prefix": "/"
+      },
+      "action": {
+        "weightedTargets": [
+          {
+            "virtualNode": "color-node",
+            "weight": 1
+          }
+        ]
+      }
+    }
+  }
+}
