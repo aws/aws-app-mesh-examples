@@ -211,7 +211,7 @@ main() {
         delete_mesh
         ;;
     addGreen)
-        update_route "${TEST_MESH_DIR}/colorTellerGreen/colorteller-updated-route.json" "colorteller-vr" "colorteller-route"
+        update_route "${TEST_MESH_DIR}/colortellerGreen/colorteller-updated-route.json" "colorteller-vr" "colorteller-route"
         ;;
     updateGateway)
         update_vnode "${TEST_MESH_DIR}/colorGatewayValidation/colorgateway-vn-update_1.json" "colorgateway-vn" "colorgateway"
@@ -219,9 +219,6 @@ main() {
     updateGateway2)
         update_vnode "${TEST_MESH_DIR}/colorGatewayValidation/colorgateway-vn-update_2.json" "colorgateway-vn" "colorgateway"
         ;;    
-    debug)
-        update_vnode "${TEST_MESH_DIR}/colorTellerGreen/colorteller-green-vn.json" "colorteller-green-vn" "colorteller-green"
-        ;;
     *)
         err "Invalid action specified: $action"
         ;;
