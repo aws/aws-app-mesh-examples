@@ -68,19 +68,22 @@ These backends will be configured in distinct accounts and made accessible throu
         ```
     5. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
         ```
-        export ENVOY_IMAGE=840364872350.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-envoy:v1.12.1.1-prod
+        export ENVOY_IMAGE=840364872350.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-envoy:v1.12.2.1-prod
         ```
     6. **Backend Images**
         ```
         export BACKEND_1_IMAGE=dockercloud/hello-world
         export BACKEND_2_IMAGE=karthequian/helloworld 
         ```     
-    7. **KEY_PAIR** set to the name of an EC2 key pair. We will use this key pair to access a bastion host in the generated VPC to look at the stats collected by the Envoy proxy. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+    7. **KEY_PAIR** set to the name of an EC2 key pair.
+        We will use this key pair to access a bastion host in the generated VPC to debug the application on ECS side and look at Envoy configs.
+        See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html
+        Note: This key pair should be in the primary account. We will be creating a bastion host in the primary account.
         ```
         export KEY_PAIR=...
         ```
-10. Source the `env.vars` file using `source env.vars`
-11. Setup base cloudformation stack by running
+3. Source the `env.vars` file using `source env.vars`
+4. Setup base cloudformation stack by running
     ```
     ./deploy.sh
     ```
@@ -103,6 +106,8 @@ These backends will be configured in distinct accounts and made accessible throu
     ```
     export BASTION_ENDPOINT=<your_bastion_endpoint e.g. 123.45.67.89>
     ```
+    Note: This bastion endpoint is only used for debugging purposes,
+    such as curling the private IP of the ECS tasks to look at Envoy Configs.
 2. Try curling the web page or open the address in a browser:
     ```
     curl $DNS_ENDPOINT
