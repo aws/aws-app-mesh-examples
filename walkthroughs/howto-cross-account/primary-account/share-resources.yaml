@@ -1,0 +1,35 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+  ConsumerAccountId:
+    Type: String
+    Description: Account Id to share resources with
+
+Resources:
+  MeshShare:
+    Type: AWS::RAM::ResourceShare
+    Properties:
+      AllowExternalPrincipals: true
+      Name: mesh-share
+      Principals:
+        - !Ref ConsumerAccountId
+      ResourceArns:
+         - !Sub 'arn:aws:appmesh-preview:${AWS::Region}:${AWS::AccountId}:mesh/${ProjectName}-mesh'
+
+  SubnetResourceShare:
+    Type: AWS::RAM::ResourceShare
+    Properties:
+      AllowExternalPrincipals: true
+      Name: vpc-share
+      Principals:
+        - !Ref ConsumerAccountId
+      ResourceArns:
+        - Fn::Join:
+          - '/'
+          - - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet'
+            - Fn::ImportValue: !Sub '${ProjectName}:PrivateSubnet1'
+        - Fn::Join:
+          - '/'
+          - - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet'
+            - Fn::ImportValue: !Sub '${ProjectName}:PrivateSubnet2'

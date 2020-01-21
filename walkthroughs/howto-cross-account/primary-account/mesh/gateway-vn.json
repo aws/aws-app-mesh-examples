@@ -1,0 +1,24 @@
+{
+    "spec": {
+       "backends": [
+            {
+                "virtualService": {
+                    "virtualServiceName": "backend.\($PROJECT_NAME).local"
+                }
+            }
+       ],
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 80,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "hostname": "gateway.\($PROJECT_NAME).local"
+            }
+        }
+    }
+}

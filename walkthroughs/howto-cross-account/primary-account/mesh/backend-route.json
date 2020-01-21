@@ -1,0 +1,17 @@
+{
+    "spec": {
+        "httpRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "backend-1-vn",
+                        "weight": 2
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/"
+            }
+        }
+    }
+}

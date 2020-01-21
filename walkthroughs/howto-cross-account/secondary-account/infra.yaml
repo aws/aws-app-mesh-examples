@@ -1,0 +1,33 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+  VPC:
+    Description: Please enter the VPC shared from the primary account
+    Type: String
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ProjectName
+
+  ECSServiceDiscoveryNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: !Sub 'secondary.${ProjectName}.local'
+      Vpc: !Ref VPC
+
+Outputs:
+  ECSCluster:
+    Description: A reference to the ECS cluster
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub '${ProjectName}:ECSCluster'
+
+  ECSServiceDiscoveryNamespace:
+    Description: A SDS namespace that will be used by all services in this cluster
+    Value: !Ref ECSServiceDiscoveryNamespace
+    Export:
+      Name: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
