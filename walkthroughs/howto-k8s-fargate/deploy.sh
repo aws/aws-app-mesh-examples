@@ -51,7 +51,7 @@ check_appmesh_k8s() {
 
     #check aws-app-mesh-inject version
     currentver=$(kubectl get deployment -n appmesh-system appmesh-inject -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':')
-    requiredver="v0.3.0"
+    requiredver="v0.4.0"
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
         echo "aws-app-mesh-inject check passed! $currentver >= $requiredver"
     else
