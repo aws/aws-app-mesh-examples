@@ -1,24 +1,23 @@
 ## Prerequisites
-- Setup EKS cluster with Fargate support.
-  - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io)
-- [Walkthrough: App Mesh with EKS](../eks/)
-
-## Setup
-
-1. Clone this repository and navigate to the walkthrough/howto-k8s-alb folder, all commands will be run from this location
-2. **Your** account id:
+- Setup following environment variables
+  - **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
-3. **Region** e.g. us-east-2
+  - **Region** e.g. us-east-2
     ```
     export AWS_DEFAULT_REGION=us-east-2
     ```
-4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy,
+  - **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
-    export ENVOY_IMAGE=840364872350.dkr.ecr.us-east-2.amazonaws.com/aws-appmesh-envoy:v1.12.1.1-prod
+    export ENVOY_IMAGE=...
     ```
-5. Deploy
+- Setup EKS cluster with Fargate support.
+  - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
+
+## Deploy
+1. Clone this repository and navigate to the walkthrough/howto-k8s-alb folder, all commands will be run from this location
+2. Deploy
     ```.
     ./deploy.sh
     ```
