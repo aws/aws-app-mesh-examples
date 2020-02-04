@@ -16,7 +16,7 @@
   - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
 
 ## Deploy
-1. Clone this repository and navigate to the walkthrough/howto-k8s-alb folder, all commands will be run from this location
+1. Clone this repository and navigate to the walkthrough/howto-k8s-fargate folder, all commands will be run from this location
 2. Deploy
     ```.
     ./deploy.sh
