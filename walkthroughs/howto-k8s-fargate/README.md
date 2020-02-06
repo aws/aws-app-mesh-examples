@@ -14,6 +14,9 @@
     ```
 - Setup EKS cluster with Fargate support.
   - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
+    ```
+    eksctl create cluster -f clusterconfig.yaml
+    ```
 
 ## Deploy
 1. Clone this repository and navigate to the walkthrough/howto-k8s-fargate folder, all commands will be run from this location
@@ -44,7 +47,7 @@
    ```
 3. Curl front-app
    ```
-   $ while true; do  curl -s http://localhost:8080; sleep 0.1; echo ; done
+   $ while true; do  curl -s http://localhost:8080/color; sleep 0.1; echo ; done
 
     {"color":"green", "stats": {"blue":0.54,"green":0.46}}
     {"color":"green", "stats": {"blue":0.54,"green":0.46}}
