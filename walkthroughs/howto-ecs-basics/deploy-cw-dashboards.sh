@@ -19,7 +19,7 @@ STACK_NAME="appmesh-${PROJECT_NAME}"
 deploy_cw_dashboards() {
     mkdir -p $DIR/_output
     MESH_NAME=${PROJECT_NAME}
-    LOG_GROUP="${PROJECT_NAME}-log-group"
+    CLOUDWATCH_NAMESPACE=${CLOUDWATCH_NAMESPACE:-${PROJECT_NAME}}
     virtual_nodes=($(aws cloudformation describe-stack-resources --stack-name ${STACK_NAME} |
         jq -r '.StackResources[] | select(.ResourceType == "AWS::AppMesh::VirtualNode") | .PhysicalResourceId'))
     for vn in ${virtual_nodes[@]}; do
@@ -62,7 +62,6 @@ delete_stacks() {
 }
 
 action=${1:-"deploy"}
-stage=${2:-"prelude"}
 if [ "$action" == "delete" ]; then
     delete_stacks
     exit 0
