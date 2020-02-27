@@ -33,7 +33,7 @@ deploy_images() {
     done
 
     $(aws ecr get-login --no-include-email)
-    docker build -t ${CW_AGENT_IMAGE} --build-arg GO_PROXY=${GO_PROXY} ${DIR}/src/cwagent && docker push ${CW_AGENT_IMAGE}
+    docker build -t ${CW_AGENT_IMAGE} ${DIR}/src/cwagent && docker push ${CW_AGENT_IMAGE}
     docker build -t ${COLOR_APP_IMAGE} --build-arg GO_PROXY=${GO_PROXY} ${DIR}/src/colorapp && docker push ${COLOR_APP_IMAGE}
     docker build -t ${FRONT_APP_IMAGE} --build-arg GO_PROXY=${GO_PROXY} ${DIR}/src/feapp && docker push ${FRONT_APP_IMAGE}
 }
