@@ -400,6 +400,9 @@ Resources:
           Environment:
             - Name: 'HOST_NAME'
               Value: !GetAtt ColorVirtualNode.VirtualNodeName
+            - Name: CW_CONFIG_CONTENT
+              Value:
+                Fn::Sub: "{ \"metrics\": { \"namespace\":\"${ProjectName}\", \"metrics_collected\": { \"statsd\": {}}}}"
         - Name: envoy
           Image: !Ref EnvoyImage
           Essential: true
@@ -631,6 +634,9 @@ Resources:
           Environment:
             - Name: 'HOST_NAME'
               Value: !GetAtt FrontVirtualNode.VirtualNodeName
+            - Name: CW_CONFIG_CONTENT
+              Value:
+                Fn::Sub: "{ \"metrics\": { \"namespace\":\"${ProjectName}\", \"metrics_collected\": { \"statsd\": {}}}}"
         - Name: envoy
           Image: !Ref EnvoyImage
           Essential: true

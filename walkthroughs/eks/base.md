@@ -206,15 +206,15 @@ kubectl -n appmesh-demo \
           --image=tutum/curl /bin/bash
 # If you don't see a command prompt, try pressing enter.
 # root@curler-5b467f98bb-lmwm9:/#
-curl colorgateway:9080/color
+curl colorgateway.appmesh-demo:9080/color
 # {"color":"black", "stats": {"black":1}}
 
 # root@curler-5b467f98bb-lmwm9:/#
-curl colorgateway:9080/color
+curl colorgateway.appmesh-demo:9080/color
 # {"color":"white", "stats": {"black":0.67,"white":0.33}}
 ...
 # root@curler-5b467f98bb-lmwm9:/#
-curl colorgateway:9080/color
+curl colorgateway.appmesh-demo:9080/color
 # {"color":"blue", "stats": {"black":0.5,"blue":0.2,"white":0.3}}
 ```
 

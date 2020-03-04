@@ -6,7 +6,7 @@ This example shows how we can route between HTTP2 clients and servers using App 
 
 ### Color Server
 
-The Color Server is a simple go HTTP2 server returns a color. In this example, we have 3 types of the Color Server running: `red`, `green`, and `blue` each returning a different color. All service instances are registered under the `color_server.http2.local` DNS namespace. But we will be able to route between them by registering their color metadata in [AWS Cloud Map](https://docs.aws.amazon.com/cloud-map/latest/dg/what-is-cloud-map.html) and configuring our virtual-nodes to use AWS Cloud Map [Service Discovery](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual_nodes.html#create-virtual-node).
+The Color Server is a simple go HTTP2 server returns a color. In this example, we have 3 types of the Color Server running: `red`, `green`, and `blue` each returning a different color. All service instances are registered under the `color_server.howto-http2.local` DNS namespace. But we will be able to route between them by registering their color metadata in [AWS Cloud Map](https://docs.aws.amazon.com/cloud-map/latest/dg/what-is-cloud-map.html) and configuring our virtual-nodes to use AWS Cloud Map [Service Discovery](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual_nodes.html#create-virtual-node).
 
 ### Color Client
 
@@ -134,11 +134,11 @@ The Color Server also exposes an APIs to simulate a flaky HTTP2 service: `/setFl
     ```
 4. On the EC2 bastion host we can access the `/stats` endpoint of the Envoy by curling it directly:
     ```
-    curl color_client.http2.local:9901/stats
+    curl howto-color_client.howto-http2.local:9901/stats
     ```
    Here is a lot of information. But we can glean some useful stats about our simple mesh. For example we should see that the HTTP2 health checks from the Color Client to the Color Server are working just fine:
     ```
-    curl -s color_client.http2.local:9901/stats | grep health_check
+    curl -s color_client.howto-http2.local:9901/stats | grep health_check
     ```
    Namely stats similar to this:
     ```
@@ -147,12 +147,12 @@ The Color Server also exposes an APIs to simulate a flaky HTTP2 service: `/setFl
     ```
 5. Now make some requests to your color client from within your bastion or on your original host
     ```
-    curl color_client.http2.local:8080/color # On Bastion host
+    curl color_client.howto-http2.local:8080/color # On Bastion host
     ```
    Due to our retry policy the vast majority of requests will succeed. You can run `/color` as many times as you like.
 6. Now check the retry stats.
     ```
-    curl -s color_client.http2.local:9901/stats | grep upstream_rq_retry
+    curl -s color_client.howto-http2.local:9901/stats | grep upstream_rq_retry
     ```
    You'll see something like:
     ```
@@ -162,7 +162,7 @@ The Color Server also exposes an APIs to simulate a flaky HTTP2 service: `/setFl
    The `upstream_rq_retry` stat represents the number of requests that we made when applying a retry policy and the `upstream_rq_retry_success` is the number of retry requests that succeeded.
 8. Lastly you can reset the stats of the Envoy by calling the `/reset_counters` API from within the bastion. This can help verify behaivor while you experiment further.
     ```
-    curl -X POST -s color_client.http2.local:9901/reset_counters
+    curl -X POST -s color_client.howto-http2.local:9901/reset_counters
     ```
 
 ## Teardown

@@ -158,11 +158,11 @@ The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakine
     ```
 5. On the EC2 bastion host we can access the `/stats` endpoint of the Envoy by curling it directly:
     ```
-    curl color_client.grpc.local:9901/stats
+    curl color_client.howto-grpc.local:9901/stats
     ```
    Here is a lot of information. But we can glean some useful stats about our simple mesh. For example we should see that the gRPC health checks from the Color Client to the Color Server are working just fine:
     ```
-    curl -s color_client.grpc.local:9901/stats | grep health_check
+    curl -s color_client.howto-grpc.local:9901/stats | grep health_check
     ```
    Namely stats similar to this:
     ```
@@ -171,12 +171,12 @@ The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakine
     ```
 6. Now make some requests to your color client from within your bastion or on your original host
     ```
-    curl color_client.grpc.local:8080/getColor # On Bastion host
+    curl color_client.howto-grpc.local:8080/getColor # On Bastion host
     ```
    Due to our retry policy the vast majority of requests will succeed. You can run `/getColor` as many times as you like.
 7. Now check the retry stats.
     ```
-    curl -s color_client.grpc.local:9901/stats | grep upstream_rq_retry
+    curl -s color_client.howto-grpc.local:9901/stats | grep upstream_rq_retry
     ```
    You'll see something like:
     ```
@@ -186,7 +186,7 @@ The Color Server also exposes APIs to simulate a flaky gRPC service: `SetFlakine
    The `upstream_rq_retry` stat represents the number of requests that we made when applying a retry policy and the `upstream_rq_retry_success` is the number of retry requests that succeeded.
 8. Lastly you can reset the stats of the Envoy by calling the `/reset_counters` API from within the bastion. This can help verify behaivor while you experiment further.
     ```
-    curl -X POST -s color_client.grpc.local:9901/reset_counters
+    curl -X POST -s color_client.howto-grpc.local:9901/reset_counters
     ```
 ## Teardown
 
