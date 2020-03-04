@@ -8,19 +8,9 @@ In App Mesh, traffic encryption works between Virtual Nodes, and thus between En
 
 In this guide, we will be configuring Envoy to use the file based strategy.
 
-## Step 1: Download the App Mesh Preview CLI
-
-You will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
-
-```bash
-aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-```
-
 Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
-## Step 2: Create Color App Infrastructure
+## Step 1: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
@@ -43,10 +33,11 @@ export COLOR_APP_ENVOY_IMAGE_NAME="colorapp-envoy"
 You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
-aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | jq -r .KeyMaterial > ~/.ssh/color-app.pem
+aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | jq -r .KeyMaterial > ~/.ssh/$KEY_PAIR_NAME.pem
+chmod go-r ~/.ssh/$KEY_PAIR_NAME.pem
 ```
 
-This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at `~/.ssh/color-app.pem`.
+This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at `~/.ssh/${KEY_PAIR_NAME}.pem`.
 
 First, create the VPC.
 
@@ -68,7 +59,7 @@ Next, build and deploy the color app images.
 ./src/gateway/deploy.sh
 ```
 
-## Step 3: Generate the Certficates
+## Step 2: Generate the Certficates
 
 Before we can encrypt traffic between services in the mesh, we need to generate our certificates.
 
@@ -97,7 +88,7 @@ We are going to store these certificates in [AWS Secrets Manager](https://aws.am
 ./src/tlsCertificates/deploy.sh
 ```
 
-## Step 4: Export our Custom Docker Image
+## Step 3: Export our Custom Docker Image
 
 Finally, we can build and deploy our custom docker image. This container has a `/keys` directory and a custom startup script that will pull the necessary certificates from `AWS Secrets Manager`.
 
@@ -105,7 +96,7 @@ Finally, we can build and deploy our custom docker image. This container has a `
 ./src/customEnvoyImage/deploy.sh
 ```
 
-## Step 5: Create a Mesh with TLS enabled
+## Step 4: Create a Mesh with TLS enabled
 
 We are going to start with a both a White Color Teller and a Green Color Teller. Initially, we will only serve traffic to the White Color Teller.
 
@@ -117,34 +108,38 @@ Let's create the mesh.
 
 The Virtual Node spec for the white colorteller looks like:
 
-```json
-{
-    "spec": {
-        "listeners": [
-            {
-                "portMapping": {
-                    "port": 9080,
-                    "protocol": "http"
-                },
-                ...
-                "tls": {
-                    "mode": "STRICT",
-                    "certificate": {
-                        "file": {
-                            "certificateChain": "/keys/colorteller_white_cert_chain.pem",
-                            "privateKey": "/keys/colorteller_white_key.pem"
-                        }
-                    }
-                }
-            }
-    }
-    ...
-}
+```yaml
+ColorTellerWhiteVirtualNode:
+  Type: AWS::AppMesh::VirtualNode
+  Properties:
+    MeshName: !GetAtt Mesh.MeshName
+    VirtualNodeName: ColorTellerWhite
+    Spec:
+      Listeners:
+        - PortMapping:
+            Port: 80
+            Protocol: http
+          HealthCheck:
+            Protocol: http
+            Path: /ping
+            HealthyThreshold: 2
+            UnhealthyThreshold: 3
+            TimeoutMillis: 2000
+            IntervalMillis: 5000
+          TLS:
+            Mode: STRICT
+            Certificate:
+              File:
+                CertificateChain: "/keys/colorteller_white_cert_chain.pem"
+                PrivateKey: "/keys/colorteller_white_key.pem"
+      ServiceDiscovery:
+        DNS:
+          Hostname: !Sub "colorteller.${ServicesDomain}"
 ```
 
 The `tls` block specifies a filepath to where the Envoy can find the certificates it expects. In order to encrypt the traffic, Envoy needs to have both the certificate chain and the private key.
 
-## Step 6: Deploy and Verify
+## Step 5: Deploy and Verify
 
 Now with the mesh defined, we can deploy our service to ECS and test it out.
 
@@ -181,46 +176,29 @@ Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userg
 
 Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the Color Gateway should also be responsible for defining what certificate authorities are trusted. App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
 
-## Step 7: Add the Green Color Teller
+## Step 6: Add the Green Color Teller
 
 We previously added two color tellers, the White Color Teller and the Green Color Teller. The TLS configuration for the Green Color Teller looks almost identical to the White, but now we are using the `colorteller_green` related certificates.
 
-```json
-"tls": {
-    "mode": "STRICT",
-    "certificate": {
-        "file": {
-            "certificateChain": "/keys/colorteller_green_cert_chain.pem",
-            "privateKey": "/keys/colorteller_green_key.pem"
-        }
-    }
-}
+```yaml
+TLS:
+  Mode: STRICT
+  Certificate:
+    File:
+      CertificateChain: "/keys/colorteller_green_cert_chain.pem"
+      PrivateKey: "/keys/colorteller_green_key.pem"
 ```
 
 The route we have currently, only routes to the White Color Teller. We will also need to update the to serve traffic to both color tellers:
 
-```json
-{
-    "spec": {
-        "httpRoute": {
-            "action": {
-                "weightedTargets": [
-                    {
-                        "virtualNode": "colorteller-white-vn",
-                        "weight": 1
-                    },
-                    {
-                        "virtualNode": "colorteller-green-vn",
-                        "weight": 1
-                    }
-                ]
-            },
-            "match": {
-                "prefix": "/"
-            }
-        }
-    }
-}
+```yaml
+HttpRoute:
+  Action:
+    WeightedTargets:
+      - VirtualNode: !GetAtt ColorTellerWhiteVirtualNode.VirtualNodeName
+        Weight: 1
+      - VirtualNode: !GetAtt ColorTellerGreenVirtualNode.VirtualNodeName
+        Weight: 1
 ```
 
 Let's update our mesh
@@ -235,7 +213,7 @@ After a couple seconds, when you hit the service, you should see both green and 
 curl "${COLORAPP_ENDPOINT}/color"
 ```
 
-### Step 8: Add TLS Validation to the Gateway
+### Step 7: Add TLS Validation to the Gateway
 
 As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem.  
 
@@ -245,29 +223,21 @@ If you recall, the Green Color Teller certificates were signed by a different CA
 
 We are going to update the Color Gateway backend to have this configuration:
 
-```json
-"backends": [
-    {
-        "virtualService":
-        {
-            "virtualServiceName": $COLOR_TELLER_VS,
-            "clientPolicy": {
-                "tls": {
-                    "validation": {
-                        "trust": {
-                            "file": {
-                                "certificateChain": "/keys/ca_1_cert.pem"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-]
+```yaml
+Backends:
+  - VirtualService:
+      VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+BackendDefaults:
+  ClientPolicy:
+    TLS:
+      Enforce: !If [EnableClientValidation, True, False]
+      Validation:
+        Trust:
+          File:
+            CertificateChain: "/keys/ca_1_cert.pem"
 ```
 
-This instructs Envoy to only allow certificates signed by CA 1 to be accepted.
+In this situation, we add a backend default for the Client Policy that instructs Envoy to only allow certificates signed by CA 1 to be accepted. If we had a separate backend with a `ClientPolicy` defined for `TLS`, then the default policy would not be applied for `TLS`.
 
 ```bash
 ./mesh/mesh.sh updateGateway
@@ -279,7 +249,7 @@ Now when call the service, you will see `white` is working properly, but you wil
 curl "${COLORAPP_ENDPOINT}/color"
 ```
 
-### Step 9: Restore Communication to Green Color Teller
+### Step 8: Restore Communication to Green Color Teller
 
 We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instructs Envoy to accept certificates signed by both CA 1 and CA 2.
 
@@ -293,7 +263,13 @@ Now when you call the service, you will see both `white` and `green` again.
 curl "${COLORAPP_ENDPOINT}/color"
 ```
 
-### Step 10: Clean Up
+Tip: You can use this command to clear the color teller history
+
+```bash
+curl "${COLORAPP_ENDPOINT}/color/clear"
+```
+
+### Step 9: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
 Run the following commands to clean up and tear down the resources that we’ve created.
@@ -311,7 +287,7 @@ aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 Delete the mesh.
 
 ```bash
-./mesh/mesh.sh down
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-mesh
 ```
 
 And finally delete the certificates.
