@@ -20,7 +20,7 @@ Parameters:
   ColorGatewayTlsValidationPath:
     Description: The path to use for TLS client validation on the Color Gateway
     Type: String
-    Default: "null"
+    Default: ""
   
   EnableClientValidationFlag:
     Description: Flag to determine whether or not to enforce client policy tls validation
@@ -29,6 +29,7 @@ Parameters:
 
 Conditions:
   EnableClientValidation: !Equals [!Ref EnableClientValidationFlag, "true"]
+  ColorGatewayTlsValidationPathPresent: !Not [!Equals [!Ref ColorGatewayTlsValidationPath, ""]]
 
 
 Resources:
@@ -50,11 +51,14 @@ Resources:
         BackendDefaults:
           ClientPolicy:
             TLS:
-              Enforce: !If [EnableClientValidation, True, False]
-              Validation:
-                Trust:
-                  File: 
-                    CertificateChain: !Ref ColorGatewayTlsValidationPath
+              Fn::If: 
+              - ColorGatewayTlsValidationPathPresent
+              - Enforce: !If [EnableClientValidation, True, False]
+                Validation:
+                  Trust:
+                    File: 
+                      CertificateChain: !Ref ColorGatewayTlsValidationPath
+              - !Ref AWS::NoValue
         Listeners:
           - PortMapping:
               Port: 80

@@ -49,10 +49,10 @@ main() {
 
     case "$action" in
     up)
-        callCloudformation 0 "false" "/fake/path"
+        callCloudformation 0 "false"
         ;;
     addGreen)
-        callCloudformation 1 "false" "/fake/path"
+        callCloudformation 1 "false"
         ;;
     updateGateway)
         callCloudformation 1 "true" "/keys/ca_1_cert.pem"
