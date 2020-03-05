@@ -15,11 +15,10 @@ Additionally, this walkthrough makes use of the unix command line utility `jq`. 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
 Next, we need to set a few environment variables before provisioning the
-infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, and `ENVOY_IMAGE` below.
+infrastructure. Please change the value for `AWS_ACCOUNT_ID` and `ENVOY_IMAGE` below.
 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
-export KEY_PAIR_NAME="color-app"
 export AWS_DEFAULT_REGION="us-west-2"
 export ENVIRONMENT_NAME="AppMeshTLSExample"
 export MESH_NAME="ColorApp-TLS"
@@ -32,14 +31,22 @@ export COLOR_APP_ENVOY_IMAGE_NAME="colorapp-envoy"
 
 You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
+Export the name of the keypair:
+
+```bash
+export KEY_PAIR_NAME=<name of the key pair to use>
+```
+
+If you are creating a new keypair, run these commands:
+
 ```bash
 aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | jq -r .KeyMaterial > ~/.ssh/$KEY_PAIR_NAME.pem
 chmod go-r ~/.ssh/$KEY_PAIR_NAME.pem
 ```
 
-This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at `~/.ssh/${KEY_PAIR_NAME}.pem`.
+This command creates an Amazon EC2 Key Pair and saves the private key at `~/.ssh/${KEY_PAIR_NAME}.pem`.
 
-First, create the VPC.
+Now that you have your key pair set up, create the VPC.
 
 ```bash
 ./infrastructure/vpc.sh
