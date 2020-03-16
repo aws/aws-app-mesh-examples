@@ -22,7 +22,8 @@ PROJECT_NAME="$(basename ${DIR})"
 APP_NAMESPACE=${PROJECT_NAME}
 MESH_NAME=${PROJECT_NAME}
 
-ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
+ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX="${ECR_REGISTRY}/${PROJECT_NAME}"
 FRONT_APP_IMAGE="${ECR_IMAGE_PREFIX}/feapp:$(git log -1 --format=%h src/feapp)"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp:$(git log -1 --format=%h src/colorapp)"
 
@@ -66,7 +67,7 @@ deploy_images() {
         aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${f} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${f}
     done
 
-    $(aws ecr get-login --no-include-email)
+    aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REGISTRY}
     docker build --build-arg GOPROXY=${GOPROXY} -t ${COLOR_APP_IMAGE} ${DIR}/src/colorapp && docker push ${COLOR_APP_IMAGE}
     docker build --build-arg GOPROXY=${GOPROXY} -t ${FRONT_APP_IMAGE} ${DIR}/src/feapp && docker push ${FRONT_APP_IMAGE}
 }

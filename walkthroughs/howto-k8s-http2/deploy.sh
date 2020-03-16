@@ -22,7 +22,8 @@ PROJECT_NAME="howto-k8s-http2"
 APP_NAMESPACE=${PROJECT_NAME}
 MESH_NAME=${PROJECT_NAME}
 CLOUDMAP_NAMESPACE="${APP_NAMESPACE}.svc.cluster.local"
-ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
+ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX="${ECR_REGISTRY}/${PROJECT_NAME}"
 CLIENT_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_client"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_server"
 
@@ -54,7 +55,7 @@ deploy_images() {
     for app in color_client color_server; do
         aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app
         docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
-        $(aws ecr get-login --no-include-email)
+        docker login --username AWS --password-stdin ${ECR_REGISTRY}
         docker push ${ECR_IMAGE_PREFIX}/${app}
     done
 }

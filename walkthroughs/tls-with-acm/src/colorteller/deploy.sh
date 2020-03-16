@@ -10,11 +10,12 @@ fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COLOR_TELLER_IMAGE_NAME}:latest"
+ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+IMAGE="${ECR_REGISTRY}/${COLOR_TELLER_IMAGE_NAME}:latest"
 
 # build
 docker build -t $IMAGE $DIR --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
 
 # push
-$(aws ecr get-login --no-include-email)
+docker login --username AWS --password-stdin ${ECR_REGISTRY}
 docker push $IMAGE

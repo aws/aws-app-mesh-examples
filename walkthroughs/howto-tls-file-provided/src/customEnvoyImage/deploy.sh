@@ -15,13 +15,16 @@ fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-$(aws ecr get-login --no-include-email --registry-id 840364872350)
+ENVOY_ACCOUNT_PASSWORD="$(aws ecr get-authorization-token --registry-ids 840364872350 --query 'authorizationData[0].authorizationToken' --output text)"
+ENVOY_ACCOUNT_ECR_REGISTRY="840364872350.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+echo "$ENVOY_ACCOUNT_PASSWORD" | docker login --username AWS --password-stdin ${ENVOY_ACCOUNT_ECR_REGISTRY}
 
-IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${COLOR_APP_ENVOY_IMAGE_NAME}:latest"
+ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+IMAGE="${ECR_REGISTRY}/${COLOR_APP_ENVOY_IMAGE_NAME}:latest"
 
 # build
 docker build -t $IMAGE $DIR --build-arg ENVOY_IMAGE=$ENVOY_IMAGE
 
 # push
-$(aws ecr get-login --no-include-email)
+docker login --username AWS --password-stdin ${ECR_REGISTRY}
 docker push $IMAGE

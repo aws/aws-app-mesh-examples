@@ -11,13 +11,14 @@ if [ -z $AWS_PROFILE ]; then
 fi
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-ECR_IMAGE_PREFIX=${AWS_PRIMARY_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}
+ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+ECR_IMAGE_PREFIX=${ECR_REGISTRY}/${PROJECT_NAME}
 
 deploy_image() {
     echo "Deploying Gateway image to ECR..."
     aws ecr describe-repositories --repository-name ${PROJECT_NAME}/gateway >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/gateway
     docker build -t ${ECR_IMAGE_PREFIX}/gateway ${DIR}/gateway --build-arg BACKEND_SERVICE=backend.${PROJECT_NAME}.local
-    $(aws --profile ${AWS_PROFILE} ecr get-login --no-include-email)
+    aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REGISTRY}
     docker push ${ECR_IMAGE_PREFIX}/gateway
 }
 
