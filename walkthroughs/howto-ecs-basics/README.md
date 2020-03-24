@@ -6,7 +6,7 @@ This tutorial provides a walkthrough of the basics of App Mesh service. This int
 
 ## Bootstrap
 
-1. Clone this repository and navigate to the walkthrough/howto-basics folder, all commands will be ran from this location
+1. Clone this repository and navigate to the walkthrough/howto-ecs-basics folder, all commands will be ran from this location
 2. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
