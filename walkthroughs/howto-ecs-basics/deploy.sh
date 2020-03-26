@@ -80,8 +80,6 @@ print_endpoint() {
 }
 
 deploy_stacks() {
-    confirm_service_linked_role
-
     if [ -z $SKIP_IMAGES ]; then
         echo "deploy images..."
         deploy_images
@@ -90,6 +88,9 @@ deploy_stacks() {
     echo "deploy app using stage ${stage}"
     deploy "${stage}"
 
+    if [ "${stage}" == "2-meshify" ]; then
+      confirm_service_linked_role
+    fi
     print_endpoint
 }
 
