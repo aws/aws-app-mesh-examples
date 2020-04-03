@@ -87,8 +87,6 @@ kubectl api-resources --api-group=appmesh.k8s.aws
 
 We use the [howto-k8s-colorapp](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-cloudmap) to demonstrate the usage of App Mesh with EKS.
 
-Install the example application from the location where you checked out the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s):
-
 ```sh
 cd aws-app-mesh-controller-for-k8s
 make example
