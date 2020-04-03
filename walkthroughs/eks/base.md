@@ -42,36 +42,38 @@ export KUBECONFIG=~/.kube/eksctl/clusters/appmeshtest
 
 In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that.
 
-*Code base*
-
-Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
-```
->> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
->> cd aws-app-mesh-examples/walkthroughs/eks/
+### Install Helm
+```sh
+brew install kubernetes-helm
 ```
 
-*Install Helm*
-
-```
->>brew install kubernetes-helm
-```
-
-*Install App Mesh Components*
+### Install App Mesh k8s Components
 
 Run the following set of commands to install the App Mesh controller and Injector components 
 
-```
+Add EKS Charts to your local helm.
+```sh
 helm repo add eks https://aws.github.io/eks-charts
-kubectl create ns appmesh-system
+```
+Install App Mesh CRDs
+```sh
 kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/appmesh-controller/crds/crds.yaml
-helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
-helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=color-mesh
-
-Opitionally add tracing
+```
+Create your namespace
+```sh
+kubectl create ns appmesh-system
+```
+Add appmesh-controller and appmesh-inject to your namespace.
+```sh
+helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system \
+&& helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=color-mesh
+```
+Optionally enable tracing to your namcespace
+```sh
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set tracing.enabled=true --set tracing.provider=x-ray
 ```
 
-Now you're all set, you've provisioned the EKS cluster and set up App Mesh components that automate injection of Envoy and take care of the life cycle management of the mesh resources such as virtual nodes, virtual services, and virtual routes.
+You've now provisioned the EKS cluster and set up App Mesh components that automate injection of Envoy and take care of the life cycle management of the mesh resources such as virtual nodes, virtual services, and virtual routes.
 
 At this point, you also might want to check the custom resources the App Mesh Controller uses:
 
@@ -83,19 +85,21 @@ kubectl api-resources --api-group=appmesh.k8s.aws
 # virtualservices                appmesh.k8s.aws   true         VirtualService
 ```
 
-## The application
+### Deploy the Application
 
-We use the [colorapp](https://github.com/awslabs/aws-app-mesh-examples/tree/master/examples/apps/colorapp) to demonstrate the usage of App Mesh with EKS.
-
-Install the example application from the location where you checked out the [AWS App Mesh Controller For Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s):
-
+Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
 ```sh
-cd aws-app-mesh-controller-for-k8s
-make example
+>> git clone https://github.com/aws/aws-app-mesh-examples.git \
+>> && cd aws-app-mesh-examples/walkthroughs/eks/
 ```
 
-Make sure all resources have been created, using the following command:
+We use the [howto-k8s-colorapp](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-cloudmap) to demonstrate the usage of App Mesh with EKS.
+```sh
+cd  walkthroughs/howto-k8s-cloudmap \
+./deploy.sh
+```
 
+Validate that colorapp is deplpoyed.
 ```sh
 kubectl -n appmesh-demo \
           get deploy,po,svc,virtualnode.appmesh.k8s.aws,virtualservice.appmesh.k8s.aws
@@ -133,8 +137,9 @@ kubectl -n appmesh-demo \
 # virtualservice.appmesh.k8s.aws/colorteller.appmesh-demo    1m
 ```
 
-Now, validate the mesh creation using the `aws` CLI:
+You can also view the App Mesh resources created by [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) using the `aws` CLI:
 
+Mesh
 ```sh
 aws appmesh list-meshes --region us-east-2
 # {
@@ -145,7 +150,9 @@ aws appmesh list-meshes --region us-east-2
 #         }
 #     ]
 # }
-
+```
+Virtual Services
+```sh
 aws appmesh list-virtual-services \
       --mesh-name color-mesh \
       --region us-east-2
@@ -163,7 +170,10 @@ aws appmesh list-virtual-services \
 #         }
 #     ]
 # }
+```
 
+Virtual Nodes
+```sh
 aws appmesh list-virtual-nodes \
       --mesh-name color-mesh \
       --region us-east-2
@@ -198,7 +208,7 @@ aws appmesh list-virtual-nodes \
 # }
 ```
 
-You can access the `gateway` service of the color app in-cluster as follows:
+You can access the `gateway` service of the colorapp in-cluster as follows:
 
 ```sh
 kubectl -n appmesh-demo \
