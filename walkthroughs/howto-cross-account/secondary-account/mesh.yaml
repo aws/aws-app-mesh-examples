@@ -1,0 +1,26 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+  MeshName:
+    Type: String
+    Description: Name of the shared mesh
+  MeshOwner:
+    Type: String
+    Description: Account Id of the owner of the mesh
+
+Resources:
+  BackendNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref MeshName
+      MeshOwner: !Ref MeshOwner
+      VirtualNodeName: backend-2-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 80
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "backend.secondary.${ProjectName}.local"

@@ -57,6 +57,8 @@ PRIMARY_ACCOUNT_DIR="${DIR}/primary-account"
 SECONDARY_ACCOUNT_DIR="${DIR}/secondary-account"
 
 print_endpoint() {
+    echo "Setting AWS_PROFILE=${AWS_PRIMARY_PROFILE} to get public endpoint"
+    export AWS_PROFILE=${AWS_PRIMARY_PROFILE}
     echo "Public endpoint:"
     endpoint=$(aws cloudformation describe-stacks \
         --stack-name="${PROJECT_NAME}-app" \
