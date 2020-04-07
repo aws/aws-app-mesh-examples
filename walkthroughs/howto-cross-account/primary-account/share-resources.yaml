@@ -15,7 +15,7 @@ Resources:
       Principals:
         - !Ref ConsumerAccountId
       ResourceArns:
-         - !Sub 'arn:aws:appmesh-preview:${AWS::Region}:${AWS::AccountId}:mesh/${ProjectName}-mesh'
+         - !Sub 'arn:aws:appmesh:${AWS::Region}:${AWS::AccountId}:mesh/${ProjectName}-mesh'
 
   SubnetResourceShare:
     Type: AWS::RAM::ResourceShare
