@@ -116,7 +116,7 @@ These backends will be configured in distinct accounts and made accessible throu
 
 4. Update the route to [updated-route.json](./updated-route.json):
     ```
-    aws --profile ${AWS_PRIMARY_PROFILE} appmesh-preview update-route --mesh-name ${PROJECT_NAME}-mesh --virtual-router-name backend-vr --route-name backend-route --cli-input-json file://`pwd`/updated-route.json
+    aws --profile ${AWS_PRIMARY_PROFILE} appmesh update-route --mesh-name ${PROJECT_NAME}-mesh --virtual-router-name backend-vr --route-name backend-route --cli-input-json file://`pwd`/updated-route.json
     ```
 5. Now try curling the web page again:
     ```
