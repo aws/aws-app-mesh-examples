@@ -25,6 +25,7 @@ main() {
     removeSecret "colorteller_green_key"
     removeSecret "colorteller_green_cert_chain"
     rm $DIR/*.pem
+    rm $DIR/*.generated
 }
 
 main $@
