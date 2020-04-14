@@ -66,7 +66,7 @@ kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=color-mesh
 
-# Opitionally add tracing
+# Optionally add tracing
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set tracing.enabled=true --set tracing.provider=x-ray
 ```
 
@@ -120,7 +120,7 @@ aws appmesh list-meshes
 # {
 #     "meshes": [
 #         {
-#             "meshName": "color-mesh",
+#             "meshName": "howto-k8s-cloudmap",
 #             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap"
 #         }
 #     ]
@@ -130,12 +130,12 @@ aws appmesh list-virtual-services --mesh-name howto-k8s-cloudmap
 # {
 #     "virtualServices": [
 #         {
-#             "meshName": "color-mesh",
+#             "meshName": "howto-k8s-cloudmap",
 #             "virtualServiceName": "colorteller.demo.svc.cluster.local",
 #             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualService/front.howto-k8s-cloudmap.pvt.aws.local"
 #         },
 #         {
-#             "meshName": "color-mesh",
+#             "meshName": "howto-k8s-cloudmap",
 #             "virtualServiceName": "colorgateway.demo.svc.cluster.local",
 #             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualService/colorapp.howto-k8s-cloudmap.pvt.aws.local"
 #         }
@@ -188,7 +188,7 @@ With this you're done concerning the base deployment. You can now move on to day
 The AWS App Mesh Controller For Kubernetes performs clean-up of the mesh and its dependent resources (virtual nodes, services, etc.) when deleting the demo namespace and the mesh custom resource like so:
 
 ```sh
-kubectl delete ns appmesh-system && kubectl delete ns howto-k8s-cloudmap && kubectl delete mesh color-mesh
+kubectl delete ns appmesh-system && kubectl delete ns howto-k8s-cloudmap && kubectl delete mesh howto-k8s-cloudmap
 ```
 
 Finally, get rid of the EKS cluster to free all compute, networking, and storage resources, using:
