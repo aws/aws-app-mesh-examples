@@ -134,7 +134,7 @@ The Color Server also exposes an APIs to simulate a flaky HTTP2 service: `/setFl
     ```
 4. On the EC2 bastion host we can access the `/stats` endpoint of the Envoy by curling it directly:
     ```
-    curl howto-color_client.howto-http2.local:9901/stats
+    curl color_client.howto-http2.local:9901/stats
     ```
    Here is a lot of information. But we can glean some useful stats about our simple mesh. For example we should see that the HTTP2 health checks from the Color Client to the Color Server are working just fine:
     ```

@@ -10,9 +10,14 @@ In order to successfully carry out the base deployment:
 - Make sure to have `kubectl` [installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/), at least version `1.11` or above.
 - Make sure to have `jq` [installed](https://stedolan.github.io/jq/download/).
 - Make sure to have `aws-iam-authenticator` [installed](https://github.com/kubernetes-sigs/aws-iam-authenticator), required for eksctl
+- Make sure to have `helm` [installed](https://helm.sh/docs/intro/install/).
 - Install [eksctl](https://eksctl.io/), for example, on macOS with `brew tap weaveworks/tap` and `brew install weaveworks/tap/eksctl`, and make sure it's on at least on version `0.1.26`.
 
 Note that this walkthrough assumes throughout to operate in the `us-east-2` region.
+
+```sh
+export AWS_DEFAULT_REGION=us-east-2
+```
 
 ## Cluster provisioning
 
@@ -45,29 +50,23 @@ In order to automatically inject App Mesh components and proxies on pod creation
 *Code base*
 
 Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
-```
->> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
->> cd aws-app-mesh-examples/walkthroughs/eks/
-```
-
-*Install Helm*
-
-```
->>brew install kubernetes-helm
+```sh
+git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
+cd aws-app-mesh-examples/walkthroughs/eks/
 ```
 
 *Install App Mesh Components*
 
 Run the following set of commands to install the App Mesh controller and Injector components 
 
-```
+```sh
 helm repo add eks https://aws.github.io/eks-charts
 kubectl create ns appmesh-system
 kubectl apply -f https://raw.githubusercontent.com/aws/eks-charts/master/stable/appmesh-controller/crds/crds.yaml
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set mesh.create=true --set mesh.name=color-mesh
 
-Opitionally add tracing
+# Optionally add tracing
 helm upgrade -i appmesh-inject eks/appmesh-inject --namespace appmesh-system --set tracing.enabled=true --set tracing.provider=x-ray
 ```
 
@@ -85,135 +84,101 @@ kubectl api-resources --api-group=appmesh.k8s.aws
 
 ## The application
 
-We use the [howto-k8s-colorapp](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-cloudmap) to demonstrate the usage of App Mesh with EKS.
-
-```sh
-cd aws-app-mesh-controller-for-k8s
-make example
-```
+We use the [howto-k8s-cloudmap](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-cloudmap) to demonstrate the usage of App Mesh with EKS.
 
 Make sure all resources have been created, using the following command:
 
 ```sh
-kubectl -n appmesh-demo \
+kubectl -n appmesh-system \
           get deploy,po,svc,virtualnode.appmesh.k8s.aws,virtualservice.appmesh.k8s.aws
 
-# NAME                                      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-# deployment.extensions/colorgateway        1         1         1            1           1m
-# deployment.extensions/colorteller         1         1         1            1           1m
-# deployment.extensions/colorteller-black   1         1         1            1           1m
-# deployment.extensions/colorteller-blue    1         1         1            1           1m
-# deployment.extensions/colorteller-red     1         1         1            1           1m
-#
-# NAME                                     READY   STATUS    RESTARTS   AGE
-# pod/colorgateway-cc6464d75-qbznr         2/2     Running   0          1m
-# pod/colorteller-86664b5956-zhb44         2/2     Running   0          1m
-# pod/colorteller-black-6787756c7b-5sgfq   2/2     Running   0          1m
-# pod/colorteller-blue-55d6f99dc6-wltdj    2/2     Running   0          1m
-# pod/colorteller-red-578866ffb-rztfc      2/2     Running   0          1m
-#
-# NAME                        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-# service/colorgateway        ClusterIP   10.100.45.69    <none>        9080/TCP   1m
-# service/colorteller         ClusterIP   10.100.186.86   <none>        9080/TCP   1m
-# service/colorteller-black   ClusterIP   10.100.52.209   <none>        9080/TCP   1m
-# service/colorteller-blue    ClusterIP   10.100.82.44    <none>        9080/TCP   1m
-# service/colorteller-red     ClusterIP   10.100.19.144   <none>        9080/TCP   1m
-#
-# NAME                                            AGE
-# virtualnode.appmesh.k8s.aws/colorgateway        1m
-# virtualnode.appmesh.k8s.aws/colorteller         1m
-# virtualnode.appmesh.k8s.aws/colorteller-black   1m
-# virtualnode.appmesh.k8s.aws/colorteller-blue    1m
-# virtualnode.appmesh.k8s.aws/colorteller-red     1m
-#
-# NAME                                                       AGE
-# virtualservice.appmesh.k8s.aws/colorgateway.appmesh-demo   1m
-# virtualservice.appmesh.k8s.aws/colorteller.appmesh-demo    1m
+NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.extensions/appmesh-controller   1/1     1            1           72m
+deployment.extensions/appmesh-inject       1/1     1            1           72m
+
+NAME                                      READY   STATUS    RESTARTS   AGE
+pod/appmesh-controller-5977c4b87d-68vb6   1/1     Running   1          72m
+pod/appmesh-inject-767d8c8f7c-dk4fk       1/1     Running   0          72m
+
+NAME                     TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/appmesh-inject   ClusterIP   10.100.192.220   <none>        443/TCP   72m
+```
+
+```sh
+kubectl get pod -n howto-k8s-cloudmap -o wide
+
+NAME                             READY   STATUS    RESTARTS   AGE   IP               NODE                                           NOMINATED NODE   READINESS GATES
+colorapp-blue-768d5c96b9-jdbqg   2/2     Running   0          11m   192.168.33.13    ip-192-168-56-114.us-east-2.compute.internal   <none>           <none>
+colorapp-red-9c8c4cbfc-z4k22     2/2     Running   0          11m   192.168.15.43    ip-192-168-12-143.us-east-2.compute.internal   <none>           <none>
+front-7d559c8949-qqwmb           2/2     Running   0          11m   192.168.12.218   ip-192-168-12-143.us-east-2.compute.internal   <none>           <none>
 ```
 
 Now, validate the mesh creation using the `aws` CLI:
 
 ```sh
-aws appmesh list-meshes --region us-east-2
+aws appmesh list-meshes
 # {
 #     "meshes": [
 #         {
-#             "meshName": "color-mesh",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh"
+#             "meshName": "howto-k8s-cloudmap",
+#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap"
 #         }
 #     ]
 # }
 
-aws appmesh list-virtual-services \
-      --mesh-name color-mesh \
-      --region us-east-2
+aws appmesh list-virtual-services --mesh-name howto-k8s-cloudmap
 # {
 #     "virtualServices": [
 #         {
-#             "meshName": "color-mesh",
+#             "meshName": "howto-k8s-cloudmap",
 #             "virtualServiceName": "colorteller.demo.svc.cluster.local",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualService/colorteller.demo.svc.cluster.local"
+#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualService/front.howto-k8s-cloudmap.pvt.aws.local"
 #         },
 #         {
-#             "meshName": "color-mesh",
+#             "meshName": "howto-k8s-cloudmap",
 #             "virtualServiceName": "colorgateway.demo.svc.cluster.local",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualService/colorgateway.demo.svc.cluster.local"
+#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualService/colorapp.howto-k8s-cloudmap.pvt.aws.local"
 #         }
 #     ]
 # }
 
-aws appmesh list-virtual-nodes \
-      --mesh-name color-mesh \
-      --region us-east-2
-# {
-#     "virtualNodes": [
-#         {
-#             "meshName": "color-mesh",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualNode/colorteller-black",
-#             "virtualNodeName": "colorteller-black"
-#         },
-#         {
-#             "meshName": "color-mesh",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualNode/colorteller-blue",
-#             "virtualNodeName": "colorteller-blue"
-#         },
-#         {
-#             "meshName": "color-mesh",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualNode/colorteller",
-#             "virtualNodeName": "colorteller"
-#         },
-#         {
-#             "meshName": "color-mesh",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualNode/colorgateway",
-#             "virtualNodeName": "colorgateway"
-#         },
-#         {
-#             "meshName": "color-mesh",
-#             "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/color-mesh/virtualNode/colorteller-red",
-#             "virtualNodeName": "colorteller-red"
-#         }
-#     ]
-# }
+aws appmesh list-virtual-nodes --mesh-name howto-k8s-cloudmap
+#{
+#    "virtualNodes": [
+#        {
+#            "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualNode/colorapp-blue-howto-k8s-cloudmap",
+#            "meshName": "howto-k8s-cloudmap",
+#            "virtualNodeName": "colorapp-blue-howto-k8s-cloudmap"
+#        },
+#        {
+#            "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualNode/colorapp-red-howto-k8s-cloudmap",
+#            "meshName": "howto-k8s-cloudmap",
+#            "virtualNodeName": "colorapp-red-howto-k8s-cloudmap"
+#        },
+#        {
+#            "arn": "arn:aws:appmesh:us-east-2:661776721573:mesh/howto-k8s-cloudmap/virtualNode/front-howto-k8s-cloudmap",
+#            "meshName": "howto-k8s-cloudmap",
+#            "virtualNodeName": "front-howto-k8s-cloudmap"
+#        }
+#    ]
+}
+
 ```
 
-You can access the `gateway` service of the color app in-cluster as follows:
+You can access the `front` service of the app in-cluster as follows:
 
 ```sh
-kubectl -n appmesh-demo \
-          run -it curler \
+kubectl -n howto-k8s-cloudmap \                              
+          run -it curler \                                                            
           --image=tutum/curl /bin/bash
 # If you don't see a command prompt, try pressing enter.
-# root@curler-5b467f98bb-lmwm9:/#
-curl colorgateway.appmesh-demo:9080/color
-# {"color":"black", "stats": {"black":1}}
+# root@curler:/#
+curl front.howto-k8s-cloudmap:8080/color
+# blue
 
-# root@curler-5b467f98bb-lmwm9:/#
-curl colorgateway.appmesh-demo:9080/color
-# {"color":"white", "stats": {"black":0.67,"white":0.33}}
-...
-# root@curler-5b467f98bb-lmwm9:/#
-curl colorgateway.appmesh-demo:9080/color
-# {"color":"blue", "stats": {"black":0.5,"blue":0.2,"white":0.3}}
+# root@curler:/#
+curl front.howto-k8s-cloudmap:8080/color
+# red
 ```
 
 With this you're done concerning the base deployment. You can now move on to day 2 ops tasks such as using [CloudWatch](o11y-cloudwatch.md) with App Mesh on EKS.
@@ -223,12 +188,11 @@ With this you're done concerning the base deployment. You can now move on to day
 The AWS App Mesh Controller For Kubernetes performs clean-up of the mesh and its dependent resources (virtual nodes, services, etc.) when deleting the demo namespace and the mesh custom resource like so:
 
 ```sh
-kubectl delete ns appmesh-demo && kubectl delete mesh color-mesh
+kubectl delete ns appmesh-system && kubectl delete ns howto-k8s-cloudmap && kubectl delete mesh howto-k8s-cloudmap
 ```
 
 Finally, get rid of the EKS cluster to free all compute, networking, and storage resources, using:
 
 ```sh
-eksctl delete cluster \
-         --name appmeshtest
+eksctl delete cluster --name appmeshtest
 ```
