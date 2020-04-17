@@ -20,6 +20,10 @@ Parameters:
     Description: The name for the color teller image
     Type: String
 
+  CloudWatchAgentImageName:
+    Description: The name for the custom App Mesh CloudWatch Agent image
+    Type: String
+
   LoadBalancerCertificateArn:
     Description: NLB TLS Certificate Arn
     Type: String
@@ -584,8 +588,9 @@ Resources:
             - Name: 'STATSD_PORT'
               Value: '8125'
         - Name: 'cw-agent'
-          Image: 'amazon/cloudwatch-agent'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CloudWatchAgentImageName}'
           Essential: true
+          User: '1337'
           PortMappings:
             - ContainerPort: 8125
               Protocol: 'udp'
@@ -593,7 +598,7 @@ Resources:
             - Name: CW_CONFIG_CONTENT
               Value:
                 Fn::Sub:
-                  - '{ "logs": { "metrics_collected": {"emf": {} }}, "metrics": { "metrics_collected": { "statsd": {}}, "namespace": "${MetricNamespace}"}}'
+                  - '{ \"metrics\": { \"namespace\":\"${MetricNamespace}\", \"metrics_collected\": { \"statsd\": { \"metrics_aggregation_interval\": 0}}}}'
                   - MetricNamespace:
                       Fn::Join:
                       - '/'

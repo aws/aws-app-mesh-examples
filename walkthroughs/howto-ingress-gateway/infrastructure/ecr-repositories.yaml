@@ -4,9 +4,18 @@ Parameters:
     Description: The name for the color teller image
     Type: String
 
+  CloudWatchAgentImageName:
+    Description: The name for the custom App Mesh CloudWatch Agent image
+    Type: String
+
 Resources:
 
   ColorTellerRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Ref ColorTellerImageName
+
+  CloudWatchAgentRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref CloudWatchAgentImageName

@@ -121,6 +121,7 @@ export MESH_NAME=ColorApp-Ingress
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
 export COLOR_TELLER_IMAGE_NAME="howto-ingress/colorteller"
+export CLOUDWATCH_AGENT_IMAGE_NAME="howto-ingress/aws-app-mesh-cloudwatch-agent"
 ```
 
 ## Step 3: Generate Certificate from ACM
@@ -213,15 +214,17 @@ Next, create the ECS cluster and ECR repositories.
 ./infrastructure/ecr-repositories.sh
 ```
 
-Finally, build and deploy the colorteller image.
+Finally, build and deploy the colorteller and cloudwatch agent images.
 
 ```bash
 ./src/colorteller/deploy.sh
+./src/cloudwatch-agent/deploy.sh
 ```
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
+GO_PROXY=direct ./src/cloudwatch-agent/deploy.sh
 ```
 
 ## Step 5: Create a Mesh
