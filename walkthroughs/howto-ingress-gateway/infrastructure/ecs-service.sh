@@ -15,6 +15,7 @@ aws --region "${AWS_DEFAULT_REGION}" \
     AppMeshMeshName="${MESH_NAME}" \
     EnvoyImage="${ENVOY_IMAGE}" \
     ColorTellerImageName="${COLOR_TELLER_IMAGE_NAME}" \
+    CloudWatchAgentImageName="${CLOUDWATCH_AGENT_IMAGE_NAME}" \
     LoadBalancerCertificateArn="${CERTIFICATE_ARN}"
 
 print_bastion() {
