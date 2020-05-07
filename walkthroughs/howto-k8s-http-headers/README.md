@@ -4,29 +4,29 @@ This example shows how http routes can use headers for matching incoming request
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
-Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=0.2.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v020). Run the following to check the version of controller you are running.
+Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=appmesh-rc-b5](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v020). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+$ kubectl get deployment -n appmesh-system appmesh-controller-manager -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
 
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/howto-k8s-cloudmap folder, all commands will be ran from this location
 2. **Your** account id:
-    ```
+
     export AWS_ACCOUNT_ID=<your_account_id>
-    ```
+
 3. **Region** e.g. us-west-2
-    ```
+
     export AWS_DEFAULT_REGION=us-west-2
-    ```
+
 4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-    ```
+
     export ENVOY_IMAGE=...
-    ```
+
 5. Deploy
     ```.
     ./deploy.sh
-    ```
+```
    
 ## Using curl to test
 
