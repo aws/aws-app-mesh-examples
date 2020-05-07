@@ -44,9 +44,9 @@ check_k8s_virtualrouter() {
 
 check_k8s_virtualservice() {
     #check CRD
-    crd=$(kubectl get crd virtualservices.appmesh.k8s.aws -o json | jq -r '.. | .grpc? | select(. != null)')
+    crd=$(kubectl get crd virtualservices.appmesh.k8s.aws -o json | jq -r '.. | .http2? | select(. != null)')
     if [ -z "$crd" ]; then
-        error "$PROJECT_NAME requires virtualservices.appmesh.k8s.aws CRD to support gRPC. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030"
+        error "$PROJECT_NAME requires virtualservices.appmesh.k8s.aws CRD to support HTTP2. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030"
     else
         echo "CRD check passed!"
     fi
@@ -57,7 +57,7 @@ check_appmesh_k8s() {
     currentver=$(kubectl get deployment -n appmesh-system appmesh-controller-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':')
 
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
-        requiredver="appmesh-rc-b5"
+        requiredver="v1.0.0"
         check_k8s_virtualrouter
     elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then
         requiredver="v0.3.0"

@@ -57,7 +57,7 @@ check_appmesh_k8s() {
     currentver=$(kubectl get deployment -n appmesh-system appmesh-controller-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':')
 
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
-        requiredver="appmesh-rc-b5"
+        requiredver="v1.0.0"
         check_k8s_virtualrouter
     elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then
         requiredver="v0.3.0"
