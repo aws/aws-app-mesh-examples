@@ -36,7 +36,7 @@ check_k8s_virtualrouter() {
     #check CRD
     crd=$(kubectl get crd virtualrouters.appmesh.k8s.aws -o json )
     if [ -z "$crd" ]; then
-        error "$PROJECT_NAME requires virtualrouters.appmesh.k8s.aws CRD to support HTTP2. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
+        error "$PROJECT_NAME requires virtualrouters.appmesh.k8s.aws CRD to support HTTP headers match. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
     else
         echo "CRD check passed!"
     fi
