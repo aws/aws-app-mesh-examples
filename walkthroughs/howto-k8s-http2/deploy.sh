@@ -32,21 +32,21 @@ error() {
 }
 
 check_appmesh_k8s() {
-    #check CRD
-    crd=$(kubectl get crd virtualservices.appmesh.k8s.aws -o json | jq -r '.. | .http2? | select(. != null)')
-    if [ -z "$crd" ]; then
-        error "$PROJECT_NAME requires virtualservices.appmesh.k8s.aws CRD to support HTTP2. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030"
-    else
-        echo "CRD check passed!"
-    fi
-
     #check aws-app-mesh-controller version
-    currentver=$(kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':')
-    requiredver="v0.3.0"
+    currentver=$(kubectl get deployment -n appmesh-system appmesh-controller-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':')
+    requiredver="appmesh-rc-b5"
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
         echo "aws-app-mesh-controller check passed! $currentver >= $requiredver"
     else
         error "$PROJECT_NAME requires aws-app-mesh-controller version >=$requiredver but found $currentver. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030"
+    fi
+
+    #check CRD
+    crd=$(kubectl get crd virtualrouters.appmesh.k8s.aws -o json )
+    if [ -z "$crd" ]; then
+        error "$PROJECT_NAME requires virtualrouters.appmesh.k8s.aws CRD to support HTTP2. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030"
+    else
+        echo "CRD check passed!"
     fi
 }
 

@@ -4,9 +4,9 @@ This example shows how to manage HTTP/2 routes in App Mesh using Kubernetes depl
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
-Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030). Run the following to check the version of controller you are running.
+Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=appmesh-rc-b5](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+$ kubectl get deployment -n appmesh-system appmesh-controller-manager -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
 
 ## Setup
 
