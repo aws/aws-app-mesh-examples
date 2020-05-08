@@ -71,7 +71,7 @@ metadata:
   name: color
   namespace: ${APP_NAMESPACE}
 spec:
-  awsName: color.${CLOUDMAP_NAMESPACE}
+  awsName: color.${APP_NAMESPACE}.svc.cluster.local
   provider:
     virtualRouter:
       virtualRouterRef:
@@ -99,6 +99,7 @@ spec:
                 name: server
               weight: 1
 ---
+# Service per VirtualNode is a no-op when using AppMesh
 apiVersion: v1
 kind: Service
 metadata:
@@ -137,6 +138,7 @@ spec:
             - name: "PORT"
               value: "8080"
 ---
+# Service per VirtualNode is a no-op when using AppMesh
 apiVersion: v1
 kind: Service
 metadata:
@@ -183,8 +185,6 @@ kind: Service
 metadata:
   name: color
   namespace: ${APP_NAMESPACE}
-  labels:
-    app: color
 spec:
   ports:
     - port: 8080

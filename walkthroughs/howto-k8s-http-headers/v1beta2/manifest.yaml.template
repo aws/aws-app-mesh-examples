@@ -455,9 +455,6 @@ kind: Service
 metadata:
   name: color-white
   namespace: ${APP_NAMESPACE}
-  labels:
-    app: color
-    version: yellow
 spec:
   ports:
     - port: 8080
@@ -497,8 +494,6 @@ kind: Service
 metadata:
   name: color
   namespace: ${APP_NAMESPACE}
-  labels:
-    app: color
 spec:
   ports:
     - port: 8080
