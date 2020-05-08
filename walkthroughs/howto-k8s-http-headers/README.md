@@ -4,29 +4,33 @@ This example shows how http routes can use headers for matching incoming request
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
-Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=0.2.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v020). Run the following to check the version of controller you are running.
+Note: v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md). Run the following to check the version of controller you are running.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+```
 
+You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030)
+
+```
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/howto-k8s-cloudmap folder, all commands will be ran from this location
 2. **Your** account id:
-    ```
+
     export AWS_ACCOUNT_ID=<your_account_id>
-    ```
+
 3. **Region** e.g. us-west-2
-    ```
+
     export AWS_DEFAULT_REGION=us-west-2
-    ```
+
 4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-    ```
+
     export ENVOY_IMAGE=...
-    ```
+
 5. Deploy
     ```.
     ./deploy.sh
-    ```
+```
    
 ## Using curl to test
 
