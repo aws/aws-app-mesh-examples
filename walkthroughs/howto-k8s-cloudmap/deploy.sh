@@ -60,7 +60,6 @@ check_appmesh_k8s() {
 
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
         requiredver="v1.0.0"
-        requiredver="appmesh-rc-b5"
         check_virtualnode_v1beta2
     elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then
         requiredver="v0.3.0"
