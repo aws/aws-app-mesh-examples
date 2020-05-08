@@ -102,13 +102,13 @@ spec:
                 name: blue
               weight: 1
         #UNCOMMENT below to enable retries
-        retryPolicy:
-          maxRetries: 4
-          perRetryTimeout:
-            unit: ms
-            value: 2000
-          httpRetryEvents:
-            - server-error
+        #retryPolicy:
+        #  maxRetries: 4
+        #  perRetryTimeout:
+        #    unit: ms
+        #    value: 2000
+        #  httpRetryEvents:
+        #    - server-error
 ---
 apiVersion: v1
 kind: Service
