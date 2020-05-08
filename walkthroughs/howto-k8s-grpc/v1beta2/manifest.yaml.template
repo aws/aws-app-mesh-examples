@@ -99,7 +99,7 @@ spec:
                 name: server
               weight: 1
 ---
-# Service per VirtualNode is a no-op when using AppMesh
+# Service per VirtualNode is a no-op when using CloudMap
 apiVersion: v1
 kind: Service
 metadata:
@@ -138,7 +138,7 @@ spec:
             - name: "PORT"
               value: "8080"
 ---
-# Service per VirtualNode is a no-op when using AppMesh
+# Service per VirtualNode is a no-op when using CloudMap
 apiVersion: v1
 kind: Service
 metadata:
