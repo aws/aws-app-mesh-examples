@@ -14,10 +14,13 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
-Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version >=0.1.2. Run the following to check the version of controller you are running.
+Note: v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+$ kubectl get deployment -n appmesh-system appmesh-controller-manager -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
 ```
+
+You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version >=0.1.2
+
 
 ## Setup
 
@@ -48,28 +51,26 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r "
 1. Use AWS Cloud Map DiscoverInstances API to check that pods are getting registered
    ```
    $ kubectl get pod -n howto-k8s-cloudmap -o wide
-    NAME                             READY   STATUS    RESTARTS   AGE   IP               NODE                                           NOMINATED NODE   READINESS GATES
-    colorapp-blue-558b8698b5-p98kb   2/2     Running   0          80m   192.168.50.137   ip-192-168-34-246.us-west-2.compute.internal   <none>           <none>
-    colorapp-red-7997f7f687-t4k98    2/2     Running   0          80m   192.168.72.100   ip-192-168-94-59.us-west-2.compute.internal    <none>           <none>
-    front-667ff84fd-g85p8            2/2     Running   0          80m   192.168.84.178   ip-192-168-94-59.us-west-2.compute.internal    <none>           <none>
+    NAME                             READY   STATUS    RESTARTS   AGE     IP               NODE                                           NOMINATED NODE   READINESS GATES
+    colorapp-blue-6f99884fd4-2h4jt   2/2     Running   0          4m15s   192.168.10.38    ip-192-168-16-102.us-west-2.compute.internal   <none>           <none>
+    colorapp-red-77d6565cc6-8btwz    2/2     Running   0          4m15s   192.168.34.225   ip-192-168-56-146.us-west-2.compute.internal   <none>           <none>
+    front-5d96c9bfb6-d2zdx           2/2     Running   0          4m15s   192.168.59.249   ip-192-168-56-146.us-west-2.compute.internal   <none>           <none>
 
    $ aws servicediscovery discover-instances --namespace howto-k8s-cloudmap.pvt.aws.local --service front
     {
         "Instances": [
             {
-                "InstanceId": "192.168.84.178",
+                "InstanceId": "192.168.59.249",
                 "NamespaceName": "howto-k8s-cloudmap.pvt.aws.local",
                 "ServiceName": "front",
-                "HealthStatus": "UNKNOWN",
+                "HealthStatus": "HEALTHY",
                 "Attributes": {
-                    "AWS_INSTANCE_IPV4": "192.168.84.178",
+                    "AWS_INIT_HEALTH_STATUS": "HEALTHY",
+                    "AWS_INSTANCE_IPV4": "192.168.59.249",
                     "app": "front",
-                    "appmesh.k8s.aws/mesh": "howto-k8s-cloudmap",
-                    "appmesh.k8s.aws/virtualNode": "front-howto-k8s-cloudmap",
-                    "date": "1574731550",
                     "k8s.io/namespace": "howto-k8s-cloudmap",
-                    "k8s.io/pod": "front-667ff84fd-g85p8",
-                    "pod-template-hash": "667ff84fd",
+                    "k8s.io/pod": "front-5d96c9bfb6-d2zdx",
+                    "pod-template-hash": "5d96c9bfb6",
                     "version": "v1"
                 }
             }
@@ -80,42 +81,38 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r "
     {
         "Instances": [
             {
-                "InstanceId": "192.168.50.137",
+                "InstanceId": "192.168.10.38",
                 "NamespaceName": "howto-k8s-cloudmap.pvt.aws.local",
                 "ServiceName": "colorapp",
-                "HealthStatus": "UNKNOWN",
+                "HealthStatus": "HEALTHY",
                 "Attributes": {
-                    "AWS_INSTANCE_IPV4": "192.168.50.137",
+                    "AWS_INIT_HEALTH_STATUS": "HEALTHY",
+                    "AWS_INSTANCE_IPV4": "192.168.10.38",
                     "app": "colorapp",
-                    "appmesh.k8s.aws/mesh": "howto-k8s-cloudmap",
-                    "appmesh.k8s.aws/virtualNode": "colorapp-blue-howto-k8s-cloudmap",
-                    "date": "1574731553",
                     "k8s.io/namespace": "howto-k8s-cloudmap",
-                    "k8s.io/pod": "colorapp-blue-558b8698b5-p98kb",
-                    "pod-template-hash": "558b8698b5",
+                    "k8s.io/pod": "colorapp-blue-6f99884fd4-2h4jt",
+                    "pod-template-hash": "6f99884fd4",
                     "version": "blue"
                 }
             }
         ]
     }
 
-    $ aws servicediscovery discover-instances --namespace howto-k8s-cloudmap.pvt.aws.local --service colorapp --query-parameters "version=red"
+   $ aws servicediscovery discover-instances --namespace howto-k8s-cloudmap.pvt.aws.local --service colorapp --query-parameters "version=red"
     {
         "Instances": [
             {
-                "InstanceId": "192.168.72.100",
+                "InstanceId": "192.168.34.225",
                 "NamespaceName": "howto-k8s-cloudmap.pvt.aws.local",
                 "ServiceName": "colorapp",
-                "HealthStatus": "UNKNOWN",
+                "HealthStatus": "HEALTHY",
                 "Attributes": {
-                    "AWS_INSTANCE_IPV4": "192.168.72.100",
+                    "AWS_INIT_HEALTH_STATUS": "HEALTHY",
+                    "AWS_INSTANCE_IPV4": "192.168.34.225",
                     "app": "colorapp",
-                    "appmesh.k8s.aws/mesh": "howto-k8s-cloudmap",
-                    "appmesh.k8s.aws/virtualNode": "colorapp-red-howto-k8s-cloudmap",
-                    "date": "1574731555",
                     "k8s.io/namespace": "howto-k8s-cloudmap",
-                    "k8s.io/pod": "colorapp-red-7997f7f687-t4k98",
-                    "pod-template-hash": "7997f7f687",
+                    "k8s.io/pod": "colorapp-red-77d6565cc6-8btwz",
+                    "pod-template-hash": "77d6565cc6",
                     "version": "red"
                 }
             }
@@ -135,11 +132,11 @@ Currently App Mesh only supports backend applications running within VPC boundar
 ## Troubleshooting
 ### 1. My deployments and corresponding pods are running successfully, but I don't see the instances when calling Cloud Map DiscoverInstances API. What is the reason?
 Following are some of the reasons why instances are not getting registered with Cloud Map.
-1. Check that aws-app-mesh-controller-for-k8s is >=v0.1.2. If not upgrade the controller using helm instructions [here](https://github.com/aws/eks-charts).
+1. Check that aws-app-mesh-controller-for-k8s is >=v0.1.2 or >=v1.0.0 based on the API version. If not upgrade the controller using helm instructions [here](https://github.com/aws/eks-charts).
 2. Check the logs of aws-app-mesh-controller-for-k8s for any errors. [stern](https://github.com/wercker/stern) is a great tool to use for this.
    ```
-   $ kubectl logs -n appmesh-system appmesh-controller-<pod-id>
+   $ kubectl logs -n appmesh-system appmesh-controller-manager-<pod-id>
    (or)
-   $ stern -n appmesh-system appmesh-controller
+   $ stern -n appmesh-system appmesh-controller-manager
    ```
-3. If you see AccessDeniedException in the logs when calling Cloud Map APIs, then update IAM role used by worker node to include AWSCloudMapRegisterInstanceAccess managed IAM policy. 
+3. If you see AccessDeniedException in the logs when calling Cloud Map APIs, then update IAM role used by worker node to include AWSCloudMapRegisterInstanceAccess managed IAM policy.
