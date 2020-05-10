@@ -15,7 +15,7 @@
 - Setup EKS cluster with Fargate support.
   - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
     ```
-    eksctl create cluster -f clusterconfig.yaml
+    eksctl create cluster -f v1beta2/clusterconfig.yaml
     ```
 
 ## Deploy

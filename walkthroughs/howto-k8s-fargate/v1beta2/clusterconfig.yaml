@@ -1,0 +1,52 @@
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: prod-20191207
+  region: us-west-2
+
+fargateProfiles:
+  - name: howto-k8s-fargate
+    selectors:
+      - namespace: howto-k8s-fargate
+
+# https://eksctl.io/usage/eks-managed-nodegroups/
+managedNodeGroups:
+  - name: ctrl-ng-1
+    minSize: 2
+    maxSize: 5
+    desiredCapacity: 5
+    volumeSize: 20
+    labels: {role: ctrl-workers}
+    tags:
+      nodegroup-role: ctrl-workers
+    iam:
+      withAddonPolicies:
+        appMesh: true
+        albIngress: true
+        xRay: true
+        cloudWatch: true
+        certManager: true
+        autoScaler: true
+
+# https://eksctl.io/usage/iamserviceaccounts/
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: appmesh-pod
+        namespace: howto-k8s-fargate
+        labels: {aws-usage: "application"}
+      attachPolicyARNs:
+        - "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
+        - "arn:aws:iam::aws:policy/AWSCloudMapDiscoverInstanceAccess"
+        - "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        - "arn:aws:iam::aws:policy/AWSAppMeshFullAccess"
+        - "arn:aws:iam::aws:policy/AWSCloudMapFullAccess"
+
+# https://eksctl.io/usage/cloudwatch-cluster-logging/
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]

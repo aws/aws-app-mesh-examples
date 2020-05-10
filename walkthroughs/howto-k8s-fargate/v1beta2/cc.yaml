@@ -1,0 +1,16 @@
+---
+# https://eksctl.io/usage/iamserviceaccounts/
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: appmesh-pod
+        namespace: howto-k8s-fargate
+        labels: {aws-usage: "application"}
+      attachPolicyARNs:
+        - "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
+        - "arn:aws:iam::aws:policy/AWSCloudMapDiscoverInstanceAccess"
+        - "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        - "arn:aws:iam::aws:policy/AWSAppMeshFullAccess"
+        - "arn:aws:iam::aws:policy/AWSCloudMapFullAccess"
