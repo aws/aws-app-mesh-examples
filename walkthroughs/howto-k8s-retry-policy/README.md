@@ -66,4 +66,4 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 4. You should now see more 200 OK responses due to retries.
 
-No go to https://www.envoyproxy.io/docs/envoy/v1.8.0/api-v1/route_config/route#config-http-conn-man-route-table-route-retry and https://www.envoyproxy.io/learn/automatic-retries for details on how retries work in Envoy.
+Now go to https://www.envoyproxy.io/docs/envoy/v1.8.0/api-v1/route_config/route#config-http-conn-man-route-table-route-retry and https://www.envoyproxy.io/learn/automatic-retries for details on how retries work in Envoy.
