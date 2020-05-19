@@ -33,11 +33,12 @@ Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io
 
 Check the events of the ingress to see what has occur.
 
-    ```bash
+    ```
     kubectl describe ing -n howto-k8s-alb color
     ```
 
 You should see similar to the following.
+
     ```
     Name:             color
     Namespace:        howto-k8s-alb
@@ -63,26 +64,28 @@ You should see similar to the following.
      ```
 
 To check if the application is reachable via ALB Ingress Controller
-    ```
-    curl -v 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com/color
-    ```
+
+```
+curl -v 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com/color
+```
 
 You should see similar to the following.
-    ```
-    *   Trying 34.208.158.34...
-    * TCP_NODELAY set
-    * Connected to 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com (34.208.158.34) port 80 (#0)
-    > GET /color HTTP/1.1> Host: 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com
-    > User-Agent: curl/7.61.1
-    > Accept: */*
-    >
-    < HTTP/1.1 200 OK
-    < Date: Sat, 09 May 2020 01:30:06 GMT
-    < Transfer-Encoding: chunked
-    < Connection: keep-alive
-    < server: envoy
-    < x-envoy-upstream-service-time: 0
-    <
-    * Connection #0 to host 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com left intact
-    blue
-    ```
+
+```
+*   Trying 34.208.158.34...
+* TCP_NODELAY set
+* Connected to 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com (34.208.158.34) port 80 (#0)
+> GET /color HTTP/1.1> Host: 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com
+> User-Agent: curl/7.61.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Date: Sat, 09 May 2020 01:30:06 GMT
+< Transfer-Encoding: chunked
+< Connection: keep-alive
+< server: envoy
+< x-envoy-upstream-service-time: 0
+<
+* Connection #0 to host 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com left intact
+blue
+```
