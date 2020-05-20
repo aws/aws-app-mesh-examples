@@ -20,10 +20,6 @@ Parameters:
     Description: The name for the color teller image
     Type: String
 
-  CloudWatchAgentImageName:
-    Description: The name for the custom App Mesh CloudWatch Agent image
-    Type: String
-
   LoadBalancerCertificateArn:
     Description: NLB TLS Certificate Arn
     Type: String
@@ -587,7 +583,7 @@ Resources:
             - Name: 'STATSD_PORT'
               Value: '8125'
         - Name: 'cw-agent'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CloudWatchAgentImageName}'
+          Image: 'amazon/cloudwatch-agent:latest'
           Essential: true
           PortMappings:
             - ContainerPort: 8125

@@ -49,7 +49,7 @@ A virtual gateway allows resources outside your mesh to communicate to resources
 	- DISABLED- TLS is disabled (plain-text only).
 
 	BackendDefaults settings are applied to all backends with ClientPolicy being policy for how to handle traffic with backends (i.e. from the client perspective).
-	
+
 	- TLS determines whether or not TLS is negotiated, and how.
 	- Validation determines how to validate a certificate offered by a backend.
 	- Trust is the trust bundle (i.e. set of root certificate authorities) used to validate the certificate offered by a backend. Certificates signed by one of these certificate authorities are considered valid.
@@ -121,7 +121,6 @@ export MESH_NAME=ColorApp-Ingress
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
 export COLOR_TELLER_IMAGE_NAME="howto-ingress/colorteller"
-export CLOUDWATCH_AGENT_IMAGE_NAME="howto-ingress/aws-app-mesh-cloudwatch-agent"
 ```
 
 ## Step 3: Generate Certificate from ACM
@@ -214,17 +213,15 @@ Next, create the ECS cluster and ECR repositories.
 ./infrastructure/ecr-repositories.sh
 ```
 
-Finally, build and deploy the colorteller and cloudwatch agent images.
+Finally, build and deploy the colorteller image.
 
 ```bash
 ./src/colorteller/deploy.sh
-./src/cloudwatch-agent/deploy.sh
 ```
-Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
+Note that the example app uses go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
-GO_PROXY=direct ./src/cloudwatch-agent/deploy.sh
 ```
 
 ## Step 5: Create a Mesh
@@ -317,30 +314,30 @@ Our next step is to deploy the service in ECS and test it out.
 	> **Note:** Since, we have enabled TLS termination at the NLB, we'll use `https` in our curl requests and use `-k` option to accept the cert without validation.
 
 	Export the public endpoint to access the gateway replacing `http` with `https` (e.g., above returned url will be changed to `https://howto-Publi-55555555.us-west-2.elb.amazonaws.com`).
-	
+
 	```bash
 	export COLORAPP_ENDPOINT=<your_https_colorApp_endpoint e.g. https://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
 	```
 	And export the bastion endpoint for use later.
-	
+
 	```bash
 	export BASTION_IP=<your_bastion_endpoint e.g. 12.245.6.189>
 	```
-	
+
 2. Let's issue a request to the color gateway with gatewayRoute prefix as `/color1` and backend service route prefix as `/tell`.
 
 	```bash
 	curl -k "${COLORAPP_ENDPOINT}/color1/tell"
 	```
 	If you run above command several time you should see successful `white` and `blue` responses back from `colorteller-white-vn` and `colorteller-blue-vn` virtualNodes respectively. These are both the targets for `colorteller-2.${SERVICES_DOMAIN}` VirtualService.
-	
+
 	Similarly, let's issue a request to the gateway with gatewayRoute prefix as `/color2` and backend service route prefix as `/tell`.
-	
+
 	```bash
 	curl -k "${COLORAPP_ENDPOINT}/color2/tell"
 	```
 	In this case, you should receive `black` and `red` responses back from targets of `colorteller-2.${SERVICES_DOMAIN}` VirtualService.
-	
+
 3. Now let's log in to the bastion host and see ssl handshake stats for the gateway envoy.
 
 	```bash
