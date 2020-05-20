@@ -552,7 +552,6 @@ Resources:
         - Name: 'app'
           Image: !Ref EnvoyImage
           Essential: true
-          User: '1337'
           Ulimits:
             - Name: "nofile"
               HardLimit: 15000
@@ -590,7 +589,6 @@ Resources:
         - Name: 'cw-agent'
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CloudWatchAgentImageName}'
           Essential: true
-          User: '1337'
           PortMappings:
             - ContainerPort: 8125
               Protocol: 'udp'
