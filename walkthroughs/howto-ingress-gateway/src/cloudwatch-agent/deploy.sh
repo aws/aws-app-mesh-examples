@@ -17,7 +17,7 @@ IMAGE="${ECR_URL}/${CLOUDWATCH_AGENT_IMAGE_NAME}:latest"
 docker build -t $IMAGE $DIR --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
 
 # ECR login
-AWS_CLI_VERSION=$(aws --version | cut -d/ -f2 | cut -d. -f1)
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
 if [ $AWS_CLI_VERSION -eq 1 ]; then
     $(aws ecr get-login --no-include-email)
