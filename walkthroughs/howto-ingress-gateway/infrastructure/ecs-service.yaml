@@ -153,7 +153,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
-          Subnets: 
+          Subnets:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerWhiteTaskDefinition }
@@ -274,7 +274,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
-          Subnets: 
+          Subnets:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerBlackTaskDefinition }
@@ -395,7 +395,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
-          Subnets: 
+          Subnets:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerBlueTaskDefinition }
@@ -516,7 +516,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
-          Subnets: 
+          Subnets:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerRedTaskDefinition }
@@ -598,7 +598,7 @@ Resources:
             - Name: CW_CONFIG_CONTENT
               Value:
                 Fn::Sub:
-                  - '{ \"metrics\": { \"namespace\":\"${MetricNamespace}\", \"metrics_collected\": { \"statsd\": { \"metrics_aggregation_interval\": 0}}}}'
+                  - "{ \"metrics\": { \"namespace\":\"${MetricNamespace}\", \"metrics_collected\": { \"statsd\": { \"metrics_aggregation_interval\": 0}}}}"
                   - MetricNamespace:
                       Fn::Join:
                       - '/'
@@ -633,7 +633,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
-          Subnets: 
+          Subnets:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorGatewayTaskDefinition }
@@ -648,8 +648,8 @@ Resources:
     Properties:
       Scheme: internet-facing
       Subnets:
-        - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1" }  
-        - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet2" }  
+        - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1" }
+        - { 'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet2" }
       Type: network
 
   WebTargetGroup:
@@ -671,7 +671,7 @@ Resources:
           Value: 120
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
-  
+
   PublicLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     DependsOn:
@@ -686,7 +686,7 @@ Resources:
       Certificates:
         - CertificateArn: !Sub '${LoadBalancerCertificateArn}'
 
-Outputs: 
+Outputs:
 
   ColorAppEndpoint:
     Description: Public endpoint for Color App service
