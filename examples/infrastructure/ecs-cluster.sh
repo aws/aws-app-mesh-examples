@@ -4,8 +4,7 @@ set -ex
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
-    cloudformation deploy \
+aws cloudformation deploy \
     --stack-name "${ENVIRONMENT_NAME}-ecs-cluster" \
     --capabilities CAPABILITY_IAM \
     --template-file "${DIR}/ecs-cluster.yaml"  \
