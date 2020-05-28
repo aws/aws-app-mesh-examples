@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
 if [ -z $AWS_ACCOUNT_ID ]; then
     echo "AWS_ACCOUNT_ID environment variable is not set."
@@ -27,7 +27,7 @@ ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/
 FRONT_APP_IMAGE="${ECR_IMAGE_PREFIX}/feapp"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp"
 
-MANIFEST_VERSION="${1:-v1beta2}"
+MANIFEST_VERSION="${1:-v1beta1}"
 
 error() {
     echo $1
