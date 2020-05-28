@@ -636,7 +636,6 @@ Resources:
           ContainerPort: 9080
           TargetGroupArn: !Ref WebTargetGroup
 
-  # public ALB for color gateway
   PublicLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -650,10 +649,9 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /server_info
-      HealthCheckPort: 9901
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 6
+      HealthCheckPort: 9080
+      HealthCheckProtocol: TCP
+      HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 3
       TargetType: ip
       Name: !Sub "${EnvironmentName}-web"
