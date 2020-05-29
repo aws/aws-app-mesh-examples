@@ -1,0 +1,88 @@
+Description: >
+  This template deploys the mesh and all of its components.
+
+Parameters:
+
+  MeshName:
+    Description: The name of the mesh to create
+    Type: String
+
+  ServicesDomain:
+    Description: The DNS suffice applied to virtual service names (e.g. default.svc.cluster.local)
+    Type: String
+
+  CertificateAuthorityArn:
+    Description: the Amazon Resource Name (ARN) of the certificate authority to use for validating TLS certificates.
+    Type: String
+
+  CertificateArn:
+    Description: The Amazon Resource Name (ARN) of the certificate to use for terminating TLS.
+    Type: String
+
+Resources:
+
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Ref MeshName
+
+  ColorGatewayVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: ColorGateway
+      Spec:
+        BackendDefaults:
+          ClientPolicy:
+            TLS:
+              Validation:
+                Trust:
+                  ACM:
+                    CertificateAuthorityArns:
+                      - !Ref CertificateAuthorityArn
+        Backends:
+          - VirtualService:
+              VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+        Listeners:
+          - PortMapping:
+              Port: 80
+              Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorgateway.${ServicesDomain}"
+
+  ColorTellerVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: ColorTellerWhite
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 80
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: /ping
+              HealthyThreshold: 2
+              UnhealthyThreshold: 3
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+            TLS:
+              Mode: STRICT
+              Certificate:
+                ACM:
+                  CertificateArn: !Ref CertificateArn
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorteller.${ServicesDomain}"
+
+  ColorTellerVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: !GetAtt ColorTellerVirtualNode.VirtualNodeName

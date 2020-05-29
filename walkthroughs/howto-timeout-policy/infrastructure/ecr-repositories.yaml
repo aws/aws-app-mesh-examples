@@ -1,0 +1,21 @@
+Parameters:
+
+  GatewayImageName:
+    Description: The name for the gateway image
+    Type: String
+
+  ColorTellerImageName:
+    Description: The name for the color teller image
+    Type: String
+
+
+Resources:
+  GatewayRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref GatewayImageName
+
+  ColorTellerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ColorTellerImageName
