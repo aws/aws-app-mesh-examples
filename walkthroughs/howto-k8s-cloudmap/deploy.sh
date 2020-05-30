@@ -57,7 +57,7 @@ check_virtualnode_v1beta2(){
 check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
-        currentver=$(kubectl get deployment -n appmesh-system appmesh-controller-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
+        currentver=$(kubectl get deployment -n appmesh-system appmesh-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
         requiredver="v1.0.0"
         check_virtualnode_v1beta2
     elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then

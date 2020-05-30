@@ -135,8 +135,8 @@ Following are some of the reasons why instances are not getting registered with 
 1. Check that aws-app-mesh-controller-for-k8s is >=v0.1.2 or >=v1.0.0 based on the API version. If not upgrade the controller using helm instructions [here](https://github.com/aws/eks-charts).
 2. Check the logs of aws-app-mesh-controller-for-k8s for any errors. [stern](https://github.com/wercker/stern) is a great tool to use for this.
    ```
-   $ kubectl logs -n appmesh-system appmesh-controller-manager-<pod-id>
+   $ kubectl logs -n appmesh-system appmesh-controller-<pod-id>
    (or)
-   $ stern -n appmesh-system appmesh-controller-manager
+   $ stern -n appmesh-system appmesh-controller
    ```
 3. If you see AccessDeniedException in the logs when calling Cloud Map APIs, then update IAM role used by worker node to include AWSCloudMapRegisterInstanceAccess managed IAM policy.
