@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
 if [ -z $AWS_ACCOUNT_ID ]; then
     echo "AWS_ACCOUNT_ID environment variable is not set."
@@ -25,7 +25,7 @@ MESH_NAME=${PROJECT_NAME}
 ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
 FRONT_APP_IMAGE="${ECR_IMAGE_PREFIX}/feapp"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp"
-MANIFEST_VERSION="${1:-v1beta2}"
+MANIFEST_VERSION="${1:-v1beta1}"
 
 error() {
     echo $1
@@ -55,7 +55,7 @@ check_k8s_virtualservice() {
 check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
-        currentver=$(kubectl get deployment -n appmesh-system appmesh-controller-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
+        currentver=$(kubectl get deployment -n appmesh-system appmesh-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
         requiredver="v1.0.0"
         check_k8s_virtualrouter
     elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then
