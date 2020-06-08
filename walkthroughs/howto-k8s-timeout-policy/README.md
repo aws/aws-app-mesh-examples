@@ -120,18 +120,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     }
    ```
 
-## FAQ
-### 1. How can I use Cloud Map namespaces other than PrivateDnsNamespace?
-AWS Cloud Map supports three types of namespaces;
-1. [PublicDnsNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePublicDnsNamespace.html): Namespace that is visible to the internet.
-2. [PrivateDnsNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePrivateDnsNamespace.html): Namespace that is visible only in the specified VPC.
-3. [HttpNamespace](https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateHttpNamespace.html): Namespace that supports only HTTP discovery using DiscoverInstances. This namespace does not support DNS resolution.
-
-Currently App Mesh only supports backend applications running within VPC boundaries and that are not directly reachable from internet. So this rules out PublicDnsNamespace support. Both PrivateDnsNamespace and HttpNamespace can be supported but given that most applications still use DNS resolution before making a connection to remote service (via Envoy), HttpNamespace cannot be readily used. In future, we plan on leveraging [Envoy's DNS filter](https://github.com/envoyproxy/envoy/issues/6748) to support both PrivateDnsNamespace and HttpNamespace seamlessly. For now it is required to create PrivateDnsNamespace to get both DNS resolution and App Mesh's EDS support. Note that both PrivateDnsNamespace and HttpNamespace services support custom attributes that can be used with DiscoverInstances API.
-
 ## Troubleshooting
-### 1. My deployments and corresponding pods are running successfully, but I don't see the instances when calling Cloud Map DiscoverInstances API. What is the reason?
-Following are some of the reasons why instances are not getting registered with Cloud Map.
 1. Check that aws-app-mesh-controller-for-k8s is >=v0.1.2 or >=v1.0.0 based on the API version. If not upgrade the controller using helm instructions [here](https://github.com/aws/eks-charts).
 2. Check the logs of aws-app-mesh-controller-for-k8s for any errors. [stern](https://github.com/wercker/stern) is a great tool to use for this.
    ```
