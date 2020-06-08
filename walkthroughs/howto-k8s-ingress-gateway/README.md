@@ -28,7 +28,7 @@ $ kubectl get deployment -n appmesh-system appmesh-manager -o json | jq -r ".spe
     export ENVOY_IMAGE=...
 
 5. Deploy
-    ```.
+```.
     ./deploy.sh
 ```
 
