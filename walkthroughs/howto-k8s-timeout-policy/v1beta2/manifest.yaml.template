@@ -33,7 +33,7 @@ spec:
         http:
           perRequest:
             unit: s
-            value: 30
+            value: 60
   serviceDiscovery:
     awsCloudMap:
       namespaceName: ${CLOUDMAP_NAMESPACE}
@@ -61,7 +61,7 @@ spec:
         http:
           perRequest:
             unit: s
-            value: 30
+            value: 60
   serviceDiscovery:
     awsCloudMap:
       namespaceName: ${CLOUDMAP_NAMESPACE}
@@ -85,7 +85,7 @@ spec:
         http:
           perRequest:
             unit: s
-            value: 30
+            value: 60
   serviceDiscovery:
     awsCloudMap:
       namespaceName: ${CLOUDMAP_NAMESPACE}
@@ -129,7 +129,7 @@ spec:
         timeout:
           perRequest:
             unit: s
-            value: 30
+            value: 60
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
@@ -166,7 +166,7 @@ spec:
         timeout:
           perRequest:
             unit: s
-            value: 30
+            value: 60
 ---
 apiVersion: apps/v1
 kind: Deployment
