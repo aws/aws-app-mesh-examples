@@ -1,6 +1,6 @@
 # Configuring Ingress Gateway
 
-In this walkthrough we'll configure an Ingress Gateway in our existing example but with a VirtualGateway resource to configure the VirtualGateway instead of a VirtualNode.
+In this walkthrough, we'll configure an Ingress Gateway in our existing example color app but with a VirtualGateway resource instead of VirtualNode for ingress traffic.
 
 A virtual gateway allows resources outside your mesh to communicate to resources that are inside your mesh. The virtual gateway represents an Envoy proxy running in an Amazon ECS, in a Kubernetes service, or on an Amazon EC2 instance. Unlike a virtual node, which represents a proxy running with an application, a virtual gateway represents the proxy deployed by itself.
 
@@ -44,7 +44,7 @@ Let's look at the VirtualGateway deployed:
 ```
 kubectl get virtualgateway -n howto-k8s-ingress-gateway                                         
 NAME         ARN                                                                                                                                 AGE
-ingress-gw   arn:aws:appmesh-preview:us-west-2:669977933099:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway   113s
+ingress-gw   arn:aws:appmesh-preview:us-west-2:112233333455:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway   113s
 ```
 
 The entry point for traffic will be an Envoy linked to the VirtualGateway `ingress-gw`:
@@ -95,7 +95,7 @@ blue
 
 Connect to VirtualNode yellow via VirtualService color-paths
 ```
-curl ${GW_ENDPOINT}:8088/paths/yello ; echo;
+curl ${GW_ENDPOINT}:8088/paths/yellow ; echo;
 yellow
 ```
 
