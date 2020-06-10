@@ -26,6 +26,9 @@ spec:
   namespaceSelector:
     matchLabels:
       gateway: ingress-gw
+  podSelector:
+    matchLabels:
+      app: ingress-gw
   listeners:
     - portMapping:
         port: 8088
@@ -588,7 +591,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 8088
+    - port: 80
+      targetPort: 8088
       name: http
   selector:
     app: ingress-gw
@@ -608,19 +612,10 @@ spec:
       labels:
         app: ingress-gw
       annotations:
-        appmesh.k8s.aws/sidecarInjectorWebhook: "disabled"
+        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: envoy
           image: ${ENVOY_IMAGE}
           ports:
-            - containerPort: 9080
-          env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "mesh/${APP_NAMESPACE}/virtualGateway/ingress-gw_${APP_NAMESPACE}"
-            - name: "APPMESH_PREVIEW"
-              value: "1"
-            - name: "ENVOY_LOG_LEVEL"
-              value: "info"
-            - name: "AWS_REGION"
-              value: "$AWS_DEFAULT_REGION"
+            - containerPort: 8088
