@@ -72,7 +72,7 @@ color-paths     ClusterIP      10.100.49.62     <none>                          
 color-red       ClusterIP      10.100.247.202   <none>                                                                   8080/TCP         3m21s
 color-white     ClusterIP      10.100.5.232     <none>                                                                   8080/TCP         3m21s
 color-yellow    ClusterIP      10.100.151.20    <none>                                                                   8080/TCP         3m21s
-ingress-gw      LoadBalancer   10.100.177.113   a0b14c18c13114255ab46432fcb9e1f8-135255798.us-west-2.elb.amazonaws.com   8088:32313/TCP   3m21s
+ingress-gw      LoadBalancer   10.100.177.113   a0b14c18c13114255ab46432fcb9e1f8-135255798.us-west-2.elb.amazonaws.com   80:30151/TCP   3m21s
 ```
 
 Let's verify connectivity into the Mesh:
@@ -83,31 +83,31 @@ GW_ENDPOINT=$(kubectl get svc ingress-gw -n howto-k8s-ingress-gateway --output j
 
 Connect to VirtualNode red via VirtualService color-paths
 ```
-curl ${GW_ENDPOINT}:8088/paths/red ; echo;
+curl ${GW_ENDPOINT}/paths/red ; echo;
 red
 ```
 
 Connect to VirtualNode blue via VirtualService color-paths
 ```
-curl ${GW_ENDPOINT}:8088/paths/blue ; echo;
+curl ${GW_ENDPOINT}/paths/blue ; echo;
 blue
 ```
 
 Connect to VirtualNode yellow via VirtualService color-paths
 ```
-curl ${GW_ENDPOINT}:8088/paths/yellow ; echo;
+curl ${GW_ENDPOINT}/paths/yellow ; echo;
 yellow
 ```
 
 Connect to VirtualNode blue via VirtualService color-headers
 ```
-curl -H "color_header: blue" ${GW_ENDPOINT}:8088/headers ; echo;
+curl -H "color_header: blue" ${GW_ENDPOINT}/headers ; echo;
 blue
 ```
 
 Connect to VirtualNode red via VirtualService color-headers
 ```
-curl -H "color_header: red" ${GW_ENDPOINT}:8088/headers ; echo;
+curl -H "color_header: red" ${GW_ENDPOINT}/headers ; echo;
 red
 ```
 
