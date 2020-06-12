@@ -14,7 +14,7 @@ You can use v1beta2 example manifest with [aws-app-mesh-controller-for-k8s](http
 ## Setup
 
 ```
-1. Clone this repository and navigate to the walkthrough/howto-k8s-http2 folder, all commands will be ran from this location
+1. Clone this repository and navigate to the walkthrough/howto-k8s-grpc folder, all commands will be ran from this location
 1. **Your** account id:
 
     export AWS_ACCOUNT_ID=<your_account_id>
