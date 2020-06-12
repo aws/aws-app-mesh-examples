@@ -21,7 +21,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="howto-k8s-ingress-gateway"
 APP_NAMESPACE=${PROJECT_NAME}
 MESH_NAME=${PROJECT_NAME}
-APPMESH_PREVIEW='"true"'
+APPMESH_PREVIEW="enabled"
 
 ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp"
@@ -103,7 +103,7 @@ EOF
 }
 
 main() {
-    #check_appmesh_k8s
+    check_appmesh_k8s
 
     if [ -z $SKIP_IMAGES ]; then
         echo "deploy images..."

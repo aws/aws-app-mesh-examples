@@ -33,13 +33,6 @@ spec:
     - portMapping:
         port: 8088
         protocol: http
-      healthCheck:
-        path: /ping
-        healthyThreshold: 6
-        intervalMillis: 6000
-        protocol: http
-        timeoutMillis: 3000
-        unhealthyThreshold: 3
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: GatewayRoute
@@ -588,6 +581,8 @@ kind: Service
 metadata:
   name: ingress-gw
   namespace: ${APP_NAMESPACE}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 spec:
   type: LoadBalancer
   ports:
