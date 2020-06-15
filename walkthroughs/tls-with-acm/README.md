@@ -59,6 +59,13 @@ Finally, build and deploy the color app images.
 ./src/gateway/deploy.sh
 ```
 
+Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
+
+```bash
+GO_PROXY=direct ./src/colorteller/deploy.sh
+GO_PROXY=direct ./src/gateway/deploy.sh
+```
+
 ## Step 2: Create a Certificate
 
 Before we can encrypt traffic between services in the mesh, we need to generate a certificate. App Mesh currently supports certificates issued by an [ACM Private Certificate Authority](https://docs.aws.amazon.com/acm-pca/latest/userguide/PcaWelcome.html), which we'll setup in this step.
