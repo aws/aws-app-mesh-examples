@@ -5,11 +5,11 @@ In this walkthrough, we'll configure an Ingress Gateway in our existing example 
 A virtual gateway allows resources outside your mesh to communicate to resources that are inside your mesh. The virtual gateway represents an Envoy proxy running in an Amazon ECS, in a Kubernetes service, or on an Amazon EC2 instance. Unlike a virtual node, which represents a proxy running with an application, a virtual gateway represents the proxy deployed by itself.
 
 ## Prerequisites
-This feature is currently only available in App Mesh preview and will work with App Mesh manager [here](https://github.com/aws/eks-charts/tree/master/stable/appmesh-manager)
+This feature is currently only available in App Mesh preview and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller)
 
 This example requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
 ## Setup
