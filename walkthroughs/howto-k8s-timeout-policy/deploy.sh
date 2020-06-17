@@ -57,15 +57,13 @@ check_virtualnode_v1beta2(){
 check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
-        currentver=$(kubectl get deployment -n appmesh-system appmesh-controller-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
-        requiredver="v1beta2-99"
+        currentver=$(kubectl get deployment -n appmesh-system appmesh-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
+        requiredver="v1.0.0"
         check_virtualnode_v1beta2
     elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then
-        currentver=$(kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':')
-        requiredver="v0.3.0"
-        check_virtualnode_v1beta1
+        error "$PROJECT_NAME is not supported with v1beta1 manifests. Timeouts feature is only available in v1beta2.
     else
-        error "$PROJECT_NAME unexpected manifest version input: $MANIFEST_VERSION. Should be v1beta2 or v1beta1 based on the AppMesh controller version. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
+        error "$PROJECT_NAME unexpected manifest version input: $MANIFEST_VERSION. Timeouts feature is only supported with v1beta2 manifest version. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
     fi
 
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
