@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
 if [ -z $AWS_ACCOUNT_ID ]; then
     echo "AWS_ACCOUNT_ID environment variable is not set."
@@ -34,16 +34,6 @@ error() {
     exit 1
 }
 
-check_virtualnode_v1beta1(){
-    #check CRD
-    crd=$(kubectl get crd virtualnodes.appmesh.k8s.aws -o json | jq -r '.. | .cloudMap?.properties.namespaceName? | select(. != null)')
-    if [ -z "$crd" ]; then
-        error "$PROJECT_NAME requires virtualnodes.appmesh.k8s.aws CRD to support Cloud Map service-discovery. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v012"
-    else
-        echo "CRD check passed!"
-    fi
-}
-
 check_virtualnode_v1beta2(){
     #check CRD
     crd=$(kubectl get crd virtualnodes.appmesh.k8s.aws -o json | jq -r '.. | .awsCloudMap?.properties.namespaceName? | select(. != null)')
@@ -57,13 +47,11 @@ check_virtualnode_v1beta2(){
 check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
-        currentver=$(kubectl get deployment -n appmesh-system appmesh-manager -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
+        currentver=$(kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
         requiredver="v1.0.0"
         check_virtualnode_v1beta2
-    elif [ "$MANIFEST_VERSION" = "v1beta1" ]; then
-        error "$PROJECT_NAME is not supported with v1beta1 manifests. Timeouts feature is only available in v1beta2.
     else
-        error "$PROJECT_NAME unexpected manifest version input: $MANIFEST_VERSION. Timeouts feature is only supported with v1beta2 manifest version. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
+        error "$PROJECT_NAME unexpected manifest version input: $MANIFEST_VERSION. Timeouts are only supported in v1beta2 and AppMesh controller version > v1.0.0. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
     fi
 
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
