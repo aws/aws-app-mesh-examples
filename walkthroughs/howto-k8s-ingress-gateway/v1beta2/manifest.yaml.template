@@ -380,8 +380,6 @@ spec:
       labels:
         app: color
         version: green
-      annotations:
-        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: app
@@ -421,8 +419,6 @@ spec:
       labels:
         app: color
         version: blue
-      annotations:
-        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: app
@@ -462,8 +458,6 @@ spec:
       labels:
         app: color
         version: red
-      annotations:
-        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: app
@@ -503,8 +497,6 @@ spec:
       labels:
         app: color
         version: yellow
-      annotations:
-        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: app
@@ -544,8 +536,6 @@ spec:
       labels:
         app: color
         version: white
-      annotations:
-        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: app
@@ -606,8 +596,6 @@ spec:
     metadata:
       labels:
         app: ingress-gw
-      annotations:
-        appmesh.k8s.aws/preview: ${APPMESH_PREVIEW}
     spec:
       containers:
         - name: envoy
