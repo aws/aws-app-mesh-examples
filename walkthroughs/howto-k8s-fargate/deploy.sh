@@ -26,7 +26,7 @@ ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/
 FRONT_APP_IMAGE="${ECR_IMAGE_PREFIX}/feapp:$(git log -1 --format=%h src/feapp)"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp:$(git log -1 --format=%h src/colorapp)"
 
-MANIFEST_VERSION="${1:-v1beta1}"
+MANIFEST_VERSION="${1:-v1beta2}"
 
 error() {
     echo $1

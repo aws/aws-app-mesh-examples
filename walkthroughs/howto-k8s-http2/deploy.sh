@@ -25,7 +25,7 @@ CLOUDMAP_NAMESPACE="${APP_NAMESPACE}.svc.cluster.local"
 ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
 CLIENT_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_client"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_server"
-MANIFEST_VERSION="${1:-v1beta1}"
+MANIFEST_VERSION="${1:-v1beta2}"
 
 error() {
     echo $1
