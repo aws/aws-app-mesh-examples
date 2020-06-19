@@ -13,7 +13,17 @@ $ aws iam attach-role-policy \
       --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 ```
 
-The X-Ray daemon is automatically injected by [App Mesh Inject](https://github.com/awslabs/aws-app-mesh-inject) into your app container if the `INJECT_XRAY_SIDECAR=true` environment variable is set at time of install. Let's verify that with the following command:
+Enable X-Ray tracing for the App Mesh data plane
+
+```sh
+helm upgrade -i appmesh-controller eks/appmesh-controller \
+    --namespace appmesh-system \
+    --set tracing.enabled=true \
+    --set tracing.provider=x-ray
+```
+
+The X-Ray daemon is automatically injected by [App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s) into your app containers. Let's verify that with the following command:
+
 
 ```
 $ kubectl -n appmesh-demo \
