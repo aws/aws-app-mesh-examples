@@ -11,6 +11,8 @@ Additionally a colorapp virtual-service is defined that routes traffic to blue a
 ### Front
 Front app acts as a gateway that makes remote calls to colorapp. Front app has single deployment with pods registered with the mesh as _front_ virtual-node. This virtual-node uses colorapp virtual-service as backend. This configures Envoy injected into front pod to use App Mesh's EDS to discover colorapp endpoints.
 
+Colorapp is configured to respond with a delay of 45 seconds to simulate an upstream request that takes more than the default Envoy timeout of 15 seconds. Since, the configured timeout value in _front_virtual-node is 60 seconds(along with route timeout of 60 secs in the backend virtual router), we can see that envoy will not timeout in this scenario.
+
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
