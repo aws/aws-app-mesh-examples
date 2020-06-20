@@ -195,8 +195,6 @@ spec:
               value: "8080"
             - name: "COLOR_HOST"
               value: "colorapp.${CLOUDMAP_NAMESPACE}:8080"
-          securityContext:
-            privileged: true
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -225,8 +223,6 @@ spec:
               value: "8080"
             - name: "COLOR"
               value: "blue"
-          securityContext:
-            privileged: true
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -255,5 +251,3 @@ spec:
               value: "8080"
             - name: "COLOR"
               value: "red"
-          securityContext:
-            privileged: true
