@@ -24,7 +24,7 @@ def color():
     print('----------------')
     print(request.headers)
     print('----------------')
-    time.sleep(45)
+    time.sleep(config.TIMEOUT_VALUE)
     return config.COLOR
 
 if __name__ == '__main__':

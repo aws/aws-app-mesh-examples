@@ -51,7 +51,7 @@ check_appmesh_k8s() {
         requiredver="v1.0.0"
         check_virtualnode_v1beta2
     else
-        error "$PROJECT_NAME unexpected manifest version input: $MANIFEST_VERSION. Timeouts are only supported in v1beta2 and AppMesh controller version > v1.0.0. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
+        error "$PROJECT_NAME unexpected manifest version input: $MANIFEST_VERSION. Timeouts are only supported in v1beta2 and AppMesh controller version >= v1.0.0. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md"
     fi
 
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then

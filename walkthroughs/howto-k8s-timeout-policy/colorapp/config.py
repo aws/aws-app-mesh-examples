@@ -5,6 +5,7 @@ PORT = int(env.get("PORT", 8080))
 DEBUG_MODE = int(env.get("DEBUG_MODE", 0))
 XRAY_APP_NAME = env.get('XRAY_APP_NAME', 'feapp')
 COLOR = env.get('COLOR', 'n/a')
+TIMEOUT_VALUE = int(env.get("TIMEOUT_VALUE", 45))
 
 # Gunicorn config
 bind = ":" + str(PORT)

@@ -223,6 +223,8 @@ spec:
               value: "8080"
             - name: "COLOR"
               value: "blue"
+            - name: "TIMEOUT_VALUE"
+              value: "45"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -251,3 +253,5 @@ spec:
               value: "8080"
             - name: "COLOR"
               value: "red"
+            - name: "TIMEOUT_VALUE"
+              value: "45"
