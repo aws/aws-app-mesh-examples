@@ -4,7 +4,7 @@ This example shows how to enable App Mesh between multiple accounts for cross ac
 
 ![System Diagram](./CrossAccount.png "System Diagram")
 
-### Gatway
+### Gateway
 
 The gateway image is an NGINX proxy which listens on a given port and forwards requests to the backend service on a given port. It also responds to NLB HealthChecks.
 
