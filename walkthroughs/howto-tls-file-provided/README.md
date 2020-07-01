@@ -66,6 +66,13 @@ Next, build and deploy the color app images.
 ./src/gateway/deploy.sh
 ```
 
+Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
+
+```bash
+GO_PROXY=direct ./src/colorteller/deploy.sh
+GO_PROXY=direct ./src/gateway/deploy.sh
+```
+
 ## Step 2: Generate the Certficates
 
 Before we can encrypt traffic between services in the mesh, we need to generate our certificates.
