@@ -56,6 +56,9 @@ spec:
     awsCloudMap:
       namespaceName: ${CLOUDMAP_NAMESPACE}
       serviceName: colorapp
+      attributes:
+      - key: color
+        value: blue
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
@@ -75,6 +78,9 @@ spec:
     awsCloudMap:
       namespaceName: ${CLOUDMAP_NAMESPACE}
       serviceName: colorapp
+      attributes:
+      - key: color
+        value: red
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
