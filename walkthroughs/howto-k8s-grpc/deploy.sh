@@ -22,10 +22,12 @@ PROJECT_NAME="howto-k8s-grpc"
 APP_NAMESPACE=${PROJECT_NAME}
 MESH_NAME=${PROJECT_NAME}
 CLOUDMAP_NAMESPACE="${APP_NAMESPACE}.svc.cluster.local"
-ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
+ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX="${ECR_URL}/${PROJECT_NAME}"
 CLIENT_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_client"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_server"
 MANIFEST_VERSION="${1:-v1beta2}"
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
 error() {
     echo $1
@@ -73,11 +75,20 @@ check_appmesh_k8s() {
     fi
 }
 
-deploy_images() {
-    for app in color_client color_server; do
-        aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app
-        docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
+ecr_login() {
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
         $(aws ecr get-login --no-include-email)
+    fi
+}
+
+deploy_images() {
+    ecr_login
+    for app in color_client color_server; do
+        aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app >/dev/null
+        docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
         docker push ${ECR_IMAGE_PREFIX}/${app}
     done
 }
