@@ -15,26 +15,25 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 1. Clone this repository and navigate to the walkthrough/howto-k8s-grpc folder, all commands will be ran from this location
 1. **Your** account id:
-```
+    ```
     export AWS_ACCOUNT_ID=<your_account_id>
-```
+    ```
 1. **Region** e.g. us-west-2
-```
+    ```
     export AWS_DEFAULT_REGION=us-west-2
-```
+    ```
 1. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-```
+    ```
     export ENVOY_IMAGE=...
-```
+    ```
 1. **VPC_ID** environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use `aws eks describe-cluster`.
-```
+    ```
     export VPC_ID=...
-```
+    ```
 1. Deploy
-```
+    ```
     ./deploy.sh
-```
-    
+    ```
 1. Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
    ```
    GO_PROXY=direct ./deploy.sh
