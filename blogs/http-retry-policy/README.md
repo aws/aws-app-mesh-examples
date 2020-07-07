@@ -13,7 +13,7 @@ In this blog, we will demonstrate how to configure this using AWS App Mesh, usin
 
 ## Using Retry policy
 
-Here is a simple demo application that we will use to showcase an example of retry policies. This example is available on [Github AWS App Mesh examples](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/http-retry-policy).
+Here is a simple demo application that we will use to showcase an example of retry policies. This example is available on [Github AWS App Mesh examples](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-http-retries).
 
 ### Service view: 
 

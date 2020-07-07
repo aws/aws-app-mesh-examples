@@ -17,15 +17,27 @@ if [ -z $ENVOY_IMAGE ]; then
     exit 1
 fi
 
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="howto-http-headers"
-ECR_IMAGE_PREFIX=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}
+
+ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX=${ECR_URL}/${PROJECT_NAME}
+
+ecr_login() {
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
+        $(aws ecr get-login --no-include-email)
+    fi
+}
 
 deploy_images() {
+    ecr_login
     for app in colorapp feapp; do
-        aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app
+        aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app >/dev/null
         docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app}
-        $(aws ecr get-login --no-include-email)
         docker push ${ECR_IMAGE_PREFIX}/${app}
     done
 }
@@ -66,10 +78,10 @@ delete_images() {
 
         aws ecr batch-delete-image \
            --repository-name $PROJECT_NAME/$app \
-           --image-ids imageDigest=$image_digest
+           --image-ids imageDigest=$image_digest >/dev/null
 
         aws ecr delete-repository \
-           --repository-name $PROJECT_NAME/$app
+           --repository-name $PROJECT_NAME/$app >/dev/null
     done
 }
 

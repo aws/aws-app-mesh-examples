@@ -43,7 +43,12 @@ deploy_app() {
 
 deploy_mesh() {
     echo "Creating Mesh: \"${PROJECT_NAME}-mesh\"..."
-    ${DIR}/mesh/mesh.sh up
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --stack-name "${PROJECT_NAME}-mesh"\
+        --template-file "${DIR}/mesh.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides "ProjectName=${PROJECT_NAME}"
 }
 
 enable_org_share() {
@@ -72,11 +77,6 @@ delete_cfn_stack() {
     echo 'Done'
 }
 
-delete_mesh() {
-    echo "Deleting Mesh: \"${PROJECT_NAME}-mesh\"..."
-    ${DIR}/mesh/mesh.sh down
-}
-
 delete_image() {
     echo "deleting repository \"${app}\"..."
     aws ecr delete-repository \
@@ -94,7 +94,7 @@ deploy_stacks() {
 }
 
 delete_stacks() {
-    delete_mesh
+    delete_cfn_stack "${PROJECT_NAME}-mesh"
     delete_cfn_stack "${PROJECT_NAME}-app"
     delete_cfn_stack "${PROJECT_NAME}-share-resources"
     delete_cfn_stack "${PROJECT_NAME}-infra"

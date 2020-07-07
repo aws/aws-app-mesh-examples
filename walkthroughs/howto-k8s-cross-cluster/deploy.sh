@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
 if [ -z $AWS_ACCOUNT_ID ]; then
     echo "AWS_ACCOUNT_ID environment variable is not set."
@@ -32,25 +32,35 @@ if [ -z $VPC_ID ]; then
     exit 1
 fi
 
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="appmesh-demo"
 APP_NAMESPACE=${PROJECT_NAME}
 MESH_NAME=${PROJECT_NAME}
 CLOUDMAP_NAMESPACE="${PROJECT_NAME}.pvt.aws.local"
 
-ECR_IMAGE_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}"
+ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX="${ECR_URL}/${PROJECT_NAME}"
 FRONT_APP_IMAGE="${ECR_IMAGE_PREFIX}/feapp"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp"
 
-deploy_images() {
-    for app in colorapp feapp; do
-        aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app
-        docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app}
+ecr_login() {
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
         $(aws ecr get-login --no-include-email)
+    fi
+}
+
+deploy_images() {
+    ecr_login
+    for app in colorapp feapp; do
+        aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app >/dev/null
+        docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app}
         docker push ${ECR_IMAGE_PREFIX}/${app}
     done
 }
-
 
 deploy_cloudmap_ns() {
     nsId=($(aws servicediscovery list-namespaces |
@@ -64,7 +74,7 @@ deploy_cloudmap_ns() {
 
         aws servicediscovery create-private-dns-namespace \
             --name "${CLOUDMAP_NAMESPACE}" \
-            --vpc "${VPC_ID}"
+            --vpc "${VPC_ID}" >/dev/null
         echo "Created private-dns-namespace ${CLOUDMAP_NAMESPACE}"
         sleep 5
     fi

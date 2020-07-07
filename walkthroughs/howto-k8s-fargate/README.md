@@ -1,4 +1,12 @@
 ## Prerequisites
+
+v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+```
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
+```
+
+You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
+
 - Setup following environment variables
   - **Your** account id:
     ```
@@ -15,7 +23,7 @@
 - Setup EKS cluster with Fargate support.
   - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
     ```
-    eksctl create cluster -f clusterconfig.yaml
+    eksctl create cluster -f v1beta2/clusterconfig.yaml
     ```
 
 ## Deploy

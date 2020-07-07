@@ -10,10 +10,12 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
-Note: This feature requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=0.2.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v020). Run the following to check the version of controller you are running.
+v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
+
+You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
 ## Setup
 
@@ -64,4 +66,4 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json  | jq -r "
 
 4. You should now see more 200 OK responses due to retries.
 
-No go to https://www.envoyproxy.io/docs/envoy/v1.8.0/api-v1/route_config/route#config-http-conn-man-route-table-route-retry and https://www.envoyproxy.io/learn/automatic-retries for details on how retries work in Envoy.
+Now go to https://www.envoyproxy.io/docs/envoy/v1.8.0/api-v1/route_config/route#config-http-conn-man-route-table-route-retry and https://www.envoyproxy.io/learn/automatic-retries for details on how retries work in Envoy.

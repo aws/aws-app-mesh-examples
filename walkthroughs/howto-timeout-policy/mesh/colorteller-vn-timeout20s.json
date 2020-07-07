@@ -1,0 +1,33 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 80,
+                    "protocol": "http"
+                },
+                "healthCheck": {
+                    "protocol": "http",
+                    "path": "/ping",
+                    "healthyThreshold": 2,
+                    "unhealthyThreshold": 2,
+                    "timeoutMillis": 2000,
+                    "intervalMillis": 5000
+                },
+                "timeout": {
+                    "http": {
+                        "perRequest": {
+                            "value" : 20,
+                            "unit" : "s"
+                        }
+                    }
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "hostname": $DNS_HOSTNAME
+            }
+        }
+    }
+}

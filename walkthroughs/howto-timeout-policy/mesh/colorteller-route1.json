@@ -1,0 +1,17 @@
+{
+    "spec": {
+        "httpRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "ColorTellerWhite",
+                        "weight": 1
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/color1"
+            }
+        }
+    }
+}
