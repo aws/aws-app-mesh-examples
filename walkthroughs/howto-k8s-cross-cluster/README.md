@@ -20,7 +20,9 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 
 *MESH*
 
-App Mesh components will be deployed from one of the two clusters. It does not really matter where you deploy it from. It will have various components deployed . A virtual node per service and a Virtual Service which will have a router with routes tied (provider) to route traffic between red and blue equally. We will use a custom CRD, mesh controller and  mesh inject components that will handle the mesh creation using the standard kubectl. This will auto inject proxy sidecars on pod creation.
+App Mesh components will be deployed from one of the two clusters. It does not really matter where you deploy them from. It will have various components deployed . A Virtual Node per service and a Virtual Service which will have a Virtualrouter with routes tied (provider) to route traffic between red and blue equally.
+
+Note: If your clusters are across two different accounts then add "meshOwner: <AccountId>" to the mesh spec in the second cluster.
 
 *CLOUD MAP*
 
