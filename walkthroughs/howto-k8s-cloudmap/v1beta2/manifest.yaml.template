@@ -177,7 +177,7 @@ spec:
             - name: "PORT"
               value: "8080"
             - name: "COLOR_HOST"
-              value: "colorapp.${CLOUDMAP_NAMESPACE}:8080"
+              value: "colorapp.${APP_NAMESPACE}.svc.cluster.local:8080"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -234,3 +234,13 @@ spec:
               value: "8080"
             - name: "COLOR"
               value: "red"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colorapp
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
