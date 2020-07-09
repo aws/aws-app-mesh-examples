@@ -2,6 +2,8 @@
 
 The DJ App demo uses a simple application called DJ to demonstrate some popular AWS App Mesh use cases.
 
+Note: This project has been updated for the [AWS App Mesh Controller for Kubernetes](https://github.com/aws/aws-app-mesh-controller-for-k8s) GA to use the v1beta2 API version. The legacy version can be found in the 'legacy' directory.
+
 ## Overview
 This application is composed of three microservices:
 
@@ -27,9 +29,9 @@ Seven total services with App Mesh sidecars proxying traffic, and the App Mesh c
 
 This tutorial will walk through the following steps:
 
-1. [Create the k8s DJ App](https://eksworkshop.com/servicemesh_with_appmesh/)
-1. [Create the App Mesh components](https://eksworkshop.com/servicemesh_with_appmesh/create_app_mesh_components/)
-1. [Port the DJ App to run on App mesh](https://eksworkshop.com/servicemesh_with_appmesh/port_to_app_mesh/)
+1. [Deploy DJ App on Kubernetes](https://eksworkshop.com/servicemesh_with_appmesh/)
+1. [Install the App Mesh Controller for Kubernetes](https://eksworkshop.com/servicemesh_with_appmesh/install_app_mesh_controller/)
+1. [Port the DJ App to run on AWS App Mesh](https://eksworkshop.com/servicemesh_with_appmesh/port_to_app_mesh/)
 
 ## Prerequisites
 

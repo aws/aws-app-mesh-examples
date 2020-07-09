@@ -1,0 +1,189 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    mesh: dj-app
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: dj-app
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: dj-app
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: dj
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: dj
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: jazz
+    - virtualService:
+        virtualServiceRef:
+          name: metal
+  serviceDiscovery:
+    dns:
+      hostname: dj.prod.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: jazz
+  namespace: prod
+spec:
+  awsName: jazz.prod.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: jazz-router
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: metal
+  namespace: prod
+spec:
+  awsName: metal.prod.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: metal-router
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: jazz-router
+  namespace: prod
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: jazz-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: jazz-v1
+              weight: 100
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: metal-router
+  namespace: prod
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: metal-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: metal-v1
+              weight: 100
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: jazz-v1
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: jazz
+      version: v1
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: jazz-v1.prod.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: metal-v1
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: metal
+      version: v1
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: metal-v1.prod.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jazz
+  namespace: prod
+  labels:
+    app: jazz
+spec:
+  ports:
+  - port: 9080
+    name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal
+  namespace: prod
+  labels:
+    app: metal
+spec:
+  ports:
+  - port: 9080
+    name: http
+---
