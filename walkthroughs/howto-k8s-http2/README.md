@@ -4,11 +4,12 @@ This example shows how to manage HTTP/2 routes in App Mesh using Kubernetes depl
 ## Prerequisites
 [Walkthrough: App Mesh with EKS](../eks/)
 
-Note: v1beta1 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md). Run the following to check the version of controller you are running.
+v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
-You can use v1beta2 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version >=v1.0.0
+
+You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
 ```
 ## Setup
@@ -52,7 +53,7 @@ You can use v1beta2 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 1. Initially the state of your mesh is a client node with an even distribution to 3 color services (red, blue, and green) over HTTP/2. Prove this by running the following command a few times:
     ```
-    localhost:7000/color
+    curl localhost:7000/color
     ```
    
 1. You can edit these specifications in the manifest.yaml.template [here](./manifest.yaml.template). Run ./deploy.sh after any changes you make. For instance you can remove one of the weighted targets and trigger the curl command above to confirm that color route no longer appears.

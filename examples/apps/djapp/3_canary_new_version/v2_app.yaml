@@ -1,0 +1,184 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: jazz-router
+  namespace: prod
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: jazz-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: jazz-v1
+              weight: 95
+            - virtualNodeRef:
+                name: jazz-v2
+              weight: 5 
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: metal-router
+  namespace: prod
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: metal-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: metal-v1
+              weight: 95
+            - virtualNodeRef:
+                name: metal-v2
+              weight: 5 
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: jazz-v2
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: jazz
+      version: v2
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: jazz-v2.prod.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: metal-v2
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: metal
+      version: v2
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: metal-v2.prod.svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jazz-v2
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jazz
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: jazz
+        version: v2
+    spec:
+      containers:
+        - name: jazz
+          image: "672518094988.dkr.ecr.us-west-2.amazonaws.com/hello-world:v1.0"
+          ports:
+            - containerPort: 9080
+          env:
+            - name: "HW_RESPONSE"
+              value: "[\"Astrud Gilberto (Bahia, Brazil)\",\"Miles Davis (Alton, Illinois)\"]"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-v2
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metal
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: metal
+        version: v2
+    spec:
+      containers:
+        - name: metal
+          image: "672518094988.dkr.ecr.us-west-2.amazonaws.com/hello-world:v1.0"
+          ports:
+            - containerPort: 9080
+          env:
+            - name: "HW_RESPONSE"
+              value: "[\"Megadeth (Los Angeles, California)\",\"Judas Priest (West Bromwich, England)\"]"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jazz-v2
+  namespace: prod
+  labels:
+    app: jazz
+    version: v2
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: jazz
+    version: v2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-v2
+  namespace: prod
+  labels:
+    app: metal
+    version: v2
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: metal
+    version: v2
+---

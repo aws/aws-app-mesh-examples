@@ -21,13 +21,11 @@ docker build -t $IMAGE $DIR --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.gola
 # ECR login
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
-if [ $AWS_CLI_VERSION -eq 1 ]; then
-    $(aws ecr get-login --no-include-email)
-elif [ $AWS_CLI_VERSION -eq 2 ]; then
-    aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_URL}
+if [ $AWS_CLI_VERSION -gt 1 ]; then
+    aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+        docker login --username AWS --password-stdin ${ECR_URL}
 else
-    echo "Invalid AWS CLI version"
-    exit 1
+    $(aws ecr get-login --no-include-email)
 fi
 
 # push
