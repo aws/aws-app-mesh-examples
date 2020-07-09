@@ -40,12 +40,12 @@ In order to successfully carry out the base deployment:
 * Make sure to have aws-iam-authenticator installed (https://github.com/kubernetes-sigs/aws-iam-authenticator), required for eksctl
 * Install eksctl (https://eksctl.io/), for example, on macOS with brew tap weaveworks/tap and brew install weaveworks/tap/eksctl, and make sure it's on at least on version 0.23.0. 
 
-Note: v1beta1 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md). Run the following to check the version of controller you are running.
+v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-You can use v1beta2 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version >=v1.0.0
+You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
 Note that this walkthrough assumes throughout to operate in the us-east-1 region.
 
