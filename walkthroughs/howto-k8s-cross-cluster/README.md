@@ -12,7 +12,7 @@ We will spin up two EKS clusters in the same VPC for simplicity and configure a 
 
 *DEPLOYMENTS*
 
-There are two deployments of colorapp, blue and red. Pods of both these deployments are registered behind service colorapp.appmesh-demo.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS Cloud Map as service-discovery, hence the IP addresses of these pods are registered with the Cloud Map service with corresponding attributes.
+There are two deployments of colorapp, blue and red. Pods of both these deployments are registered behind service colorapp.howto-k8s-cross-cluster.pvt.aws.local. Blue pods are registered with the mesh as colorapp-blue virtual-node and red pods as colorapp-red virtual-node. These virtual-nodes are configured to use AWS Cloud Map as service-discovery, hence the IP addresses of these pods are registered with the Cloud Map service with corresponding attributes.
 Additionally a colorapp virtual-service is defined that routes traffic to blue and red virtual-nodes.  
 
 Front app acts as a gateway that makes remote calls to colorapp. Front app has single deployment with pods registered with the mesh as front virtual-node. This virtual-node uses colorapp virtual-service as backend. This configures Envoy injected into front pod to use App Mesh's EDS to discover colorapp endpoints.
@@ -22,7 +22,7 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 
 App Mesh components will be deployed from one of the two clusters. It does not really matter where you deploy them from. It will have various components deployed . A Virtual Node per service and a Virtual Service which will have a Virtualrouter with routes tied (provider) to route traffic between red and blue equally.
 
-Note: If your clusters are across two different accounts then add "meshOwner: <AccountId>" to the mesh spec in the second cluster.
+Note: If your clusters are across two different accounts then add "meshOwner: AccountId" to the mesh spec in the second cluster. If the field isn't specified it assumes the account id of the current cluster is the owner of the mesh and will create a new mesh against that account.
 
 *CLOUD MAP*
 
@@ -34,11 +34,18 @@ So, Lets get started..
 
 In order to successfully carry out the base deployment:
 
-* Make sure to have newest AWS CLI (https://aws.amazon.com/cli/) installed, that is, version 1.16.268 or above.
+* Make sure to have newest AWS CLI (https://aws.amazon.com/cli/) installed.
 * Make sure to have kubectl installed (https://kubernetes.io/docs/tasks/tools/install-kubectl/), at least version 1.11 or above.
 * Make sure to have jq installed (https://stedolan.github.io/jq/download/).
 * Make sure to have aws-iam-authenticator installed (https://github.com/kubernetes-sigs/aws-iam-authenticator), required for eksctl
-* Install eksctl (https://eksctl.io/), for example, on macOS with brew tap weaveworks/tap and brew install weaveworks/tap/eksctl, and make sure it's on at least on version 0.1.26.
+* Install eksctl (https://eksctl.io/), for example, on macOS with brew tap weaveworks/tap and brew install weaveworks/tap/eksctl, and make sure it's on at least on version 0.23.0. 
+
+Note: v1beta1 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md). Run the following to check the version of controller you are running.
+```
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'
+```
+
+You can use v1beta2 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version >=v1.0.0
 
 Note that this walkthrough assumes throughout to operate in the us-east-1 region.
 
@@ -93,9 +100,9 @@ We are now ready to deploy our front and colorapp applications to respective clu
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
-3. **Region** e.g. us-west-2
+3. **Region** e.g. us-east-1
     ```
-    export AWS_DEFAULT_REGION=us-west-2
+    export AWS_DEFAULT_REGION=us-east-1
     ```
 4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
@@ -121,7 +128,7 @@ As a part of deploy command we have pushed the images to ECR, created a namespac
 
 You may verify this, with the following command:
 ```
-aws servicediscovery discover-instances --namespace appmesh-demo.pvt.aws.local
+aws servicediscovery discover-instances --namespace howto-k8s-cross-cluster.pvt.aws.local
  --service-name colorapp
 ```
 This should resolve to the backend service.
@@ -132,7 +139,7 @@ You can verify under App Mesh console to verify that the virtual nodes, virtual 
 
 The front service in cluster1 has been exposed as a loadbalancer and can be used directly 
 ```
->>kubectl get svc -n appmesh-demo
+>>kubectl get svc -n howto-k8s-cross-cluster
 NAME    TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
 front   LoadBalancer   10.100.145.29   af3c595c8fb3b11e987a30ab4de89fc8-1707174071.us-east-1.elb.amazonaws.com   80:31646/TCP   5h47m
 
@@ -142,8 +149,8 @@ blue
 
 You can also test it using a simple curler pod, like so:
 ```
->>kubectl -n appmesh-demo run -it curler --image=tutum/curl /bin/bash
-root@curler-5bd7c8d767-x657t:/#curl front/color
+>>kubectl -n default run -it curler --image=tutum/curl /bin/bash
+root@curler-5bd7c8d767-x657t:/#curl front.howto-k8s-cross-cluster.svc.cluster.local/color
 blue
 ```
 

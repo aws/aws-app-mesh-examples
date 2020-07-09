@@ -50,7 +50,7 @@ check_virtualnode_v1beta1(){
     #check CRD
     crd=$(kubectl get crd virtualnodes.appmesh.k8s.aws -o json | jq -r '.. | .cloudMap?.properties.namespaceName? | select(. != null)')
     if [ -z "$crd" ]; then
-        error "$PROJECT_NAME requires virtualnodes.appmesh.k8s.aws CRD to support Cloud Map service-discovery. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v012"
+        error "$PROJECT_NAME requires virtualnodes.appmesh.k8s.aws CRD to support Cloud Map service-discovery. See https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/CHANGELOG.md#v030"
     else
         echo "CRD check passed!"
     fi
