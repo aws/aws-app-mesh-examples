@@ -98,7 +98,14 @@ ROOT_CA_CSR=`aws acm-pca get-certificate-authority-csr \
     --query Csr --output text`
 ```
 
-Sign the CSR using itself as the issuer:
+Sign the CSR using itself as the issuer.
+
+Note that if you are using AWS CLI version 2, you will need to pass the CSR data through encoding prior to invoking the 'issue-certificate' command.
+
+```bash
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
+[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CSR="$(echo ${ROOT_CA_CSR} | base64)"
+```
 
 ```bash
 ROOT_CA_CERT_ARN=`aws acm-pca issue-certificate \
@@ -117,7 +124,17 @@ ROOT_CA_CERT=`aws acm-pca get-certificate \
     --certificate-arn ${ROOT_CA_CERT_ARN} \
     --certificate-authority-arn ${ROOT_CA_ARN} \
     --query Certificate --output text`
+```
 
+Note again with AWS CLI version 2, you will need to pass the certificate data through encoding.
+
+```bash
+[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CERT="$(echo ${ROOT_CA_CERT} | base64)"
+```
+
+Import the certificate:
+
+```bash
 aws acm-pca import-certificate-authority-certificate \
     --certificate-authority-arn $ROOT_CA_ARN \
     --certificate "${ROOT_CA_CERT}"
