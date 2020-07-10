@@ -58,7 +58,7 @@ check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
         currentver=$(kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
-        requiredver="v1.0.0"
+        requiredver="v1.1.0"
         check_k8s_virtualgateway
         check_k8s_gatewayroutes
     else
