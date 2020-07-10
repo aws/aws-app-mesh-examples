@@ -128,8 +128,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-white-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
 
   ColorTellerWhiteService:
     Type: 'AWS::ECS::Service'
@@ -249,8 +247,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-black-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
 
   ColorTellerBlackService:
     Type: 'AWS::ECS::Service'
@@ -370,8 +366,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
 
   ColorTellerBlueService:
     Type: 'AWS::ECS::Service'
@@ -491,8 +485,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
 
   ColorTellerRedService:
     Type: 'AWS::ECS::Service'
@@ -561,7 +553,7 @@ Resources:
             Command:
               - 'CMD-SHELL'
               - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
-            Interval: 5
+            Interval: 30
             Timeout: 2
             Retries: 3
           LogConfiguration:
@@ -574,8 +566,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/colorgateway-vg'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
