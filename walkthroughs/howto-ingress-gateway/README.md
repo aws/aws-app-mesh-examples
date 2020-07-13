@@ -89,14 +89,7 @@ Internet --> (terminate TLS) NLB (originate TLS) --> (terminate TLS) Gateway (or
 
 ## Step 1: Prerequisites
 
-You will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
-
-```bash
-aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-```
-You'll also need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
