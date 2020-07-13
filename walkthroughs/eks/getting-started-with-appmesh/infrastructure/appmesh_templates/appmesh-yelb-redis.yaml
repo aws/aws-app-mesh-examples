@@ -1,0 +1,29 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: redis-server
+  namespace: yelb
+spec:
+  awsName: redis-server-virtual-node
+  podSelector:
+    matchLabels:
+      app: redis-server
+  listeners:
+    - portMapping:
+        port: 6379
+        protocol: tcp  
+  serviceDiscovery:
+    dns:
+      hostname: redis-server.yelb.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: redis-server
+  namespace: yelb
+spec:
+  awsName: redis-server
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: redis-server
