@@ -17,44 +17,5 @@ fi
 
 docker push  $APPSERVER_ECR_REPO:latest
 
-# Generate Kubernetes deployment file
-cat > ./infrastructure/yelb_appserver_v2_deployment.yaml <<-EOF
-apiVersion: v1
-kind: Service
-metadata:
-  namespace: yelb
-  name: yelb-appserver-v2
-  labels:
-    app: yelb-appserver-v2
-    tier: middletier
-spec:
-  type: ClusterIP
-  ports:
-    - port: 4567
-  selector:
-    app: yelb-appserver-v2
-    tier: middletier
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  namespace: yelb
-  name: yelb-appserver-v2
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: yelb-appserver-v2
-      tier: middletier
-  template:
-    metadata:
-      labels:
-        app: yelb-appserver-v2
-        tier: middletier
-    spec:
-      containers:
-        - name: yelb-appserver-v2
-          image: $APPSERVER_ECR_REPO:latest
-          ports:
-            - containerPort: 4567
-EOF
+# Update the Kubernetes deployment file
+sed -i -e 's/<APPSERVER_V2_IMAGE_URI>/$APPSERVER_ECR_REPO/g' infrastructure/yelb_appserver_v2_deployment.yaml <<-EOF
