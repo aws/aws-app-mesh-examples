@@ -18,4 +18,4 @@ fi
 docker push  $APPSERVER_ECR_REPO:latest
 
 # Update the Kubernetes deployment file
-sed -i -e 's/<APPSERVER_V2_IMAGE_URI>/$APPSERVER_ECR_REPO/g' infrastructure/yelb_appserver_v2_deployment.yaml <<-EOF
+sed -i -e 's/<APPSERVER_V2_IMAGE_URI>/$APPSERVER_ECR_REPO/g' infrastructure/yelb_appserver_v2_deployment.yaml
