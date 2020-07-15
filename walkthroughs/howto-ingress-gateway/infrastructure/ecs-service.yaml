@@ -673,4 +673,4 @@ Outputs:
 
   ColorAppEndpoint:
     Description: Public endpoint for Color App service
-    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
+    Value: !Join ['', ['https://', !GetAtt 'PublicLoadBalancer.DNSName']]
