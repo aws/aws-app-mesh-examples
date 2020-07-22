@@ -1,0 +1,11 @@
+{
+    "meshName": "yelb",
+    "spec": {
+        "provider": {
+            "virtualNode": {
+                "virtualNodeName": "yelb-db"
+            }
+        }
+    },
+    "virtualServiceName": "yelb-db"
+}
