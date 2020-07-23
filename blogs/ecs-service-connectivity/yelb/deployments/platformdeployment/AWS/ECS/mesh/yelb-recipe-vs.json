@@ -1,0 +1,11 @@
+{
+    "meshName": "yelb",
+    "spec": {
+        "provider": {
+            "virtualNode": {
+                "virtualNodeName": "yelb-recipe"
+            }
+        }
+    },
+    "virtualServiceName": "www.recipepuppy.com"
+}

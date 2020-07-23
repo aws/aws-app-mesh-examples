@@ -1,0 +1,20 @@
+{
+   "gatewayRouteName" : "yelbui-gatewayroute",
+   "meshName" : "yelb",
+   "spec" : {
+      "httpRoute" : {
+         "action" : {
+            "target" : {
+               "virtualService" : {
+                  "virtualServiceName" : "yelb-ui"
+               }
+            }
+         },
+         "match" : {
+            "prefix" : "/"
+         }
+      }
+   },
+   "virtualGatewayName" : "yelb-gateway"
+}
+

@@ -1,0 +1,630 @@
+"Description" : "Yelb on ECS: Create a Yelb stack using Elastic Container Service and App Mesh. This requires public subnets"
+
+Parameters:
+
+    VPC:
+        Description: The VPC that the ECS cluster is deployed to
+        Type: AWS::EC2::VPC::Id
+
+    PublicSubnetOne:
+        Type: AWS::EC2::Subnet::Id
+        Description: First Public Subnet
+
+    PublicSubnetTwo:
+        Type: AWS::EC2::Subnet::Id
+        Description: Second Public Subnet
+
+    Domain:
+        Description: An arbitrary internal domain name for the application (only required for internal service discovery - default is yelb.local). It must be unique across multiple deploymemts.
+        Type: String
+        Default: "yelb.local"
+
+    Mesh:
+        Description: Please provide the App Mesh mesh that the components of this application will be scoped under.
+        Type: String
+        Default: "yelb"
+    
+    Username:
+        Description: username for the yelb aurora db
+        Type: String
+        Default: "postgres"
+        
+    Password:
+        Description: password for the yelb aurora db
+        Type: String
+        Default: "postgres_password"
+        
+    DBPort:
+        Description: port for yelb aurora db
+        Type: Number
+        Default: 5432
+        
+    RedisPort:
+        Description: port for yelb redis cache
+        Type: Number
+        Default: 6379
+
+    EnvoyImage:
+        Description: App Mesh Envoy container image. See https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html.
+        Type: String
+
+    YelbUIImage:
+        Description: Image for yelb-ui
+        Type: String
+
+    YelbAppServerImage:
+        Description: Image for yelb-app
+        Type: String
+
+    CountOfUiTasks:
+        Description: The number of tasks to be instantiated for the UI service
+        Type: Number
+        Default: 1
+
+    CountOfAppserverTasks:
+        Description: The number of tasks to be instantiated for the Application service
+        Type: Number
+        Default: 1
+        
+    CountOfGatewayTasks:
+        Description: The number of tasks to be instantiated for the Gateway service
+        Type: Number
+        Default: 1
+
+    LaunchType:
+        Description: Please provide the LaunchType
+        Type: String
+        Default: FARGATE
+        AllowedValues:
+               - EC2
+               - FARGATE
+
+    PublicIP:
+        Description: Please provide IP connectivity option
+        Type: String
+        Default: ENABLED
+        AllowedValues:
+               - ENABLED
+               - DISABLED
+
+
+Resources:
+
+    Cluster:
+        Type: 'AWS::ECS::Cluster'
+        Properties:
+            ClusterName: yelb
+                        
+    ServiceYelbAppserver:
+        Type: AWS::ECS::Service
+        Properties:
+            LaunchType: !Ref LaunchType
+            Cluster: !Ref Cluster
+            DesiredCount: !Ref CountOfAppserverTasks
+            ServiceRegistries:
+                - RegistryArn: !GetAtt YelbAppserverServiceDiscoveryEntry.Arn
+            TaskDefinition: !Ref 'TaskDefinitionYelbAppserver'
+            NetworkConfiguration:
+                AwsvpcConfiguration:
+                    AssignPublicIp: !Ref PublicIP
+                    Subnets: [ !Ref 'PublicSubnetOne' , !Ref 'PublicSubnetTwo'  ]
+                    SecurityGroups: [!Ref 'YelbAppserverSecurityGroup' ]
+                        
+    TaskDefinitionYelbAppserver:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: yelb-appserver
+            NetworkMode: awsvpc
+            RequiresCompatibilities:
+                - FARGATE
+            TaskRoleArn: !Ref YelbECSTaskIamRole
+            ExecutionRoleArn: !Ref 'YelbECSTaskExecutionRole'
+            Cpu: 256
+            Memory: 512
+            ProxyConfiguration:
+                Type: APPMESH
+                ContainerName: envoy
+                ProxyConfigurationProperties:
+                    - Name: IgnoredUID
+                      Value: '1337'
+                    - Name: ProxyIngressPort
+                      Value: '15000'
+                    - Name: ProxyEgressPort
+                      Value: '15001'
+                    - Name: AppPorts
+                      Value: '4567'
+                    - Name: EgressIgnoredIPs
+                      Value: '169.254.170.2,169.254.169.254'
+            ContainerDefinitions:
+                - Name: yelb-appserver
+                  Essential: true
+                  Image: !Ref YelbAppServerImage
+                  Environment:
+                    - Name: SEARCH_DOMAIN
+                      Value: !Ref 'Domain'
+                    - Name: RECIPE_API_ENDPOINT
+                      Value: 'http://www.recipepuppy.com/api/?q='
+                    - Name: YELB_DB_SERVER_ENDPOINT
+                      Value: !GetAtt YelbDb.Endpoint.Address
+                    - Name: YELB_REDIS_SERVER_ENDPOINT
+                      Value: !GetAtt YelbRedis.RedisEndpoint.Address
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+                        awslogs-stream-prefix: yelb-appserver
+                  DependsOn:
+                      - ContainerName: envoy
+                        Condition: HEALTHY
+                - Name: xray
+                  Image: amazon/aws-xray-daemon
+                  Essential: true
+                  User: '1337'
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref AWS::StackName
+                          awslogs-region: !Ref AWS::Region
+                          awslogs-stream-prefix: yelb-appserver
+                - Name: envoy
+                  Image: !Ref EnvoyImage
+                  Essential: true
+                  User: '1337'
+                  DependsOn:
+                      - ContainerName: xray
+                        Condition: START
+                  Ulimits:
+                      - Name: nofile
+                        HardLimit: 15000
+                        SoftLimit: 15000
+                  HealthCheck:
+                      Command:
+                         - CMD-SHELL
+                         - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+                      Interval: 5
+                      Timeout: 10
+                      Retries: 10
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref AWS::StackName
+                          awslogs-region: !Ref AWS::Region
+                          awslogs-stream-prefix: yelb-appserver
+                  Environment:
+                      - Name: ENVOY_LOG_LEVEL
+                        Value: debug
+                      - Name: ENABLE_ENVOY_XRAY_TRACING
+                        Value: '1'
+                      - Name: ENABLE_ENVOY_STATS_TAGS
+                        Value: '1'
+                      - Name: ENABLE_ENVOY_DOG_STATSD
+                        Value: '1'
+                      - Name: APPMESH_VIRTUAL_NODE_NAME
+                        Value:
+                            Fn::Join:
+                                - ''
+                                -
+                                    - mesh/
+                                    - !Ref Mesh
+                                    - /virtualNode/
+                                    - 'yelb-app-server'
+
+    ServiceYelbGateway:
+        Type: AWS::ECS::Service
+        DependsOn: YelbLoadBalancerListener
+        Properties:
+            LaunchType: !Ref LaunchType
+            Cluster: !Ref Cluster
+            DesiredCount: !Ref CountOfGatewayTasks
+            ServiceRegistries:
+                - RegistryArn: !GetAtt YelbGatewayServiceDiscoveryEntry.Arn
+            TaskDefinition: !Ref 'TaskDefinitionYelbGateway'
+            LoadBalancers:
+            - ContainerName: envoy
+              ContainerPort: 80
+              TargetGroupArn: !Ref YelbTargetGroup
+            NetworkConfiguration:
+                AwsvpcConfiguration:
+                    AssignPublicIp: !Ref PublicIP
+                    Subnets: [ !Ref 'PublicSubnetOne' , !Ref 'PublicSubnetTwo'  ]
+                    SecurityGroups: [!Ref 'YelbGatewaySecurityGroup' ]
+
+                
+    TaskDefinitionYelbGateway:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: yelb-gateway
+            NetworkMode: awsvpc
+            RequiresCompatibilities:
+                - FARGATE
+            TaskRoleArn: !Ref YelbECSTaskIamRole
+            ExecutionRoleArn: !Ref 'YelbECSTaskExecutionRole'
+            Cpu: 256
+            Memory: 512
+            ContainerDefinitions:
+                - Name: envoy
+                  PortMappings:
+                    - ContainerPort: 80
+                  Image: !Ref EnvoyImage
+                  Essential: true
+                  Ulimits:
+                      - Name: nofile
+                        HardLimit: 15000
+                        SoftLimit: 15000
+                  HealthCheck:
+                      Command:
+                          - CMD-SHELL
+                          - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+                      Interval: 5
+                      Timeout: 10
+                      Retries: 10
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref AWS::StackName
+                          awslogs-region: !Ref AWS::Region
+                          awslogs-stream-prefix: yelb-gateway
+                  Environment:
+                      - Name: ENVOY_LOG_LEVEL
+                        Value: debug
+                      - Name: ENABLE_ENVOY_STATS_TAGS
+                        Value: '1'
+                      - Name: ENABLE_ENVOY_DOG_STATSD
+                        Value: '1'
+                      - Name: STATSD_PORT
+                        Value: '8125'
+                      - Name: APPMESH_VIRTUAL_NODE_NAME
+                        Value:
+                            Fn::Join:
+                                - ''
+                                -
+                                    - mesh/
+                                    - !Ref Mesh
+                                    - /virtualGateway/
+                                    - 'yelb-gateway'
+                                    
+    YelbDb:
+        Type: 'AWS::RDS::DBCluster'
+        Properties:
+            MasterUsername: !Ref 'Username'
+            MasterUserPassword: !Ref 'Password'
+            DatabaseName: 'yelbdatabase'
+            DBClusterIdentifier: yelb-cluster
+            Engine: aurora-postgresql
+            EngineVersion: '10.7'
+            Port: !Ref 'DBPort'
+            DBClusterParameterGroupName: default.aurora-postgresql10
+            EnableCloudwatchLogsExports:
+                - postgresql
+            VpcSecurityGroupIds: [!Ref 'YelbDbSecurityGroup' ]
+                
+    YelbDbInstance1:
+        Type: 'AWS::RDS::DBInstance'
+        Properties:
+            DBInstanceIdentifier: yelb-cluster-instance1
+            Engine: aurora-postgresql
+            DBClusterIdentifier: !Ref YelbDb
+            PubliclyAccessible: 'true'
+            DBInstanceClass: db.r4.large
+            
+    YelbRedis:
+        Type: 'AWS::ElastiCache::CacheCluster'
+        Properties:
+            AutoMinorVersionUpgrade: 'true'
+            Engine: redis
+            CacheNodeType: cache.t2.micro
+            Port: !Ref 'RedisPort'
+            NumCacheNodes: '1'
+            VpcSecurityGroupIds: [!Ref 'YelbRedisServerSecurityGroup' ]
+
+    ServiceYelbUi:
+        Type: AWS::ECS::Service
+        Properties:
+            LaunchType: !Ref LaunchType
+            Cluster: !Ref Cluster
+            DesiredCount: !Ref CountOfUiTasks
+            ServiceRegistries:
+                - RegistryArn: !GetAtt YelbUiServiceDiscoveryEntry.Arn
+            TaskDefinition: !Ref 'TaskDefinitionYelbUi'
+            NetworkConfiguration:
+                AwsvpcConfiguration:
+                    AssignPublicIp: !Ref PublicIP
+                    Subnets: [ !Ref 'PublicSubnetOne' , !Ref 'PublicSubnetTwo'  ]
+                    SecurityGroups: [!Ref 'YelbUiSecurityGroup' ]
+
+    TaskDefinitionYelbUi:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: yelb-ui
+            NetworkMode: awsvpc
+            RequiresCompatibilities:
+                - FARGATE
+            TaskRoleArn: !Ref YelbECSTaskIamRole
+            ExecutionRoleArn: !Ref 'YelbECSTaskExecutionRole'
+            Cpu: 256
+            Memory: 512
+            ProxyConfiguration:
+                Type: APPMESH
+                ContainerName: envoy
+                ProxyConfigurationProperties:
+                    - Name: IgnoredUID
+                      Value: '1337'
+                    - Name: ProxyIngressPort
+                      Value: '15000'
+                    - Name: ProxyEgressPort
+                      Value: '15001'
+                    - Name: AppPorts
+                      Value: '80'
+                    - Name: EgressIgnoredIPs
+                      Value: '169.254.170.2,169.254.169.254'
+            ContainerDefinitions:
+                - Name: yelb-ui
+                  Essential: true
+                  Image: !Ref YelbUIImage
+                  Environment:
+                    - Name: SEARCH_DOMAIN
+                      Value: !Ref 'Domain'
+                  PortMappings:
+                    - ContainerPort: 80
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+                        awslogs-stream-prefix: yelb-ui
+                  DependsOn:
+                      - ContainerName: envoy
+                        Condition: HEALTHY
+                - Name: xray
+                  Image: amazon/aws-xray-daemon
+                  Essential: true
+                  User: '1337'
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref AWS::StackName
+                          awslogs-region: !Ref AWS::Region
+                          awslogs-stream-prefix: yelb-ui
+                - Name: envoy
+                  Image: !Ref EnvoyImage
+                  Essential: true
+                  User: '1337'
+                  DependsOn:
+                      - ContainerName: xray
+                        Condition: START
+                  Ulimits:
+                      - Name: nofile
+                        HardLimit: 15000
+                        SoftLimit: 15000
+                  HealthCheck:
+                      Command:
+                          - CMD-SHELL
+                          - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+                      Interval: 5
+                      Timeout: 10
+                      Retries: 10
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref AWS::StackName
+                          awslogs-region: !Ref AWS::Region
+                          awslogs-stream-prefix: yelb-ui
+                  Environment:
+                      - Name: ENVOY_LOG_LEVEL
+                        Value: debug
+                      - Name: ENABLE_ENVOY_XRAY_TRACING
+                        Value: '1'
+                      - Name: ENABLE_ENVOY_STATS_TAGS
+                        Value: '1'
+                      - Name: ENABLE_ENVOY_DOG_STATSD
+                        Value: '1'
+                      - Name: APPMESH_VIRTUAL_NODE_NAME
+                        Value:
+                            Fn::Join:
+                                - ''
+                                -
+                                    - mesh/
+                                    - !Ref Mesh
+                                    - /virtualNode/
+                                    - 'yelb-ui'
+                                    
+                
+
+
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 365  
+   
+    YelbECSTaskIamRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument: |
+                {
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                        "Action": [ "sts:AssumeRole" ]
+                    }]
+                }
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/CloudWatchFullAccess
+                - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+                - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+
+    YelbECSTaskExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                - Effect: Allow
+                  Principal:
+                     Service: [ecs-tasks.amazonaws.com]
+                  Action: ['sts:AssumeRole']
+            Path: /
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+                - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+    YelbServiceDiscoveryNameSpace:
+        Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+        Properties:
+            Description: "Service Discovery Namespace for Yelb"
+            Vpc: !Ref 'VPC'
+            Name: !Ref 'Domain'
+
+
+    YelbAppserverServiceDiscoveryEntry:
+        Type: AWS::ServiceDiscovery::Service
+        Properties:
+            Name: yelb-appserver
+            DnsConfig:
+                DnsRecords: 
+                    - Type: A
+                      TTL: "10"
+                NamespaceId: !Ref 'YelbServiceDiscoveryNameSpace'
+            HealthCheckCustomConfig:
+                FailureThreshold: '1'
+                
+
+    YelbUiServiceDiscoveryEntry:
+        Type: AWS::ServiceDiscovery::Service
+        Properties:
+            Name: yelb-ui
+            DnsConfig:
+                DnsRecords: 
+                    - Type: A
+                      TTL: "10"
+                NamespaceId: !Ref 'YelbServiceDiscoveryNameSpace'
+            HealthCheckCustomConfig:
+                FailureThreshold: '1'
+                
+    YelbGatewayServiceDiscoveryEntry:
+        Type: AWS::ServiceDiscovery::Service
+        Properties:
+            Name: yelb-gateway
+            DnsConfig:
+                DnsRecords: 
+                    - Type: A
+                      TTL: "10"
+                NamespaceId: !Ref 'YelbServiceDiscoveryNameSpace'
+            HealthCheckCustomConfig:
+                FailureThreshold: '1'
+
+    YelbDbSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: yelb-db security group
+            SecurityGroupIngress:
+            - SourceSecurityGroupId: !Ref YelbAppserverSecurityGroup
+              IpProtocol: tcp
+              ToPort: 5432
+              FromPort: 5432
+            - CidrIp: 0.0.0.0/0
+              IpProtocol: tcp
+              ToPort: 65535
+              FromPort: 0
+            VpcId: !Ref 'VPC'
+
+
+    YelbRedisServerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: redis-server security group
+            SecurityGroupIngress:
+            - SourceSecurityGroupId: !Ref YelbAppserverSecurityGroup
+              IpProtocol: tcp
+              ToPort: 6379
+              FromPort: 6379
+            VpcId: !Ref 'VPC'
+
+    YelbAppserverSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: yelb-appserver security group
+            SecurityGroupIngress:
+            - CidrIp: '0.0.0.0/0'
+              IpProtocol: tcp
+              ToPort: 4567
+              FromPort: 4567
+            VpcId: !Ref 'VPC'
+            
+
+    YelbUiSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: yelb-ui security group
+            SecurityGroupIngress:
+            - CidrIp: '0.0.0.0/0'
+              IpProtocol: tcp
+              ToPort: 80
+              FromPort: 80
+            VpcId: !Ref 'VPC'
+
+    YelbLBSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: yelb load balancer security group
+            SecurityGroupIngress:
+            - CidrIp: '0.0.0.0/0'
+              IpProtocol: tcp
+              ToPort: 80
+              FromPort: 80
+            VpcId: !Ref 'VPC'
+            
+    YelbGatewaySecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: yelb gateway security group
+            SecurityGroupIngress:
+            - CidrIp: '0.0.0.0/0'
+              IpProtocol: tcp
+              ToPort: 80
+              FromPort: 80
+            VpcId: !Ref 'VPC'
+
+    YelbLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Type: network
+        Scheme: internet-facing
+        Subnets: [ !Ref 'PublicSubnetOne' , !Ref 'PublicSubnetTwo' ]
+
+    YelbLoadBalancerListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        LoadBalancerArn: !Ref YelbLoadBalancer
+        Port: 80
+        Protocol: TCP
+        DefaultActions:
+          - Type: forward
+            TargetGroupArn: !Ref YelbTargetGroup
+
+    YelbTargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        HealthCheckIntervalSeconds: 10
+        HealthCheckProtocol: TCP
+        HealthCheckTimeoutSeconds: 10
+        HealthyThresholdCount: 10
+        UnhealthyThresholdCount: 10
+        TargetType: ip 
+        VpcId: !Ref VPC
+        Port: 80
+        Protocol: TCP
+        
+
+Outputs:
+    YelbDBEndpointUrl:
+        Description: Yelb Aurora Writer Endpoint URL
+        Value: !GetAtt YelbDb.Endpoint.Address
+    YelbRedisCacheUrl:
+        Description: Yelb Redis Cache Endpoint URL
+        Value: !GetAtt YelbRedis.RedisEndpoint.Address
+    LoadBalancerUrl:
+        Description: The URL of the NLB
+        Value: !GetAtt YelbLoadBalancer.DNSName
+    
