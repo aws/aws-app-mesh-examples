@@ -46,6 +46,7 @@ YELB_APP_IMAGE="${ECR_IMAGE_PREFIX}/yelb-appserver:$(git log -1 --format=%h ${YE
 
 
 deploy_images() {
+
     for f in yelb-ui; do
         aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${f} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${f}
     done
@@ -57,29 +58,15 @@ deploy_images() {
         aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${f} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${f}
     done
 
-    $(aws ecr get-login --no-include-email)
     docker build -t ${YELB_APP_IMAGE} ${YELB_APP_SRC} && docker push ${YELB_APP_IMAGE}
     
 } 
-
-#create ecs cluster
-aws ecs create-cluster \
-    --cluster-name yelb
-    
-#create security group for yelb-db
-#create-security-group --description "yelb-db security group" --group-name YelbDbSecurityGroup --vpc-id $VPC
-
-
-#create aurora postgresql for yelb-db
-    
-
 
 deploy_images
 aws cloudformation deploy \
     --capabilities CAPABILITY_IAM --stack-name yelb-fargate  \
     --template-file $DIR/yelb-cloudformation-ECS-AppMesh-deployment.yaml \
     --parameter-overrides \
-    "Cluster=yelb" \
     "VPC=${VPC}" \
     "PublicSubnetOne=${PUBLIC_SUBNET_1}" \
     "PublicSubnetTwo=${PUBLIC_SUBNET_2}" \

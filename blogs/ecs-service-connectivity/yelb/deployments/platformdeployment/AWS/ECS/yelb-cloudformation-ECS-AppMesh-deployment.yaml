@@ -14,11 +14,6 @@ Parameters:
         Type: AWS::EC2::Subnet::Id
         Description: Second Public Subnet
 
-    Cluster:
-        Description: Please provide the ECS Cluster ID that this service should run on
-        Type: String
-        Default: "Default"
-
     Domain:
         Description: An arbitrary internal domain name for the application (only required for internal service discovery - default is yelb.local). It must be unique across multiple deploymemts.
         Type: String
@@ -94,6 +89,11 @@ Parameters:
 
 
 Resources:
+
+    Cluster:
+        Type: 'AWS::ECS::Cluster'
+        Properties:
+            ClusterName: yelb
                         
     ServiceYelbAppserver:
         Type: AWS::ECS::Service
@@ -454,7 +454,6 @@ Resources:
                 - arn:aws:iam::aws:policy/CloudWatchFullAccess
                 - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
                 - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
-#                - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
 
     YelbECSTaskExecutionRole:
         Type: AWS::IAM::Role
