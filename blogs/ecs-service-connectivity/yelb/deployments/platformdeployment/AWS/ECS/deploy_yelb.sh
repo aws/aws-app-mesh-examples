@@ -44,6 +44,7 @@ YELB_UI_IMAGE="${ECR_IMAGE_PREFIX}/yelb-ui:$(git log -1 --format=%h ${YELB_UI_SR
 YELB_APP_SRC="${DIR}/../../../../yelb-appserver"
 YELB_APP_IMAGE="${ECR_IMAGE_PREFIX}/yelb-appserver:$(git log -1 --format=%h ${YELB_APP_SRC})"
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
+ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
 
 ecr_login() {
     if [ $AWS_CLI_VERSION -gt 1 ]; then
