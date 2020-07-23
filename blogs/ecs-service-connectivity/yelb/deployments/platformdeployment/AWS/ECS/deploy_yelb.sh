@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -eo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 source ${DIR}/.settings
@@ -43,7 +43,16 @@ YELB_UI_SRC="${DIR}/../../../../yelb-ui"
 YELB_UI_IMAGE="${ECR_IMAGE_PREFIX}/yelb-ui:$(git log -1 --format=%h ${YELB_UI_SRC})"
 YELB_APP_SRC="${DIR}/../../../../yelb-appserver"
 YELB_APP_IMAGE="${ECR_IMAGE_PREFIX}/yelb-appserver:$(git log -1 --format=%h ${YELB_APP_SRC})"
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
+ecr_login() {
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
+        $(aws ecr get-login --no-include-email)
+    fi
+}
 
 deploy_images() {
 
@@ -51,7 +60,7 @@ deploy_images() {
         aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${f} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${f}
     done
 
-    $(aws ecr get-login --no-include-email)
+    ecr_login
     docker build -t ${YELB_UI_IMAGE} ${YELB_UI_SRC} && docker push ${YELB_UI_IMAGE}
     
     for f in yelb-appserver; do
