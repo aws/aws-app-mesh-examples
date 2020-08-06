@@ -67,3 +67,38 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 4. You should now see more 200 OK responses due to retries.
 
 Now go to https://www.envoyproxy.io/docs/envoy/v1.8.0/api-v1/route_config/route#config-http-conn-man-route-table-route-retry and https://www.envoyproxy.io/learn/automatic-retries for details on how retries work in Envoy.
+
+## Default Retry Policy
+App Mesh provides customers with a default retry policy when an explicit retry policy is not set on a route. However, this is not currently available to all customers. If default retry policies are not currently available to you then you will not be able to run this upcoming section and can skip this section. To learn more about the default retry policy you can read about it here: https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html#default-retry-policy
+
+1. Let's swap back to a route that has no explicit retry policy to have the default retry policy get applied. Update your route configuration to not include retries by commenting out or removing the retryPolicy that you uncommented earlier in manifest.yaml.template and run `./deploy.sh`:
+   ```
+      # COMMENT back out or remove below to disable explicit retries
+        retryPolicy:
+          maxRetries: 4
+          perRetryTimeoutMillis: 2000
+          httpRetryEvents:
+            - server-error
+   ``` 
+2. Send requests to the front service again in a seperate terminal to observe that we are once again getting back 503s for some of the requests
+    ```
+    while true; do curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 ; sleep 0.5; echo ; done
+    ```
+
+3. In order to better see the default retry policy in action let's lower the fault rate on our application. Currently at a 50% fault rate we are likely going to exhaust all of our retries for some requests resulting in the 503s that we see getting returned. Let's make a change to the `serve.py` in the `colorapp` folder by reducing the fault rate from 50% to 10% by making a changing the fault rate variable at the top of the file from 50 to 10.
+    ```
+    # Change this value to 10
+    FAULT_RATE = 50
+    ```
+
+4. With this change let's redeploy the application to use this new fault rate by running the following
+    ```
+    REDEPLOY=true ./deploy.sh
+    ```
+
+5. Now let's again send requests to the front service again to observe that we are now should be getting almost exclusively 200s at this point from all of our requests despite 10% of them failing.
+    ```
+    while true; do curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 ; sleep 0.5; echo ; done
+    ```
+
+This showcases that the App Mesh default retry policy can help prevent failed requests in some cases. However, there may be cases where you will want to set an explicit retry strategy depending on your application and use case. To read more about what recommendations we give for retry policies you can read more here: https://docs.aws.amazon.com/app-mesh/latest/userguide/best-practices.html#route-retries

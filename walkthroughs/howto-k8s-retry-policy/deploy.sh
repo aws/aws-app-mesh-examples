@@ -104,12 +104,24 @@ EOF
     kubectl apply -f ${EXAMPLES_OUT_DIR}/manifest.yaml
 }
 
+redeploy_app() {
+    EXAMPLES_OUT_DIR="${DIR}/_output/"
+    kubectl delete -f ${EXAMPLES_OUT_DIR}/manifest.yaml
+    deploy_app
+}
+
 main() {
     check_appmesh_k8s
 
     if [ -z $SKIP_IMAGES ]; then
         echo "deploy images..."
         deploy_images
+    fi
+
+    if [ "$REDEPLOY" = true ]; then
+        echo "redeploying app..."    
+        redeploy_app
+        exit 0
     fi
 
     deploy_app

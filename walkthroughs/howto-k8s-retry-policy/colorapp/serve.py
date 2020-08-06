@@ -7,6 +7,8 @@ try:
 except Exception as e:
     print(f'[ERROR] {e}')
 
+FAULT_RATE = 50
+
 COLOR = os.environ.get('COLOR', 'no color!')
 print(f'COLOR is {COLOR}')
 
@@ -21,7 +23,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         r = random.randint(1, 100)
         status_code=200
-        if r <= 50:
+        if r <= FAULT_RATE:
             status_code=503
         self.send_response(status_code)
         self.end_headers()
