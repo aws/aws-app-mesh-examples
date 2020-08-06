@@ -114,8 +114,8 @@ spec:
         mode: STRICT
         certificate:
           file:
-            certificateChain: /tls/colorapp-green_cert_chain.pem
-            privateKey: /tls/colorapp-green_key.pem
+            certificateChain: /certs/colorapp-green_cert_chain.pem
+            privateKey: /certs/colorapp-green_key.pem
   serviceDiscovery:
     dns:
       hostname: color-green.howto-k8s-tls-file-based.svc.cluster.local
