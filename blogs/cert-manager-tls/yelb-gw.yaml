@@ -16,7 +16,6 @@ spec:
   backendDefaults:
     clientPolicy:
       tls:
-        enforce: true
         validation:
           trust:
             file:
@@ -120,7 +119,6 @@ spec:
   backendDefaults:
     clientPolicy:
       tls:
-        enforce: true
         validation:
           trust:
             file:
