@@ -440,6 +440,7 @@ Resources:
       - WebLoadBalancerRule
     Properties:
       Cluster: !Ref Cluster
+      ServiceName: FrontService
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
@@ -467,6 +468,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref Cluster
+      ServiceName: BlueService
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
