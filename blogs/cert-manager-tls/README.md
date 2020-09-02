@@ -53,7 +53,14 @@ kubectl apply -f yelb-cert.yaml
 
 ## 5. Configure encryption between external LB and App Mesh
 
-Please change certificate arn in below configuration snippet with your own valid arn.
+Please set `ENVOY_IMAGE` ENV variable to the correct value based on https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
 
-`kubectl apply -f yelb-gw.yaml`
+Additionally set `LB_CERT_ARN` ENV variable with your own valid arn.
 
+```
+ENVOY_IMAGE="840364872350.dkr.ecr.<region>.amazonaws.com/aws-appmesh-envoy:<version>"
+
+LB_CERT_ARN="arn:aws:acm:<region>:<account-id>:certificate/<cert-id>"
+
+sed -e "s|{{ENVOY_IMAGE}}|${ENVOY_IMAGE}|g" -e "s|{{LB_CERT_ARN}}|${LB_CERT_ARN}|g" yelb-gw.yaml | kubectl apply -f -
+```
