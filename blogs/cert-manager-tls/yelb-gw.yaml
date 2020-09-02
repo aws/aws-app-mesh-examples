@@ -81,7 +81,7 @@ spec:
     spec:
       containers:
         - name: envoy
-          image: 840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.15.0.0-prod
+          image: {{ENVOY_IMAGE}}
           ports:
             - containerPort: 8443   
           volumeMounts:
@@ -135,7 +135,7 @@ metadata:
   namespace: yelb
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:<region>:123456789012:certificate/a726a8ab-xxxx-xxxx-xxxx-fcb0f86dec6a"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{LB_CERT_ARN}}
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "ssl"
 spec:
   type: LoadBalancer
