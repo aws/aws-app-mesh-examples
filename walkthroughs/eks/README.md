@@ -5,6 +5,7 @@ In this walkthrough we will be setting up AWS App Mesh with Amazon Elastic Conta
 * [Base deployment](base.md)
 * Integrations:
   * Observability:
-    * [Prometheus](o11y-prometheus.md)
     * [CloudWatch](o11y-cloudwatch.md)
+    * [Grafana](o11y-grafana.md)
+    * [Prometheus](o11y-prometheus.md)
     * [X-Ray](o11y-xray.md)
