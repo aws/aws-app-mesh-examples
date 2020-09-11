@@ -68,7 +68,7 @@ Resources:
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/CloudWatchFullAccess
       - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
-      - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
+      - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
@@ -96,24 +96,24 @@ Resources:
         IpProtocol: -1
 
   BackendRegistry:
-      Type: AWS::ServiceDiscovery::Service
-      Properties:
-        Name: 'backend'
-        DnsConfig:
-          NamespaceId:
-            Fn::ImportValue: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
-          DnsRecords:
-          - Type: A
-            TTL: 300
-        HealthCheckCustomConfig:
-          FailureThreshold: 1
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: 'backend'
+      DnsConfig:
+        NamespaceId:
+          Fn::ImportValue: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
+        DnsRecords:
+        - Type: A
+          TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
 
   BackendTaskDef:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
       - 'FARGATE'
-      Family: 'backend'
+      Family: !Sub '${ProjectName}-backend'
       NetworkMode: 'awsvpc'
       Cpu: 256
       Memory: 512
@@ -142,7 +142,7 @@ Resources:
           Options:
             awslogs-group: !Sub '${ProjectName}-log-group'
             awslogs-region: !Ref AWS::Region
-            awslogs-stream-prefix: 'backend'
+            awslogs-stream-prefix: 'backend-2'
         PortMappings:
         - ContainerPort: !Ref ContainerPort
           Protocol: 'tcp'
@@ -177,8 +177,6 @@ Resources:
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
           Value: !Sub 'mesh/${ProjectName}-mesh@${MeshOwner}/virtualNode/backend-2-vn'
-        - Name: 'APPMESH_PREVIEW'
-          Value: 1
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 

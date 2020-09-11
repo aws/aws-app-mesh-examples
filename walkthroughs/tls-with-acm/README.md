@@ -10,19 +10,7 @@ With ACM, you can host some or all of your Public Key Infrastructure (PKI) in AW
 
 Let's jump into a brief example of App Mesh TLS in action.
 
-## Step 1: Download the App Mesh Preview CLI
-
-You will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
-
-```bash
-aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-```
-
-Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
-
-## Step 2: Create Color App Infrastructure
+## Step 1: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
@@ -30,6 +18,7 @@ You'll need a keypair stored in AWS to access a bastion host. You can create a k
 
 ```bash
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
+chmod go-r ~/.ssh/color-app.pem
 ```
 
 This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
@@ -70,7 +59,14 @@ Finally, build and deploy the color app images.
 ./src/gateway/deploy.sh
 ```
 
-## Step 3: Create a Certificate
+Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
+
+```bash
+GO_PROXY=direct ./src/colorteller/deploy.sh
+GO_PROXY=direct ./src/gateway/deploy.sh
+```
+
+## Step 2: Create a Certificate
 
 Before we can encrypt traffic between services in the mesh, we need to generate a certificate. App Mesh currently supports certificates issued by an [ACM Private Certificate Authority](https://docs.aws.amazon.com/acm-pca/latest/userguide/PcaWelcome.html), which we'll setup in this step.
 
@@ -79,7 +75,7 @@ Start by creating a root certificate authority (CA) in ACM.
 > You pay a monthly fee for the operation of each AWS Certificate Manager Private Certificate Authority until you delete it and you pay for the private certificates you issue each month. For more information, see [AWS Certificate Manager Pricing](https://aws.amazon.com/certificate-manager/pricing/).
 
 ```bash
-ROOT_CA_ARN=`aws acm-pca create-certificate-authority \
+export ROOT_CA_ARN=`aws acm-pca create-certificate-authority \
     --certificate-authority-type ROOT \
     --certificate-authority-configuration \
     "KeyAlgorithm=RSA_2048,
@@ -102,7 +98,14 @@ ROOT_CA_CSR=`aws acm-pca get-certificate-authority-csr \
     --query Csr --output text`
 ```
 
-Sign the CSR using itself as the issuer:
+Sign the CSR using itself as the issuer.
+
+Note that if you are using AWS CLI version 2, you will need to pass the CSR data through encoding prior to invoking the 'issue-certificate' command.
+
+```bash
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
+[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CSR="$(echo ${ROOT_CA_CSR} | base64)"
+```
 
 ```bash
 ROOT_CA_CERT_ARN=`aws acm-pca issue-certificate \
@@ -121,10 +124,29 @@ ROOT_CA_CERT=`aws acm-pca get-certificate \
     --certificate-arn ${ROOT_CA_CERT_ARN} \
     --certificate-authority-arn ${ROOT_CA_ARN} \
     --query Certificate --output text`
+```
 
+Note again with AWS CLI version 2, you will need to pass the certificate data through encoding.
+
+```bash
+[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CERT="$(echo ${ROOT_CA_CERT} | base64)"
+```
+
+Import the certificate:
+
+```bash
 aws acm-pca import-certificate-authority-certificate \
     --certificate-authority-arn $ROOT_CA_ARN \
     --certificate "${ROOT_CA_CERT}"
+```
+
+We also want to grant permissions to the CA to automatically renew the managed certificates it issues:
+
+```bash
+aws acm-pca create-permission \
+    --certificate-authority-arn $ROOT_CA_ARN \
+    --actions IssueCertificate GetCertificate ListPermissions \
+    --principal acm.amazonaws.com
 ```
 
 Now you can request a managed certificate from ACM using this CA:
@@ -138,80 +160,81 @@ export CERTIFICATE_ARN=`aws acm request-certificate \
 
 With managed certificates, ACM will automatically renew certificates that are nearing the end of their validity, and App Mesh will automatically distribute the renewed certificates. See [Managed Renewal and Deployment](https://aws.amazon.com/certificate-manager/faqs/#Managed_Renewal_and_Deployment) for more information.
 
-## Step 4: Create a Mesh with TLS enabled
+## Step 3: Create a Mesh with TLS enabled
 
 This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white).
 
 We'll be encrypting traffic from the gateway to the color teller node. Our color teller white Virtual Node will be terminating TLS with a certificate provided by ACM. The spec looks like this:
 
-```json
-"listeners": [
-    {
-        "portMapping": {
-            "port": 9080,
-            "protocol": "http"
-        },
-        "healthCheck": {
-            "protocol": "http",
-            "path": "/ping",
-            "healthyThreshold": 2,
-            "unhealthyThreshold": 2,
-            "timeoutMillis": 2000,
-            "intervalMillis": 5000
-        },
-        "tls": {
-            "mode": "STRICT",
-            "certificate": {
-                "acm": {
-                    "certificateArn": "${CERTIFICATE_ARN}"
-                }
-            }
-        }
-    }
-],
-"serviceDiscovery": {
-    "dns": {
-        "hostname": "colorteller.${SERVICES_DOMAIN}"
-    }
-}
+```yaml
+ColorTellerVirtualNode:
+  Type: AWS::AppMesh::VirtualNode
+  Properties:
+    MeshName: !GetAtt Mesh.MeshName
+    VirtualNodeName: ColorTellerWhite
+    Spec:
+      Listeners:
+        - PortMapping:
+            Port: 80
+            Protocol: http
+          HealthCheck:
+            Protocol: http
+            Path: /ping
+            HealthyThreshold: 2
+            UnhealthyThreshold: 3
+            TimeoutMillis: 2000
+            IntervalMillis: 5000
+          TLS:
+            # Mode determines whether or not TLS is negotiated on this Virtual Node.
+            # STRICT - TLS is required.
+            # PERMISSIVE - TLS is optional (plain-text allowed).
+            # DISABLED - TLS is disabled (plain-text only).
+            Mode: STRICT
+            # Use a certificate from ACM.
+            Certificate:
+              ACM:
+                CertificateArn: !Ref CertificateArn
+      ServiceDiscovery:
+        DNS:
+          Hostname: !Sub "colorteller.${SERVICES_DOMAIN}"
 ```
 
 Additionally, the gateway service will be configured to validate the certificate of the color teller node by specifying the CA that issued it. The spec for the gateway looks like this:
 
-```json
-"listeners": [
-    {
-        "portMapping": {
-            "port": 9080,
-            "protocol": "http"
-        }
-    }
-],
-"serviceDiscovery": {
-    "dns": {
-        "hostname": "colorgateway.${SERVICES_DOMAIN}"
-    }
-},
-"backends": [
-    {
-        "virtualService": {
-            "virtualServiceName": "colorteller.${SERVICE_DOMAIN}",
-            "clientPolicy": {
-                "tls": {
-                    "validation": {
-                        "trust": {
-                            "acm": {
-                                "certificateAuthorityArns": [
-                                    "$ROOT_CA_ARN"
-                                ]
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-]
+```yaml
+ColorGatewayVirtualNode:
+  Type: AWS::AppMesh::VirtualNode
+  Properties:
+    MeshName: !GetAtt Mesh.MeshName
+    VirtualNodeName: ColorGateway
+    Spec:
+      # BackendDefaults settings are applied to all backends.
+      BackendDefaults:
+        # ClientPolicy is a policy for how to handle traffic with backends (i.e. from the client
+        # perspective)
+        ClientPolicy:
+          # TLS determines whether or not TLS is negotiated, and how.
+          TLS:
+            # Validation determines how to validate a certificate offered by a backend.
+            Validation:
+              # Trust is the trust bundle (i.e. set of root certificate authorities) used to validate
+              # the certificate offered by a backend. Certificates signed by one of these certificate
+              # authorities are considered valid.
+              Trust:
+                # Use a certificate authority from ACM
+                ACM:
+                  CertificateAuthorityArns:
+                    - !Ref CertificateAuthorityArn
+      Backends:
+        - VirtualService:
+            VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+      Listeners:
+        - PortMapping:
+            Port: 80
+            Protocol: http
+      ServiceDiscovery:
+        DNS:
+          Hostname: !Sub "colorgateway.${ServicesDomain}"
 ```
 
 For more information on what TLS settings you can provide for a Virtual Node, see the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation.
@@ -222,7 +245,7 @@ Let's create the mesh.
 ./mesh/mesh.sh up
 ```
 
-## Step 5: Deploy and Verify
+## Step 4: Deploy and Verify
 
 Our final step is to deploy the service and test it out.
 
@@ -257,7 +280,7 @@ That's it! We've encrypted traffic from our gateway service to our color teller 
 
 Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
 
-## Step 6: Clean Up
+## Step 5: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
 Run the following commands to clean up and tear down the resources that we’ve created.
@@ -265,16 +288,11 @@ Run the following commands to clean up and tear down the resources that we’ve 
 ```bash
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-mesh
 aws ecr delete-repository --force --repository-name colorteller
 aws ecr delete-repository --force --repository-name gateway
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
-```
-
-Delete the mesh.
-
-```bash
-./mesh/mesh.sh down
 ```
 
 And finally delete the certificates.

@@ -1,0 +1,130 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-ui
+  namespace: yelb
+spec:
+  awsName: yelb-ui-virtual-node
+  podSelector:
+    matchLabels:
+      app: yelb-ui
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http  
+  serviceDiscovery:
+    dns:
+      hostname: yelb-ui.yelb.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        validation:
+          trust:
+            file:
+              certificateChain: /etc/keys/yelb/ca.crt      
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: yelb-appserver
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-appserver
+  namespace: yelb
+spec:
+  awsName: yelb-appserver-virtual-node
+  podSelector:
+    matchLabels:
+      app: yelb-appserver
+  listeners:
+    - portMapping:
+        port: 4567
+        protocol: http
+      tls:
+        certificate:
+          file:
+            certificateChain: /etc/keys/yelb/tls.crt
+            privateKey: /etc/keys/yelb/tls.key
+        mode: STRICT          
+  serviceDiscovery:
+    dns:
+      hostname: yelb-appserver.yelb.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        validation:
+          trust:
+            file:
+              certificateChain: /etc/keys/yelb/ca.crt      
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: yelb-db
+    - virtualService:
+       virtualServiceRef:
+          name: redis-server
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-db
+  namespace: yelb
+spec:
+  awsName: yelb-db-virtual-node
+  podSelector:
+    matchLabels:
+      app: yelb-db
+  listeners:
+    - portMapping:
+        port: 5432
+        protocol: tcp 
+      tls:
+        certificate:
+          file:
+            certificateChain: /etc/keys/yelb/tls.crt
+            privateKey: /etc/keys/yelb/tls.key
+        mode: STRICT           
+  serviceDiscovery:
+    dns:
+      hostname: yelb-db.yelb.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        validation:
+          trust:
+            file:
+              certificateChain: /etc/keys/yelb/ca.crt        
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: redis-server
+  namespace: yelb
+spec:
+  awsName: redis-server-virtual-node
+  podSelector:
+    matchLabels:
+      app: redis-server
+  listeners:
+    - portMapping:
+        port: 6379
+        protocol: tcp 
+      tls:
+        certificate:
+          file:
+            certificateChain: /etc/keys/yelb/tls.crt
+            privateKey: /etc/keys/yelb/tls.key
+        mode: STRICT           
+  serviceDiscovery:
+    dns:
+      hostname: redis-server.yelb.svc.cluster.local
+  backendDefaults:
+    clientPolicy:
+      tls:
+        validation:
+          trust:
+            file:
+              certificateChain: /etc/keys/yelb/ca.crt        
+---

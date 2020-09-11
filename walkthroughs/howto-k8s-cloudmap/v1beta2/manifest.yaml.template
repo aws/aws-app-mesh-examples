@@ -1,0 +1,246 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${APP_NAMESPACE}
+  labels:
+    mesh: ${MESH_NAME}
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: ${MESH_NAME}
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: ${MESH_NAME}
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: front
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: front
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: colorapp
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: colorapp-blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: colorapp
+      version: blue
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: colorapp
+      attributes:
+      - key: color
+        value: blue
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: colorapp-red
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: colorapp
+      version: red
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: colorapp
+      attributes:
+      - key: color
+        value: red
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: colorapp
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: colorapp.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: colorapp-router
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: ${APP_NAMESPACE}
+  name: colorapp-router
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  routes:
+    - name: color-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: colorapp-red
+              weight: 1
+            - virtualNodeRef:
+                name: colorapp-blue
+              weight: 1
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: front.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: front-router
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: ${APP_NAMESPACE}
+  name: front-router
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  routes:
+    - name: color-route
+      httpRoute:
+        match:
+          prefix: /color
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: front
+              weight: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: front
+        version: v1
+    spec:
+      containers:
+        - name: front
+          image: ${FRONT_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "PORT"
+              value: "8080"
+            - name: "COLOR_HOST"
+              value: "colorapp.${APP_NAMESPACE}.svc.cluster.local:8080"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: colorapp-blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: colorapp
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: colorapp
+        version: blue
+    spec:
+      containers:
+        - name: colorapp
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "SERVER_PORT"
+              value: "8080"
+            - name: "COLOR"
+              value: "blue"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: colorapp-red
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: colorapp
+      version: red
+  template:
+    metadata:
+      labels:
+        app: colorapp
+        version: red
+    spec:
+      containers:
+        - name: colorapp
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "SERVER_PORT"
+              value: "8080"
+            - name: "COLOR"
+              value: "red"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colorapp
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080

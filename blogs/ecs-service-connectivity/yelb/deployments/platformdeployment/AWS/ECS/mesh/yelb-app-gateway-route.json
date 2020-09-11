@@ -1,0 +1,19 @@
+{
+   "gatewayRouteName" : "yelbapp-gatewayroute",
+   "meshName" : "yelb",
+   "spec" : {
+      "httpRoute" : {
+         "action" : {
+            "target" : {
+               "virtualService" : {
+                  "virtualServiceName" : "yelb-appserver"
+               }
+            }
+         },
+         "match" : {
+            "prefix" : "/api"
+         }
+      }
+   },
+   "virtualGatewayName" : "yelb-gateway"
+}

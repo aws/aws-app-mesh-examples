@@ -1,0 +1,29 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-db
+  namespace: yelb
+spec:
+  awsName: yelb-db-virtual-node
+  podSelector:
+    matchLabels:
+      app: yelb-db
+  listeners:
+    - portMapping:
+        port: 5432
+        protocol: tcp  
+  serviceDiscovery:
+    dns:
+      hostname: yelb-db.yelb.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: yelb-db
+  namespace: yelb
+spec:
+  awsName: yelb-db
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: yelb-db

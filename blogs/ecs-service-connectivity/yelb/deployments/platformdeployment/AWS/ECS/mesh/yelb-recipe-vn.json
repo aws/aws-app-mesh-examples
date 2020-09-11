@@ -1,0 +1,19 @@
+{
+    "meshName": "yelb",
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 80,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+                "dns": {
+                    "hostname": "www.recipepuppy.com"
+                }
+        }
+    },
+    "virtualNodeName": "yelb-recipe"
+}

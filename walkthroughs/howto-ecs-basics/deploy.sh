@@ -18,23 +18,36 @@ if [ -z $ENVOY_IMAGE ]; then
 fi
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
+
 PROJECT_NAME="$(basename ${DIR})"
 STACK_NAME="appmesh-${PROJECT_NAME}"
-ECR_IMAGE_PREFIX=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}
+ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX=${ECR_URL}/${PROJECT_NAME}
 CW_AGENT_IMAGE="${ECR_IMAGE_PREFIX}/cwagent:$(git log -1 --format=%h src/cwagent)"
 COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/colorapp:$(git log -1 --format=%h src/colorapp)"
 FRONT_APP_IMAGE="${ECR_IMAGE_PREFIX}/feapp:$(git log -1 --format=%h src/feapp)"
+GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
+
+ecr_login() {
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
+        $(aws ecr get-login --no-include-email)
+    fi
+}
 
 # deploy_images builds and pushes docker images for colorapp and feapp to ECR
 deploy_images() {
     for f in cwagent colorapp feapp; do
-        aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${f} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${f}
+        aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${f} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${f} >/dev/null
     done
 
-    $(aws ecr get-login --no-include-email)
+    ecr_login
     docker build -t ${CW_AGENT_IMAGE} ${DIR}/src/cwagent && docker push ${CW_AGENT_IMAGE}
-    docker build -t ${COLOR_APP_IMAGE} ${DIR}/src/colorapp && docker push ${COLOR_APP_IMAGE}
-    docker build -t ${FRONT_APP_IMAGE} ${DIR}/src/feapp && docker push ${FRONT_APP_IMAGE}
+    docker build -t ${COLOR_APP_IMAGE} --build-arg GO_PROXY=${GO_PROXY} ${DIR}/src/colorapp && docker push ${COLOR_APP_IMAGE}
+    docker build -t ${FRONT_APP_IMAGE} --build-arg GO_PROXY=${GO_PROXY} ${DIR}/src/feapp && docker push ${FRONT_APP_IMAGE}
 }
 
 # deploy deploys infra, colorapp and feapp.
@@ -79,8 +92,6 @@ print_endpoint() {
 }
 
 deploy_stacks() {
-    confirm_service_linked_role
-
     if [ -z $SKIP_IMAGES ]; then
         echo "deploy images..."
         deploy_images
@@ -89,6 +100,9 @@ deploy_stacks() {
     echo "deploy app using stage ${stage}"
     deploy "${stage}"
 
+    if [ "${stage}" == "2-meshify" ]; then
+      confirm_service_linked_role
+    fi
     print_endpoint
 }
 

@@ -1,0 +1,37 @@
+{
+    "meshName": "yelb",
+    "spec": {
+        "backends": [
+            {
+                "virtualService": {
+                    "virtualServiceName": "yelb-db"
+                }
+            },
+            {
+                "virtualService": {
+                    "virtualServiceName": "redis-server"
+                }
+            },
+            {
+                "virtualService": {
+                    "virtualServiceName": "www.recipepuppy.com"
+                }
+            }
+        ],
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 4567,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "awsCloudMap": {
+                "namespaceName": "yelb.local",
+                "serviceName": "yelb-appserver"
+            }
+        }
+    },
+    "virtualNodeName": "yelb-app-server"
+}

@@ -9,11 +9,6 @@ Resources:
     Properties:
       MeshName: !Sub '${ProjectName}-mesh'
 
-  Mesh:
-    Type: AWS::AppMesh::Mesh
-    Properties:
-      MeshName: !Sub '${ProjectName}-mesh'
-
   ColorClientNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:

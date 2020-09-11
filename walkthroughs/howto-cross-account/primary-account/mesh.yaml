@@ -13,7 +13,7 @@ Resources:
     Type: AWS::AppMesh::VirtualNode
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: gateway
+      VirtualNodeName: gateway-vn
       Spec:
         Backends:
         - VirtualService:
@@ -30,7 +30,7 @@ Resources:
     Type: AWS::AppMesh::VirtualNode
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: backend-1
+      VirtualNodeName: backend-1-vn
       Spec:
         Listeners:
         - PortMapping:
@@ -44,7 +44,7 @@ Resources:
     Type: AWS::AppMesh::VirtualRouter
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualRouterName: virtual-router
+      VirtualRouterName: backend-vr
       Spec:
         Listeners:
         - PortMapping:
@@ -61,7 +61,7 @@ Resources:
       Spec:
         Provider:
           VirtualRouter:
-            VirtualRouterName: virtual-router
+            VirtualRouterName: backend-vr
 
   Route:
     DependsOn:
@@ -70,13 +70,13 @@ Resources:
     Type: AWS::AppMesh::Route
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualRouterName: virtual-router
-      RouteName: route
+      VirtualRouterName: backend-vr
+      RouteName: backend-route
       Spec:
         HttpRoute:
           Action:
             WeightedTargets:
-            - VirtualNode: backend-1
+            - VirtualNode: backend-1-vn
               Weight: 1
           Match:
             Prefix: /

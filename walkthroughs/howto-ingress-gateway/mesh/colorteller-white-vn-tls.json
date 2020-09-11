@@ -1,0 +1,33 @@
+{
+    "spec": {
+          "listeners": [
+             {
+                "healthCheck": {
+                   "healthyThreshold": 2,
+                   "intervalMillis": 5000,
+                   "path": "/ping",
+                   "protocol": "http",
+                   "timeoutMillis": 2000,
+                   "unhealthyThreshold": 2
+                },
+                "portMapping": {
+                   "port": 9080,
+                   "protocol": "http"
+                },
+                "tls": {
+                    "mode": "STRICT",
+                    "certificate": {
+                        "acm": {
+                            "certificateArn": $CERTIFICATE_ARN
+                        }
+                    }
+                }
+             }
+          ],
+          "serviceDiscovery": {
+             "dns": {
+                "hostname": $DNS_HOSTNAME
+             }
+          }
+    }
+}

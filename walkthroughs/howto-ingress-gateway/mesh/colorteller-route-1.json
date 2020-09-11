@@ -1,0 +1,21 @@
+{
+    "spec": {
+        "httpRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "colorteller-white-vn",
+                        "weight": 1
+                    },
+                    {
+                        "virtualNode": "colorteller-blue-vn",
+                        "weight": 1
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/tell"
+            }
+        }
+    }
+}

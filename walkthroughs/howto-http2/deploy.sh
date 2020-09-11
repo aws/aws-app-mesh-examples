@@ -28,14 +28,25 @@ if [ -z $KEY_PAIR ]; then
 fi
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-ECR_IMAGE_PREFIX=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}
+ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+ECR_IMAGE_PREFIX="${ECR_URL}/${PROJECT_NAME}"
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
+
+ecr_login() {
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
+        $(aws ecr get-login --no-include-email)
+    fi
+}
 
 deploy_images() {
     echo "Deploying Color Client and Color Server images to ECR..."
+    ecr_login
     for app in color_client color_server; do
-        aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${app} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${app}
+        aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${app} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${app} >/dev/null
         docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
-        $(aws ecr get-login --no-include-email)
         docker push ${ECR_IMAGE_PREFIX}/${app}
     done
 }
@@ -112,7 +123,7 @@ delete_images() {
         echo "deleting repository \"${app}\"..."
         aws ecr delete-repository \
            --repository-name $PROJECT_NAME/$app \
-           --force
+           --force >/dev/null
     done
 }
 

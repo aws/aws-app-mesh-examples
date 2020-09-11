@@ -33,13 +33,13 @@ deploy_app() {
 }
 
 deploy_mesh() {
-    echo "Creating Mesh: \"${PROJECT_NAME}-mesh\"..."
-    ${DIR}/mesh/mesh.sh up
-}
-
-delete_mesh() {
-    echo "Deleting Mesh: \"${PROJECT_NAME}-mesh\"..."
-    ${DIR}/mesh/mesh.sh down
+    echo "Creating reources in shared Mesh: \"${PROJECT_NAME}-mesh\"..."
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --stack-name "${PROJECT_NAME}-mesh"\
+        --template-file "${DIR}/mesh.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides "ProjectName=${PROJECT_NAME}" "MeshName=${PROJECT_NAME}-mesh" "MeshOwner=${AWS_PRIMARY_ACCOUNT_ID}"
 }
 
 load_primary_vpc() {
@@ -88,7 +88,7 @@ delete_cfn_stack() {
 delete_stacks() {
     delete_cfn_stack "${PROJECT_NAME}-app"
     delete_cfn_stack "${PROJECT_NAME}-infra"
-    delete_mesh
+    delete_cfn_stack "${PROJECT_NAME}-mesh"
 
     echo "all resources for secondary account have been deleted"
 }

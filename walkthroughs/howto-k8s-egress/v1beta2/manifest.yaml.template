@@ -1,0 +1,185 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${APP_NAMESPACE}
+  labels:
+    mesh: ${MESH_NAME}
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mesh-external
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: ${MESH_NAME}
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: ${MESH_NAME}
+  egressFilter:
+    type: DROP_ALL
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: front
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: external
+  serviceDiscovery:
+    dns:
+      hostname: front.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: blue.mesh-external.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: external
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: blue.mesh-external.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: blue
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: front
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+    spec:
+      containers:
+        - name: app
+          image: ${FRONT_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR_HOST"
+              value: "blue.mesh-external.svc.cluster.local:8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue
+  namespace: mesh-external
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: blue
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue
+  namespace: mesh-external
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: color
+        version: blue
+    spec:
+      containers:
+        - name: app
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "external: blue"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: red
+  namespace: mesh-external
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: red
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: red
+  namespace: mesh-external
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: red
+  template:
+    metadata:
+      labels:
+        app: color
+        version: red
+    spec:
+      containers:
+        - name: app
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "external: red"

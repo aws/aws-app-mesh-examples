@@ -1,0 +1,26 @@
+{
+  "virtualRouterName": "colorteller-vr",
+  "routeName": "colorteller-route",
+  "spec": {
+    "priority": 1,
+    "httpRoute": {
+      "action": {
+        "weightedTargets": [
+          {
+            "virtualNode": "ColorTellerWhite",
+            "weight": 1
+          }
+        ]
+      },
+      "match": {
+        "prefix": "/color1"
+      },
+      "timeout" : {
+        "perRequest": {
+          "value" : 18,
+          "unit" : "s"
+        }
+      }
+    }
+  }
+}

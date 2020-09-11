@@ -1,0 +1,19 @@
+{
+    "meshName": "yelb",
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 6379,
+                    "protocol": "tcp"
+                }
+            }
+        ],
+         "serviceDiscovery": {
+                "dns": {
+                    "hostname": $DNS_HOSTNAME
+                }
+            }
+    },
+    "virtualNodeName": "yelb-redis-server"
+}

@@ -1,0 +1,32 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 80,
+                    "protocol": "http"
+                },
+                "timeout": {
+                    "http": {
+                        "perRequest": {
+                            "value" : 20,
+                            "unit" : "s"
+                        }
+                    }
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "dns": {
+                "hostname": $DNS_HOSTNAME
+            }
+        },
+        "backends": [
+            {
+                "virtualService": {
+                    "virtualServiceName": $COLOR_TELLER_VS
+                }
+            }
+        ]
+    }
+}
