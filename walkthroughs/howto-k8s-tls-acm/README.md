@@ -111,7 +111,7 @@ aws acm-pca create-permission \
     --principal acm.amazonaws.com
 ```
 
-Request a managed certificate "color-blue.howto-k8s-tls-acm.svc.cluster.local" from ACM using this CA:
+Request a managed certificate from ACM using this CA:
 
 ```bash
 export CERTIFICATE_ARN=`aws acm request-certificate \
@@ -165,7 +165,7 @@ spec:
         mode: STRICT
         certificate:
           acm:
-            certificateARN: arn:aws:acm:us-west-2:<ACCOUNT_ID>>:certificate/<certificate>
+            certificateARN: arn:aws:acm:eu-west-2:<ACCOUNT_ID>>:certificate/<certificate>
   serviceDiscovery:
     dns:
       hostname: color-blue.howto-k8s-tls-acm.svc.cluster.local
