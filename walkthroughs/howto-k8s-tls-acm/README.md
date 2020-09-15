@@ -34,7 +34,7 @@ Before we can encrypt traffic between services in the mesh, we need to generate 
 
 Start by creating a root certificate authority (CA) in ACM.
 
-> You pay a monthly fee for the operation of each AWS Certificate Manager Private Certificate Authority until you delete it and you pay for the private certificates you issue each month. For more information, see [AWS Certificate Manager Pricing](https://aws.amazon.com/certificate-manager/pricing/).
+***Note: You pay a monthly fee for the operation of each AWS Certificate Manager Private Certificate Authority until you delete it and you pay for the private certificates you issue each month. For more information, see [AWS Certificate Manager Pricing](https://aws.amazon.com/certificate-manager/pricing/).***
 
 ```bash
 export ROOT_CA_ARN=`aws acm-pca create-certificate-authority \
