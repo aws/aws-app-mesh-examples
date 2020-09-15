@@ -25,7 +25,7 @@ fi
 
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-PROJECT_NAME="howto-k8s-tls-file-based"
+PROJECT_NAME="howto-k8s-tls-acm"
 APP_NAMESPACE=${PROJECT_NAME}
 MESH_NAME=${PROJECT_NAME}
 

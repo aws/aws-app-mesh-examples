@@ -43,7 +43,7 @@ spec:
   backendDefaults:
     clientPolicy:
       tls:
-        enforce: false
+        enforce: true
         validation:
           trust:
             acm:
@@ -78,7 +78,7 @@ spec:
         mode: STRICT
         certificate:
           acm:
-            certificateARN: ${BLUE_CERTIFICATE_ARN}
+            certificateARN: ${CERTIFICATE_ARN}
   serviceDiscovery:
     dns:
       hostname: color-blue.${APP_NAMESPACE}.svc.cluster.local
@@ -129,11 +129,6 @@ spec:
         unhealthyThreshold: 2
         timeoutMillis: 2000
         intervalMillis: 5000
-      tls:
-        mode: STRICT
-        certificate:
-          acm:
-            certificateARN: ${GREEN_CERTIFICATE_ARN}
   serviceDiscovery:
     dns:
       hostname: color-green.${APP_NAMESPACE}.svc.cluster.local

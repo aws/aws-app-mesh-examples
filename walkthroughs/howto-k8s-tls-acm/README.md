@@ -25,7 +25,7 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 
 5. SERVICES_DOMAIN to be used while creating the AWS Certificate Manager Private Certificate Authority
 
-     export SERVICES_DOMAIN="howto-k8s-tls-file-based.svc.cluster.local"
+     export SERVICES_DOMAIN="howto-k8s-tls-acm.svc.cluster.local"
 
 
 ## Step 2: Create a Certificate
@@ -111,19 +111,11 @@ aws acm-pca create-permission \
     --principal acm.amazonaws.com
 ```
 
-Request a managed certificate "color-blue.howto-k8s-tls-file-based.svc.cluster.local" from ACM using this CA:
+Request a managed certificate "color-blue.howto-k8s-tls-acm.svc.cluster.local" from ACM using this CA:
 
 ```bash
-export BLUE_CERTIFICATE_ARN=`aws acm request-certificate \
-    --domain-name "color-blue.${SERVICES_DOMAIN}" \
-    --certificate-authority-arn ${ROOT_CA_ARN} \
-    --query CertificateArn --output text`
-```
-
-Request a managed certificate "color-green.howto-k8s-tls-file-based.svc.cluster.local" from ACM using this CA
-```bash
-export GREEN_CERTIFICATE_ARN=`aws acm request-certificate \
-    --domain-name "color-green.${SERVICES_DOMAIN}" \
+export CERTIFICATE_ARN=`aws acm request-certificate \
+    --domain-name "*.${SERVICES_DOMAIN}" \
     --certificate-authority-arn ${ROOT_CA_ARN} \
     --query CertificateArn --output text`
 ```
@@ -145,19 +137,19 @@ Frontend has backend virtual service (color) configured and the virtual service 
 - color-route-green: matches on HTTP header "green" to route traffic to virtual node `green` 
 - color-route-red: matches on HTTP header "red" to route traffic to virtual node `red`
 
-Virtual nodes `blue` and `green` are configured with TLS enabled for their respective listeners. Here's the spec for `green` Virtual Node:
+Virtual node `blue` is configured with TLS enabled for it's respective listeners. Here's the spec for `blue` Virtual Node:
 
 ```
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: green
-  namespace: howto-k8s-tls-file-based
+  name: blue
+  namespace: howto-k8s-tls-acm
 spec:
   podSelector:
     matchLabels:
       app: color
-      version: green
+      version: blue
   listeners:
     - portMapping:
         port: 8080
@@ -176,7 +168,7 @@ spec:
             certificateARN: arn:aws:acm:us-west-2:<ACCOUNT_ID>>:certificate/<certificate>
   serviceDiscovery:
     dns:
-      hostname: color-green.howto-k8s-tls-file-based.svc.cluster.local
+      hostname: color-blue.howto-k8s-tls-acm.svc.cluster.local
 ```
 
 The `tls` block specifies the ACM certificate to use. See [Transport Layer Security (TLS)](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html) for the IAM permissions that are required while using ACM PCA for TLS.
@@ -189,9 +181,8 @@ kubectl -n default run -it --rm curler --image=tutum/curl /bin/bash
 ```
 
 ```
-curl -H "color_header: blue" front.howto-k8s-tls-file-based.svc.cluster.local:8080/; echo;
+curl -H "color_header: blue" front.howto-k8s-tls-acm.svc.cluster.local:8080/; echo;
 
-curl -H "color_header: green" front.howto-k8s-tls-file-based.svc.cluster.local:8080/; echo;
 ```
 
 You should see a successful response when using the HTTP header "color_header: blue"
@@ -199,8 +190,8 @@ You should see a successful response when using the HTTP header "color_header: b
 Let's check the SSL handshake statistics.
 
 ```bash
-BLUE_POD=$(kubectl get pod -l "version=blue" -n howto-k8s-tls-file-based --output=jsonpath={.items..metadata.name})
-kubectl exec -it $BLUE_POD -n howto-k8s-tls-file-based -c envoy -- curl -s http://localhost:9901/stats | grep ssl.handshake
+BLUE_POD=$(kubectl get pod -l "version=blue" -n howto-k8s-tls-acm --output=jsonpath={.items..metadata.name})
+kubectl exec -it $BLUE_POD -n howto-k8s-tls-acm -c envoy -- curl -s http://localhost:9901/stats | grep ssl.handshake
 ```
 
 You should see output similar to: listener.0.0.0.0_15000.ssl.handshake: 1, indicating a successful SSL handshake was achieved between front and blue color app
@@ -214,10 +205,16 @@ If you want to keep the application running, you can do so, but this is the end 
 kubectl delete -f _output/manifest.yaml
 ```
 
+Delete the ECR Repositories. The `force` flag would delete the docker images inside the ECR repository
+```bash
+aws ecr delete-repository  --repository-name howto-k8s-tls-acm/colorapp --force
+
+aws ecr delete-repository  --repository-name howto-k8s-tls-acm/feapp --force
+```
+
 And finally delete the certificates.
 ```bash
-aws acm delete-certificate --certificate-arn $BLUE_CERTIFICATE_ARN
-aws acm delete-certificate --certificate-arn $GREEN_CERTIFICATE_ARN
+aws acm delete-certificate --certificate-arn $CERTIFICATE_ARN
 aws acm-pca update-certificate-authority --certificate-authority-arn $ROOT_CA_ARN --status DISABLED
 aws acm-pca delete-certificate-authority --certificate-authority-arn $ROOT_CA_ARN
 ```
