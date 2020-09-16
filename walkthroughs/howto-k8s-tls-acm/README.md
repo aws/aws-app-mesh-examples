@@ -9,7 +9,8 @@ The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](http
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-**While using ACM PCA for TLS, we require some of the IAM permissions such as `acm:DescribeCertificate`, `acm-pca:DescribeCertificateAuthority`, etc. Please see [Transport Layer Security (TLS)](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html) for the IAM permissions that are required while using ACM PCA for TLS.**
+**Note: **While using ACM PCA for TLS, we require some of the IAM permissions such as `acm:DescribeCertificate`, `acm-pca:DescribeCertificateAuthority`, etc. Please see [Transport Layer Security (TLS)](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html) for the IAM permissions that are required while using ACM PCA for TLS.
+
 
 
 ## Step 1: Setup environment
