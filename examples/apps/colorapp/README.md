@@ -171,6 +171,29 @@ In addition to the previously defined environment variables, you will also need 
 * `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`). For this demo, we will use `demo.local`. This means that the gateway virtual service will send requests to the colorteller virtual service at `colorteller.demo.local`.
 * `KEY_PAIR_NAME` - your [Amazon EC2 Key Pair] to log into your EC2 instances.
 
+You will need to enable [ENI Trunking](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html) in the Account Settings of your ECS Console to ensure that there are enough Elastic Network Interfaces for all of the ECS tasks that are created.
+
+Once the compute resources are created you can use the following command to verify that ENI Trunking has been enabled:
+
+```aws ecs list-attributes  --target-type container-instance  --attribute-name ecs.awsvpc-trunk-id  --cluster appmesh-dev  --region ap-southeast-2```
+
+You should receive a response similar to the below if this has been done correctly:
+
+```{
+    "attributes": [
+        {
+            "name": "ecs.awsvpc-trunk-id",
+            "value": "7e5bf497-5529-46fa-9f4a-62c1dbbd1862",
+            "targetId": "arn:aws:ecs:<your-region>:<your-account-number>:container-instance/cdbd7d09-3430-4c80-8323-29d5732bf01e"
+        },
+        {
+            "name": "ecs.awsvpc-trunk-id",
+            "value": "b5c8be13-e80a-47db-9977-cdd10e17ebe2",
+            "targetId": "arn:aws:ecs:<your-region>:<your-account-number>:container-instance/68f7b03e-a0c9-4528-8bf1-99b2a336768c"
+        }
+    ]
+}```
+
 ***Create the ECS cluster***
 
 `examples/infrastructure/ecs-cluster.sh`
