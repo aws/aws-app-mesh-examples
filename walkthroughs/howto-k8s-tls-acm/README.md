@@ -174,7 +174,7 @@ spec:
         mode: STRICT
         certificate:
           acm:
-            certificateARN: arn:aws:acm:eu-west-2:<ACCOUNT_ID>>:certificate/<certificate>
+            certificateARN: arn:aws:acm:us-west-2:<ACCOUNT_ID>:certificate/<certificate>
   serviceDiscovery:
     dns:
       hostname: color-blue.howto-k8s-tls-acm.svc.cluster.local
@@ -230,5 +230,10 @@ aws acm-pca delete-certificate-authority --certificate-authority-arn $ROOT_CA_AR
 
 To uninstall/delete the `appmesh-controller` deployment:
 ```bash
-$ helm delete appmesh-controller -n appmesh-system
+helm delete appmesh-controller -n appmesh-system
+```
+
+To delete the `appmesh-system` namespace:
+```bash
+kubectl delete ns appmesh-system
 ```
