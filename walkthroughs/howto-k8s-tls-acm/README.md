@@ -2,14 +2,20 @@
 In this walkthrough we'll enable TLS encryption between two applications in App Mesh using private certificate from AWS Certificate Manager issued by an AWS Certificate Manager Private Certificate Authority (ACM PCA) .
 
 ## Prerequisites
-[Walkthrough: App Mesh with EKS](../eks/)
+* To install appmesh-controller with IAM Roles for Service Account, follow the instructions [here](https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/README.md#eks-with-iam-roles-for-service-account) otherwise follow the instructions in [Walkthrough: App Mesh with EKS](../eks/)
+* If all the IAM permissions are being added to the worker node IAM role, then the nodes should have the IAM permissions from the following policies: `AWSAppMeshFullAccess`, `AWSCloudMapFullAccess`.
+
+* While using ACM PCA for TLS, we require some additional IAM permissions. As per [Transport Layer Security (TLS)](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html), the following IAM permissions would be required to use ACM PCA for TLS.
+    `acm:DescribeCertificate`
+    `acm-pca:DescribeCertificateAuthority`
+    `acm:ExportCertificate`
+    `acm-pca:GetCertificateAuthorityCertificate`
 
 The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-**Note:** While using ACM PCA for TLS, we require some of the IAM permissions such as `acm:DescribeCertificate`, `acm-pca:DescribeCertificateAuthority`, etc. Please see [Transport Layer Security (TLS)](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html) for the IAM permissions that are required while using ACM PCA for TLS.
 
 
 
@@ -223,3 +229,7 @@ aws acm-pca update-certificate-authority --certificate-authority-arn $ROOT_CA_AR
 aws acm-pca delete-certificate-authority --certificate-authority-arn $ROOT_CA_ARN
 ```
 
+To uninstall/delete the `appmesh-controller` deployment:
+```bash
+$ helm delete appmesh-controller -n appmesh-system
+```
