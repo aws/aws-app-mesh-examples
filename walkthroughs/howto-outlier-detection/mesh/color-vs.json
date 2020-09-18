@@ -1,0 +1,10 @@
+{
+    "virtualServiceName": $VIRTUAL_SERVICE_NAME,
+    "spec": {
+        "provider": {
+            "virtualNode": {
+                "virtualNodeName": "color-node"
+            }
+        }
+    }
+}
