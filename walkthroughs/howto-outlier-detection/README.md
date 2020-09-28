@@ -23,6 +23,8 @@ Here are the necessary fields to configure Outlier Detection:
 
 We will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
 
+If you are using AWS CLI version 1:
+
 ```bash
 
 aws configure add-model \
@@ -30,6 +32,16 @@ aws configure add-model \
 --service-name appmesh-preview \
 
 --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
+
+```
+
+If you are using AWS CLI version 2:
+
+```bash
+
+curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
+
+aws configure add-model --service-name appmesh-preview --service-model file://service-model.json
 
 ```
 
