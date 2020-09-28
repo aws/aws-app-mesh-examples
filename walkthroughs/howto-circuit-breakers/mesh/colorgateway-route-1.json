@@ -1,0 +1,16 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/color1"
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}
