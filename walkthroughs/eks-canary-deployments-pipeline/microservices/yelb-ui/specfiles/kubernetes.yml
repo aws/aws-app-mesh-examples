@@ -1,0 +1,148 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    mesh: yelb
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+  name: yelb
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: yelb
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: yelb
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-ui-NEW
+  namespace: yelb
+spec:
+  awsName: yelb-ui-NEW-virtual-node
+  podSelector:
+    matchLabels:
+      app: yelb-ui
+      version: "NEW"
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+      healthCheck:
+        healthyThreshold: 2
+        intervalMillis: 5000
+        path: "/"
+        port: 80
+        protocol: "http"
+        timeoutMillis: 2000
+        unhealthyThreshold: 2
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
+  serviceDiscovery:
+    dns:
+      hostname: yelb-ui-NEW.yelb.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: yelb-appserver
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: yelb
+  name: yelb-ui
+spec:
+  awsName: yelb-ui-virtual-router
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  routes:
+    - name: route-to-yelb-ui
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets: [CANARY_DEPLOYMENT]
+        retryPolicy:
+            maxRetries: 2
+            perRetryTimeout:
+                unit: ms
+                value: 2000
+            httpRetryEvents:
+                - server-error
+                - client-error
+                - gateway-error
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: yelb-ui
+  namespace: yelb
+spec:
+  awsName: yelb-ui
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: yelb-ui
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: yelb
+  name: yelb-ui-NEW
+  labels:
+    app: yelb-ui
+    version: "NEW"
+    tier: frontend
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      name: http
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: yelb-ui
+    version: "NEW"
+    tier: frontend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: yelb
+  name: yelb-ui-NEW
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yelb-ui
+      version: "NEW"
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: yelb-ui
+        version: "NEW"
+        tier: frontend
+    spec:
+      containers:
+        - name: yelb-ui
+          image: CONTAINER_IMAGE
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: yelb
+  name: yelb-ui # used to provide a DNS entry for yelb-ui VS
+spec:
+  ports:
+    - port: 80
+      name: http

@@ -1,0 +1,130 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    mesh: yelb
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+  name: yelb
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: yelb
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: yelb
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-db-NEW
+  namespace: yelb
+spec:
+  awsName: yelb-db-NEW-virtual-node
+  podSelector:
+    matchLabels:
+      app: yelb-db
+      version: "NEW"
+  listeners:
+    - portMapping:
+        port: 5432
+        protocol: tcp
+      healthCheck:
+        healthyThreshold: 2
+        intervalMillis: 5000
+        port: 5432
+        protocol: tcp
+        timeoutMillis: 2000
+        unhealthyThreshold: 2
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
+  serviceDiscovery:
+    dns:
+      hostname: yelb-db-NEW.yelb.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: yelb
+  name: yelb-db
+spec:
+  awsName: yelb-db-virtual-router
+  listeners:
+    - portMapping:
+        port: 5432
+        protocol: tcp
+  routes:
+    - name: route-to-yelb-db
+      tcpRoute:
+        action:
+          weightedTargets: [CANARY_DEPLOYMENT]
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: yelb-db
+  namespace: yelb
+spec:
+  awsName: yelb-db
+  provider:
+    virtualRouter:
+        virtualRouterRef:
+            name: yelb-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: yelb
+  name: yelb-db-NEW
+  labels:
+    app: yelb-db
+    version: "NEW"
+    tier: backenddb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      name: tcp
+  selector:
+    app: yelb-db
+    version: "NEW"
+    tier: backenddb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: yelb
+  name: yelb-db-NEW
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yelb-db
+      version: "NEW"
+      tier: backenddb
+  template:
+    metadata:
+      labels:
+        app: yelb-db
+        version: "NEW"
+        tier: backenddb
+    spec:
+      containers:
+        - name: yelb-db
+          image: CONTAINER_IMAGE
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: yelb
+  name: yelb-db # used to provide a DNS entry for yelb-appserver VS
+spec:
+  ports:
+    - port: 5432
+      name: tcp
