@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Load environment variables
 source ~/.bash_profile
 

@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+
+# Default variables that were used on the blog post (you can change them to fit your needs)
 AWS_REGION=us-west-2
 EKS_CLUSTER_NAME=blogpost
 SHARED_STACK_NAME=eks-deployment-stepfunctions

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Create EKS cluster
 eksctl create cluster --name $EKS_CLUSTER_NAME --region $AWS_REGION \
 --managed --appmesh-access \

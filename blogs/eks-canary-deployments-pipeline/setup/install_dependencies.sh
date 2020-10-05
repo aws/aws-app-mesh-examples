@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Install jq
 sudo yum install jq -y
 

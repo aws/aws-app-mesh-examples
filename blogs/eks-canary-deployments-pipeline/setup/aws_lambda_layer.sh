@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # AppID for the AWS Lambda Layer that has kubectl, awscli, helm, and jq
 APP_ID='arn:aws:serverlessrepo:us-east-1:903779448426:applications/lambda-layer-kubectl'
 
