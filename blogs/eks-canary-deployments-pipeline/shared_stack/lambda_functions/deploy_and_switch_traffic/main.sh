@@ -44,6 +44,6 @@ function handler () {
     echo "Deployment Version: $new_version"
     echo "Traffic Route: $canary_deployment"
 
-    # Returned json
+    # Lambda runtime response
     export response=$new_percentage
 }

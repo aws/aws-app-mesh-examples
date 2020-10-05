@@ -33,11 +33,11 @@ function handler () {
             | kubectl apply -f -
     done
 
-    # Delete the old version
+    # Delete the to_delete version
     kubectl -n $kubernetes_namespace delete VirtualNode "$microservice_name-$to_delete"
     kubectl -n $kubernetes_namespace delete deploy/"$microservice_name-$to_delete" svc/"$microservice_name-$to_delete"
 
-    # Returned json
+    # Lambda runtime response
     export response=true
 
 }
