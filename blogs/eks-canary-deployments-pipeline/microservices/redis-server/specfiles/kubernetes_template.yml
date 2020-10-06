@@ -3,30 +3,30 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    mesh: yelb
+    mesh: ${MESH_NAME}
     appmesh.k8s.aws/sidecarInjectorWebhook: enabled
-  name: yelb
+  name: ${KUBERNETES_NAMESPACE}
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: Mesh
 metadata:
-  name: yelb
+  name: ${MESH_NAME}
 spec:
   namespaceSelector:
     matchLabels:
-      mesh: yelb
+      mesh: ${MESH_NAME}
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: redis-server-CANARY_VERSION
-  namespace: yelb
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
+  namespace: ${KUBERNETES_NAMESPACE}
 spec:
-  awsName: redis-server-CANARY_VERSION-virtual-node
+  awsName: ${MICROSERVICE_NAME}-${CANARY_VERSION}-virtual-node
   podSelector:
     matchLabels:
-      app: redis-server
-      version: "CANARY_VERSION"
+      app: ${MICROSERVICE_NAME}
+      version: "${CANARY_VERSION}"
   listeners:
     - portMapping:
         port: 6379
@@ -44,47 +44,47 @@ spec:
         path: /dev/stdout
   serviceDiscovery:
     dns:
-      hostname: redis-server-CANARY_VERSION.yelb.svc.cluster.local
+      hostname: ${MICROSERVICE_NAME}-${CANARY_VERSION}.${KUBERNETES_NAMESPACE}.svc.cluster.local
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
 metadata:
-  namespace: yelb
-  name: redis-server
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}
 spec:
-  awsName: redis-server-virtual-router
+  awsName: ${MICROSERVICE_NAME}-virtual-router
   listeners:
     - portMapping:
         port: 6379
         protocol: tcp
   routes:
-    - name: route-to-redis-server
+    - name: route-to-${MICROSERVICE_NAME}
       tcpRoute:
         match:
           prefix: /
         action:
-          weightedTargets: [CANARY_ROUTES]
+          weightedTargets: [${CANARY_ROUTES}]
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
 metadata:
-  name: redis-server
-  namespace: yelb
+  name: ${MICROSERVICE_NAME}
+  namespace: ${KUBERNETES_NAMESPACE}
 spec:
-  awsName: redis-server
+  awsName: ${MICROSERVICE_NAME}
   provider:
     virtualRouter:
         virtualRouterRef:
-            name: redis-server
+            name: ${MICROSERVICE_NAME}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: yelb
-  name: redis-server-CANARY_VERSION
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
   labels:
-    app: redis-server
-    version: "CANARY_VERSION"
+    app: ${MICROSERVICE_NAME}
+    version: "${CANARY_VERSION}"
     tier: cache
 spec:
   type: ClusterIP
@@ -92,40 +92,40 @@ spec:
     - port: 6379
       name: tcp
   selector:
-    app: redis-server
-    version: "CANARY_VERSION"
+    app: ${MICROSERVICE_NAME}
+    version: "${CANARY_VERSION}"
     tier: cache
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: yelb
-  name: redis-server-CANARY_VERSION
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redis-server
-      version: "CANARY_VERSION"
+      app: ${MICROSERVICE_NAME}
+      version: "${CANARY_VERSION}"
       tier: cache
   template:
     metadata:
       labels:
-        app: redis-server
-        version: "CANARY_VERSION"
+        app: ${MICROSERVICE_NAME}
+        version: "${CANARY_VERSION}"
         tier: cache
     spec:
       containers:
-        - name: redis-server
-          image: CONTAINER_IMAGE
+        - name: ${MICROSERVICE_NAME}
+          image: ${CONTAINER_IMAGE}
           ports:
             - containerPort: 6379
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: yelb
-  name: redis-server # used to provide a DNS entry for yelb-appserver VS
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME} # used to provide a DNS entry for ${MICROSERVICE_NAME} VS
 spec:
   ports:
     - port: 6379

@@ -11,9 +11,9 @@ phases:
   post_build:
     commands:
       - docker push $REPOSITORY
-      - # Update deploy.json with container_image and base64 encoded kubernetes.yml
+      - # Update deploy.json with container_image and base64 encoded kubernetes_template.yml
       - cat specfiles/deploy.json | jq --arg REPOSITORY "$REPOSITORY" '. + {"container_image":$REPOSITORY}' > tmp.json && mv tmp.json specfiles/deploy.json
-      - cat specfiles/deploy.json | jq --arg CONFIG_FILE "$(base64 specfiles/kubernetes.yml)" '. + {"config_file":$CONFIG_FILE}' > tmp.json && mv tmp.json specfiles/deploy.json
+      - cat specfiles/deploy.json | jq --arg CONFIG_FILE "$(base64 specfiles/kubernetes_template.yml)" '. + {"config_file":$CONFIG_FILE}' > tmp.json && mv tmp.json specfiles/deploy.json
       - cat specfiles/deploy.json
 artifacts:
   files:

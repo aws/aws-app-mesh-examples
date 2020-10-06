@@ -4,6 +4,8 @@ function handler () {
     new_version=$(echo $1 | jq -r '.deployment.new_version | tonumber')
     container_image=$(echo $1 | jq -r '.container_image')
     microservice_name=$(echo $1 | jq -r '.microservice_name')
+    kubernetes_namespace=$(echo $1 | jq -r '.kubernetes_namespace')
+    mesh_name=$(echo $1 | jq -r '.mesh_name')
 
     echo $1 | jq -r '.config_file' | base64 -d > /tmp/deployment.yml
 
@@ -29,11 +31,12 @@ function handler () {
     fi
 
     # Apply configurations to deployment spec
-    sed -i 's@CANARY_VERSION@'"$new_version"'@' /tmp/deployment.yml
-    sed -i 's@CONTAINER_IMAGE@'"$container_image"'@' /tmp/deployment.yml
-    sed -i 's@CANARY_ROUTES@'"$canary_routes"'@' /tmp/deployment.yml
-
-    cat /tmp/deployment.yml
+    sed -i 's@${CANARY_VERSION}@'"$new_version"'@' /tmp/deployment.yml
+    sed -i 's@${CONTAINER_IMAGE}@'"$container_image"'@' /tmp/deployment.yml
+    sed -i 's@${CANARY_ROUTES}@'"$canary_routes"'@' /tmp/deployment.yml
+    sed -i 's@${KUBERNETES_NAMESPACE}@'"$kubernetes_namespace"'@' /tmp/deployment.yml
+    sed -i 's@${MESH_NAME}@'"$mesh_name"'@' /tmp/deployment.yml
+    sed -i 's@${MICROSERVICE_NAME}@'"$microservice_name"'@' /tmp/deployment.yml
 
     # Apply deployment to kubernetes
     kubectl apply -f /tmp/deployment.yml

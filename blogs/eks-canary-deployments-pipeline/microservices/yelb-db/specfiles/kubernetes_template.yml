@@ -3,30 +3,30 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    mesh: yelb
+    mesh: ${MESH_NAME}
     appmesh.k8s.aws/sidecarInjectorWebhook: enabled
-  name: yelb
+  name: ${KUBERNETES_NAMESPACE}
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: Mesh
 metadata:
-  name: yelb
+  name: ${MESH_NAME}
 spec:
   namespaceSelector:
     matchLabels:
-      mesh: yelb
+      mesh: ${MESH_NAME}
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: yelb-db-CANARY_VERSION
-  namespace: yelb
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
+  namespace: ${KUBERNETES_NAMESPACE}
 spec:
-  awsName: yelb-db-CANARY_VERSION-virtual-node
+  awsName: ${MICROSERVICE_NAME}-${CANARY_VERSION}-virtual-node
   podSelector:
     matchLabels:
-      app: yelb-db
-      version: "CANARY_VERSION"
+      app: ${MICROSERVICE_NAME}
+      version: "${CANARY_VERSION}"
   listeners:
     - portMapping:
         port: 5432
@@ -44,45 +44,45 @@ spec:
         path: /dev/stdout
   serviceDiscovery:
     dns:
-      hostname: yelb-db-CANARY_VERSION.yelb.svc.cluster.local
+      hostname: ${MICROSERVICE_NAME}-${CANARY_VERSION}.${KUBERNETES_NAMESPACE}.svc.cluster.local
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
 metadata:
-  namespace: yelb
-  name: yelb-db
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}
 spec:
-  awsName: yelb-db-virtual-router
+  awsName: ${MICROSERVICE_NAME}-virtual-router
   listeners:
     - portMapping:
         port: 5432
         protocol: tcp
   routes:
-    - name: route-to-yelb-db
+    - name: route-to-${MICROSERVICE_NAME}
       tcpRoute:
         action:
-          weightedTargets: [CANARY_ROUTES]
+          weightedTargets: [${CANARY_ROUTES}]
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
 metadata:
-  name: yelb-db
-  namespace: yelb
+  name: ${MICROSERVICE_NAME}
+  namespace: ${KUBERNETES_NAMESPACE}
 spec:
-  awsName: yelb-db
+  awsName: ${MICROSERVICE_NAME}
   provider:
     virtualRouter:
         virtualRouterRef:
-            name: yelb-db
+            name: ${MICROSERVICE_NAME}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: yelb
-  name: yelb-db-CANARY_VERSION
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
   labels:
-    app: yelb-db
-    version: "CANARY_VERSION"
+    app: ${MICROSERVICE_NAME}
+    version: "${CANARY_VERSION}"
     tier: backenddb
 spec:
   type: ClusterIP
@@ -90,40 +90,40 @@ spec:
     - port: 5432
       name: tcp
   selector:
-    app: yelb-db
-    version: "CANARY_VERSION"
+    app: ${MICROSERVICE_NAME}
+    version: "${CANARY_VERSION}"
     tier: backenddb
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: yelb
-  name: yelb-db-CANARY_VERSION
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: yelb-db
-      version: "CANARY_VERSION"
+      app: ${MICROSERVICE_NAME}
+      version: "${CANARY_VERSION}"
       tier: backenddb
   template:
     metadata:
       labels:
-        app: yelb-db
-        version: "CANARY_VERSION"
+        app: ${MICROSERVICE_NAME}
+        version: "${CANARY_VERSION}"
         tier: backenddb
     spec:
       containers:
-        - name: yelb-db
-          image: CONTAINER_IMAGE
+        - name: ${MICROSERVICE_NAME}
+          image: ${CONTAINER_IMAGE}
           ports:
             - containerPort: 5432
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: yelb
-  name: yelb-db # used to provide a DNS entry for yelb-appserver VS
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME} # used to provide a DNS entry for ${MICROSERVICE_NAME} VS
 spec:
   ports:
     - port: 5432

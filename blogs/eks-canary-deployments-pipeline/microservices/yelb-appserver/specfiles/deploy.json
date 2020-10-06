@@ -1,9 +1,10 @@
 {
   "cluster_name": "blogpost",
   "microservice_name": "yelb-appserver",
+  "kubernetes_namespace": "yelb",
+  "mesh_name": "yelb",
   "percentage_step": 10,
   "wait_time": 60,
-  "kubernetes_namespace": "yelb",
   "failure_threshold_value": 0,
   "failure_threshold_time": 300
 }
