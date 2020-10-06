@@ -16,15 +16,18 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     ```
     export AWS_DEFAULT_REGION=us-east-2
     ```
-  - **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-    ```
-    export ENVOY_IMAGE=...
-    ```
+
 - Setup EKS cluster with Fargate support.
   - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
     ```
     eksctl create cluster -f v1beta2/clusterconfig.yaml
     ```
+
+- (Optional) Override the default Helm chart App Mesh Envoy Image version.
+  - If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields, e.g.
+  ```
+  helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=377429403256.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=v1.15.1.0-beta
+  ```
 
 ## Deploy
 1. Clone this repository and navigate to the walkthrough/howto-k8s-fargate folder, all commands will be run from this location
