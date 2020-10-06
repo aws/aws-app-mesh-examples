@@ -12,7 +12,7 @@ function handler () {
 
     # Check if first deployment then apply all traffic to deployed version
     if [ $new_version -eq 1 ]; then
-        canary_deployment='{"virtualNodeRef":{"name":"'$microservice_name'-'$new_version'"},"weight":1}'
+        canary_routes='{"virtualNodeRef":{"name":"'$microservice_name'-'$new_version'"},"weight":1}'
         new_percentage=100
     else
         percentage_step=$(echo $1 | jq -r '.percentage_step | tonumber')
@@ -25,13 +25,13 @@ function handler () {
         fi
         old_percentage=$((100 - $new_percentage))
         old_version=$(($new_version - 1))
-        canary_deployment='{"virtualNodeRef":{"name":"'$microservice_name'-'$new_version'"},"weight":'$new_percentage'},{"virtualNodeRef":{"name":"'$microservice_name'-'$old_version'"},"weight":'$old_percentage'}'
+        canary_routes='{"virtualNodeRef":{"name":"'$microservice_name'-'$new_version'"},"weight":'$new_percentage'},{"virtualNodeRef":{"name":"'$microservice_name'-'$old_version'"},"weight":'$old_percentage'}'
     fi
 
     # Apply configurations to deployment spec
-    sed -i 's@NEW@'"$new_version"'@' /tmp/deployment.yml
+    sed -i 's@CANARY_VERSION@'"$new_version"'@' /tmp/deployment.yml
     sed -i 's@CONTAINER_IMAGE@'"$container_image"'@' /tmp/deployment.yml
-    sed -i 's@CANARY_DEPLOYMENT@'"$canary_deployment"'@' /tmp/deployment.yml
+    sed -i 's@CANARY_ROUTES@'"$canary_routes"'@' /tmp/deployment.yml
 
     cat /tmp/deployment.yml
 
@@ -42,7 +42,7 @@ function handler () {
     echo "Microservice: $microservice_name"
     echo "Container Image: $container_image"
     echo "Deployment Version: $new_version"
-    echo "Traffic Route: $canary_deployment"
+    echo "Traffic Route: $canary_routes"
 
     # Lambda runtime response
     export response=$new_percentage

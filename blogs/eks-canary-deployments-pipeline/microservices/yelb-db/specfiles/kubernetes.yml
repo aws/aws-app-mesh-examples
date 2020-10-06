@@ -19,14 +19,14 @@ spec:
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: yelb-db-NEW
+  name: yelb-db-CANARY_VERSION
   namespace: yelb
 spec:
-  awsName: yelb-db-NEW-virtual-node
+  awsName: yelb-db-CANARY_VERSION-virtual-node
   podSelector:
     matchLabels:
       app: yelb-db
-      version: "NEW"
+      version: "CANARY_VERSION"
   listeners:
     - portMapping:
         port: 5432
@@ -44,7 +44,7 @@ spec:
         path: /dev/stdout
   serviceDiscovery:
     dns:
-      hostname: yelb-db-NEW.yelb.svc.cluster.local
+      hostname: yelb-db-CANARY_VERSION.yelb.svc.cluster.local
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
@@ -61,7 +61,7 @@ spec:
     - name: route-to-yelb-db
       tcpRoute:
         action:
-          weightedTargets: [CANARY_DEPLOYMENT]
+          weightedTargets: [CANARY_ROUTES]
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
@@ -79,10 +79,10 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: yelb
-  name: yelb-db-NEW
+  name: yelb-db-CANARY_VERSION
   labels:
     app: yelb-db
-    version: "NEW"
+    version: "CANARY_VERSION"
     tier: backenddb
 spec:
   type: ClusterIP
@@ -91,26 +91,26 @@ spec:
       name: tcp
   selector:
     app: yelb-db
-    version: "NEW"
+    version: "CANARY_VERSION"
     tier: backenddb
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: yelb
-  name: yelb-db-NEW
+  name: yelb-db-CANARY_VERSION
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: yelb-db
-      version: "NEW"
+      version: "CANARY_VERSION"
       tier: backenddb
   template:
     metadata:
       labels:
         app: yelb-db
-        version: "NEW"
+        version: "CANARY_VERSION"
         tier: backenddb
     spec:
       containers:

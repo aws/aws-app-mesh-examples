@@ -19,14 +19,14 @@ spec:
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: redis-server-NEW
+  name: redis-server-CANARY_VERSION
   namespace: yelb
 spec:
-  awsName: redis-server-NEW-virtual-node
+  awsName: redis-server-CANARY_VERSION-virtual-node
   podSelector:
     matchLabels:
       app: redis-server
-      version: "NEW"
+      version: "CANARY_VERSION"
   listeners:
     - portMapping:
         port: 6379
@@ -44,7 +44,7 @@ spec:
         path: /dev/stdout
   serviceDiscovery:
     dns:
-      hostname: redis-server-NEW.yelb.svc.cluster.local
+      hostname: redis-server-CANARY_VERSION.yelb.svc.cluster.local
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
@@ -63,7 +63,7 @@ spec:
         match:
           prefix: /
         action:
-          weightedTargets: [CANARY_DEPLOYMENT]
+          weightedTargets: [CANARY_ROUTES]
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
@@ -81,10 +81,10 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: yelb
-  name: redis-server-NEW
+  name: redis-server-CANARY_VERSION
   labels:
     app: redis-server
-    version: "NEW"
+    version: "CANARY_VERSION"
     tier: cache
 spec:
   type: ClusterIP
@@ -93,26 +93,26 @@ spec:
       name: tcp
   selector:
     app: redis-server
-    version: "NEW"
+    version: "CANARY_VERSION"
     tier: cache
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: yelb
-  name: redis-server-NEW
+  name: redis-server-CANARY_VERSION
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: redis-server
-      version: "NEW"
+      version: "CANARY_VERSION"
       tier: cache
   template:
     metadata:
       labels:
         app: redis-server
-        version: "NEW"
+        version: "CANARY_VERSION"
         tier: cache
     spec:
       containers:

@@ -19,14 +19,14 @@ spec:
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: yelb-appserver-NEW
+  name: yelb-appserver-CANARY_VERSION
   namespace: yelb
 spec:
-  awsName: yelb-appserver-NEW-virtual-node
+  awsName: yelb-appserver-CANARY_VERSION-virtual-node
   podSelector:
     matchLabels:
       app: yelb-appserver
-      version: "NEW"
+      version: "CANARY_VERSION"
   listeners:
     - portMapping:
         port: 4567
@@ -45,7 +45,7 @@ spec:
         path: /dev/stdout
   serviceDiscovery:
     dns:
-      hostname: yelb-appserver-NEW.yelb.svc.cluster.local
+      hostname: yelb-appserver-CANARY_VERSION.yelb.svc.cluster.local
   backends:
     - virtualService:
        virtualServiceRef:
@@ -71,7 +71,7 @@ spec:
         match:
           prefix: /
         action:
-          weightedTargets: [CANARY_DEPLOYMENT]
+          weightedTargets: [CANARY_ROUTES]
         retryPolicy:
             maxRetries: 2
             perRetryTimeout:
@@ -98,10 +98,10 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: yelb
-  name: yelb-appserver-NEW
+  name: yelb-appserver-CANARY_VERSION
   labels:
     app: yelb-appserver
-    version: "NEW"
+    version: "CANARY_VERSION"
     tier: middletier
 spec:
   type: ClusterIP
@@ -110,26 +110,26 @@ spec:
       name: http
   selector:
     app: yelb-appserver
-    version: "NEW"
+    version: "CANARY_VERSION"
     tier: middletier
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: yelb
-  name: yelb-appserver-NEW
+  name: yelb-appserver-CANARY_VERSION
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: yelb-appserver
-      version: "NEW"
+      version: "CANARY_VERSION"
       tier: middletier
   template:
     metadata:
       labels:
         app: yelb-appserver
-        version: "NEW"
+        version: "CANARY_VERSION"
         tier: middletier
     spec:
       containers:
