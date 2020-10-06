@@ -23,15 +23,16 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
     export AWS_DEFAULT_REGION=us-west-2
 
-4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-
-    export ENVOY_IMAGE=...
+4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields, e.g.
+    ```
+    helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=v1.15.0.0-prod
+    ```
 
 5. Deploy
     ```.
     ./deploy.sh
 ```
-   
+
 ## Using curl to test
 
 Add a curler to the namespace howto-k8s-http-headers on your cluster -
