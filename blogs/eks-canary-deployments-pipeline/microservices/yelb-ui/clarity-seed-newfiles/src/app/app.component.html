@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Yelb</title>
+</head>
+<body>
+    <div class="main-container">
+        <header class="header">
+            <div class="branding">
+                <a href="javascript://">
+                    <clr-icon shape="user"></clr-icon>
+                    <span class="title">Yelb</span>
+                </a>
+            </div>
+        </header>
+
+        <div class="content-container">
+            <div class="content-area">
+                <div class="center">
+                    <h2 class="aligned-center">Welcome to Yelb, the only hub for healthy food recommendations!</h2>
+<!--                    <p class="aligned-center">The only hub for healthy food recommendations. We will take care of your diet!</p> -->
+
+                    <div class="separator"></div>
+
+                    <div class="row">
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <clr-icon shape="grid-view" dir="up" class="-color6" size="24" style="color: #374E61; width: 24px; height: 24px;"></clr-icon> IHOP
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="http://www.ihop.com/" target="_blank"><b>Pancakes</b>, for a powerful start!</a>
+                                    </li>
+                                </ul>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary" (click)='vote("ihop")'>Vote</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <clr-icon shape="cloud" dir="up" class="-color6" size="24" style="color: #d20059; width: 24px; height: 24px;"></clr-icon> Chipotle
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="https://www.chipotle.com/" target="_blank"><b>Burritos</b>, for a mid-day break!</a>
+                                    </li>
+                                </ul>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary" (click)='vote("chipotle")'>Vote</button>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <clr-icon shape="compass" dir="up" class="-color6" size="24" style="color: #00A98C; width: 24px; height: 24px;"></clr-icon> Outback
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="https://www.outback.com/" target="_blank"><b>Blooming onion</b>, what else?</a>
+                                    </li>
+                                </ul>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary" (click)='vote("outback")'>Vote</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <clr-icon shape="dollar-bill" dir="up" class="-color6" size="24" style="color: #318700; width: 24px; height: 24px;"></clr-icon> Buca di Beppo
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="http://www.bucadibeppo.com/" target="_blank"><b>Lasagne</b>, this is heaven!</a>
+                                    </li>
+                                </ul>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary" (click)='vote("bucadibeppo")'>Vote</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="spacer"></div>
+ 
+
+<div class="row flex-items-xs-middle">
+    <div class="col-xs">
+    </div>
+    <div class="col-xs">
+        <ngx-charts-advanced-pie-chart [view]="view" [scheme]="colorScheme" [results]="votes" [gradient]="gradient">
+        </ngx-charts-advanced-pie-chart>
+    </div>
+    <div class="col-xs">
+    </div>
+</div>
+
+
+
+              <div class="row flex-items-xs-middle">
+
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                            <div class="card">
+                                
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a target="_blank">Number of page views so far: <b><u>{{stats.pageviews}}</u></b></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                            <div class="card">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a target="_blank">App Server: <b><u>{{stats.hostname}}</u></b></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+              </div>          
+
+                    <div class="spacer"></div>
+
+<!--
+                    <div class="label label-blue label-success">
+                        Number of page views
+                        <span class="badge"><%= @pageviews %></span>
+                    </div>
+
+                    <div class="label label-orange label-success">
+                        Container hostname
+                        <span class="badge"><%= @hostname %></span>
+                    </div>
+-->
+
+                    <div class="separator"></div>
+
+                    <div class="row">
+
+                        <div style="width: 100%; margin-left: 0px; margin-right: 0px;">
+                            <h3 class="aligned-left" style="display: block;">Common Cloud Experiences Patterns and Libraries</h3>
+                        </div>
+
+
+                        <div class="col-sm-12 col-md-6 col-xl-3">
+                                <a href="http://clarity.design" class="card clickable" target="_blank">
+                                    <div class="card-block">
+                                        <p class="card-text">
+                                            <img src="https://vmware.github.io/clarity/clarity_logo.21dda15557a6ebf26fce.svg" style="width: 24px; margin-right: 12px;">Clarity Design System
+                                        </p>
+                                    </div>
+                                </a>
+                        </div>
+
+                        
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
