@@ -1,21 +1,4 @@
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    mesh: ${MESH_NAME}
-    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
-  name: ${KUBERNETES_NAMESPACE}
----
-apiVersion: appmesh.k8s.aws/v1beta2
-kind: Mesh
-metadata:
-  name: ${MESH_NAME}
-spec:
-  namespaceSelector:
-    matchLabels:
-      mesh: ${MESH_NAME}
----
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:

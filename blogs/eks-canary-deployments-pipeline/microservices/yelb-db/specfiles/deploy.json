@@ -2,7 +2,6 @@
   "cluster_name": "blogpost",
   "microservice_name": "yelb-db",
   "kubernetes_namespace": "yelb",
-  "mesh_name": "yelb",
   "percentage_step": 25,
   "wait_time": 60,
   "failure_threshold_value": 5,

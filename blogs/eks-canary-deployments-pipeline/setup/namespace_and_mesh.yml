@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    mesh: ${MESH}
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+  name: ${NAMESPACE}
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: ${MESH}
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: ${MESH}
