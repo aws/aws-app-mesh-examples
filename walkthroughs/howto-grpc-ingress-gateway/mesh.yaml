@@ -1,0 +1,74 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+Resources:
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Sub '${ProjectName}-mesh'
+
+  ColorServerNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: color_server
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: grpc
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 3
+            Port: 8080
+            Protocol: grpc
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: color_server
+
+  VirtualService:
+    DependsOn:
+    - ColorServerNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: !Sub 'color_server.${ProjectName}.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: color_server
+
+  VirtualGateway:
+    DependsOn:
+    - VirtualService
+    Type: AWS::AppMesh::VirtualGateway
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualGatewayName: color_gateway
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 8080
+            Protocol: grpc
+
+  GatewayRoute:
+    DependsOn:
+    - VirtualGateway
+    Type: AWS::AppMesh::GatewayRoute
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualGatewayName: color_gateway
+      GatewayRouteName: gateway_route
+      Spec:
+        GrpcRoute:
+          Action:
+            Target:
+              VirtualService:
+                VirtualServiceName: !Sub 'color_server.${ProjectName}.local'
+          Match:
+            ServiceName: 'color.ColorService'

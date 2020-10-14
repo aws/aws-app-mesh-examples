@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package color;
+
+service ColorService {
+  rpc GetColor (GetColorRequest) returns (GetColorResponse) {}
+  rpc SetColor (SetColorRequest) returns (SetColorResponse) {}
+  rpc GetFlakiness (GetFlakinessRequest) returns (GetFlakinessResponse) {}
+  rpc SetFlakiness (SetFlakinessRequest) returns (SetFlakinessResponse) {}
+}
+
+enum Color {
+  NO_COLOR = 0;
+  RED = 1;
+  BLUE = 2;
+  GREEN = 3;
+  YELLOW = 4;
+  ORANGE = 5;
+  PURPLE = 6;
+  PINK = 7;
+  BLACK = 8;
+  WHITE = 9;
+}
+
+message GetColorRequest {}
+
+message GetColorResponse {
+  Color color = 1;
+}
+
+message SetColorRequest {
+  Color color = 1;
+}
+
+message SetColorResponse {
+  Color color = 1;
+}
+
+message Flakiness {
+  float rate = 1;
+  int32 code = 2;
+}
+
+message GetFlakinessRequest {}
+
+message GetFlakinessResponse {
+  Flakiness flakiness = 1;
+}
+
+message SetFlakinessRequest {
+  Flakiness flakiness = 1;
+}
+
+message SetFlakinessResponse {
+  Flakiness flakiness = 1;
+}
