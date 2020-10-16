@@ -1,0 +1,63 @@
+Parameters:
+  MeshName:
+    Type: String
+    Description: Name of the Mesh
+    Default: yelb
+
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+    Default: am-ecs-multi-account
+
+Resources:
+  DatabaseNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref MeshName
+      VirtualNodeName: yelb-db-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 5432
+              Protocol: tcp
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "yelb-db.${ProjectName}.local"
+
+  DatabaseService:
+    DependsOn:
+      - DatabaseNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !Ref MeshName
+      VirtualServiceName: yelb-db
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: yelb-db-vn
+
+  RedisNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref MeshName
+      VirtualNodeName: redis-server-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 6379
+              Protocol: tcp
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "redis-server.${ProjectName}.local"
+
+  RedisService:
+    DependsOn:
+      - RedisNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !Ref MeshName
+      VirtualServiceName: redis-server
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: redis-server-vn
