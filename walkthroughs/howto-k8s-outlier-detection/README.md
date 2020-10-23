@@ -3,7 +3,7 @@
 
 In this walkthrough, we'll demonstrate the use of outlier detection in AWS App Mesh with EKS.
 
-Outlier detection is a form of passive health check that temporarily ejects an endpoint/host of a given service (represented by a Virtual Node) from the load balancing set when it meets failure threshold (hence considered an *outlier*). Outlier detection is support as configuration in Virtual Nodes listeners.
+Outlier detection is a form of passive health check that temporarily ejects an endpoint/host of a given service (represented by a Virtual Node) from the load balancing set when it meets failure threshold (hence considered an *outlier*). Outlier detection is supported as configuration in Virtual Nodes listeners.
 
 ## Prerequisites
 This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided the `us-west-2` region.
@@ -351,6 +351,22 @@ Error Set:
 ```
 
 The request above was made while the host `c87a6e70-c9a2-4343-a453-81808bec9d2d` was ejected and we got 100% successful responses.
+
+Wait for the ejection duration to pass and generate traffic again. You will see the faulty host is back in the cluster until ejected again:
+
+```
+echo "GET http://front.howto-k8s-outlier-detection:8080/color/get" | vegeta attack -duration=4s | tee results.bin | vegeta report
+
+Requests      [total, rate, throughput]         200, 50.25, 48.98
+Duration      [total, attack, wait]             3.982s, 3.98s, 1.657ms
+Latencies     [min, mean, 50, 90, 95, 99, max]  1.42ms, 1.794ms, 1.766ms, 1.969ms, 2.019ms, 2.78ms, 5.082ms
+Bytes In      [total, mean]                     1435, 7.17
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           97.50%
+Status Codes  [code:count]                      200:195  500:5
+Error Set:
+500 Internal Server Error
+```
 
 ## Step 4: Cleanup
 
