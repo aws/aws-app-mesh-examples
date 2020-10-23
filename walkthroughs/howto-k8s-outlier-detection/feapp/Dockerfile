@@ -1,9 +1,5 @@
 FROM golang:1 AS builder
 
-#FIXME
-RUN go env -w GOPROXY=direct
-RUN go env -w "GOPRIVATE=*.corp.example.com"
-
 WORKDIR /go/src/github.com/aws/aws-app-mesh-examples/feapp
 
 # go.mod and go.sum go into their own layers.
