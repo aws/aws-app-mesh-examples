@@ -7,7 +7,7 @@ Circuit breaking is a pattern designed to minimize the impact of failures, to pr
 
 
 ## Prerequisites
-This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided the `us-west-2` region.
+This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided in the `us-west-2` region.
 
 1. [Walkthrough: App Mesh with EKS](../eks/)
 2. Run the following to check the version of controller you are running.
