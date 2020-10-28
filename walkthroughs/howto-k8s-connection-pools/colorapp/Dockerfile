@@ -6,14 +6,13 @@ WORKDIR /go/src/github.com/aws/aws-app-mesh-examples/colorapp
 # This ensures `go mod download` happens only when go.mod and go.sum change.
 COPY go.mod .
 COPY go.sum .
-
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -o /aws-app-mesh-examples-colorapp .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -o /src/colorteller .
 
 FROM amazonlinux:2
 RUN yum install -y ca-certificates
-COPY --from=builder /aws-app-mesh-examples-colorapp bin/aws-app-mesh-examples-colorapp
+COPY --from=builder /src/colorteller /src/colorteller
 
-ENTRYPOINT ["/bin/aws-app-mesh-examples-colorapp"]
+ENTRYPOINT ["/src/colorteller"]
