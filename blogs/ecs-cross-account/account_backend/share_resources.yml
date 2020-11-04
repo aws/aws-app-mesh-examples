@@ -1,0 +1,50 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+    Default: am-ecs-multi-account
+
+  ConsumerAccountId:
+    Type: String
+    Description: Account ID to share resources with
+
+  MeshName:
+    Type: String
+    Description: Name of the Mesh
+    Default: yelb
+
+Resources:
+  MeshShare:
+    Type: AWS::RAM::ResourceShare
+    Properties:
+      AllowExternalPrincipals: true
+      Name: mesh-share
+      Principals:
+        - !Ref ConsumerAccountId
+      ResourceArns:
+        - !Sub "arn:aws:appmesh:${AWS::Region}:${AWS::AccountId}:mesh/${MeshName}"
+
+  SubnetResourceShare:
+    Type: AWS::RAM::ResourceShare
+    Properties:
+      AllowExternalPrincipals: true
+      Name: vpc-share
+      Principals:
+        - !Ref ConsumerAccountId
+      ResourceArns:
+        - Fn::Join:
+            - "/"
+            - - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet"
+              - Fn::ImportValue: !Sub "${ProjectName}:PrivateSubnet1"
+        - Fn::Join:
+            - "/"
+            - - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet"
+              - Fn::ImportValue: !Sub "${ProjectName}:PrivateSubnet2"
+        - Fn::Join:
+            - "/"
+            - - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet"
+              - Fn::ImportValue: !Sub "${ProjectName}:PublicSubnet1"
+        - Fn::Join:
+            - "/"
+            - - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:subnet"
+              - Fn::ImportValue: !Sub "${ProjectName}:PublicSubnet2"
