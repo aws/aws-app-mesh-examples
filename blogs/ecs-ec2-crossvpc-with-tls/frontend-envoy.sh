@@ -116,3 +116,16 @@ aws ssm create-document \
   --document-format YAML \
   --content file:///tmp/install_envoy.yml \
   --document-type Command
+AUTOSCALING_GROUP=$(jq < cfn-crystal.json -r '.RubyAutoScalingGroupName');
+# Create the association with the frontend EC2 instances
+aws ssm create-association \
+  --name appmesh-workshop-installenvoy \
+  --association-name appmesh-workshop-state \
+  --targets "Key=tag:aws:autoscaling:groupName,Values=$AUTOSCALING_GROUP" \
+  --max-errors 0 \
+  --max-concurrency 50% \
+  --parameters \
+      "region=$AWS_REGION,
+        meshName=appmesh-workshop,
+        vNodeName=frontend,
+        appPorts=3000"
