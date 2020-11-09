@@ -879,6 +879,8 @@ Outputs:
   ExternalLoadBalancerDNS:
     Description: The DNS for the external load balancer
     Value: !GetAtt ExternalLoadBalancer.DNSName
+    Export:
+      Name: EXTLB
   VpcId:
     Value: !Ref VPC
     Export: 
