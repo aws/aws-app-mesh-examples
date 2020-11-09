@@ -7,24 +7,16 @@ Circuit breaking is a pattern designed to minimize the impact of failures, to pr
 
 
 ## Prerequisites
-This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided in the `us-west-2` region.
 
 1. [Walkthrough: App Mesh with EKS](../eks/)
 2. Run the following to check the version of controller you are running.
 ```
 kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.2.0-preview
+v1.2.0
 ```
 
-3. [Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
-```
-aws configure add-model \
-    --service-name appmesh-preview \
-    --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-```
-
-4. Install Docker. `deploy.sh` script builds the demo application images using Docker CLI.
+3. Install Docker. `deploy.sh` script builds the demo application images using Docker CLI.
 
 
 ## Step 1: Setup environment
@@ -51,7 +43,7 @@ Let's deploy the sample applications and mesh with connection pool at virtual ga
                                                                    +-->+  Green  |
                                                                    |   +---------+
 +-----------+       +------------------+      +-----------------+  |
-|  ingress  +------>+  virtualser|ice  +----->+  virtualrouter  +--+
+|  ingress  +------>+  virtualservice  +----->+  virtualrouter  +--+
 +-----------+       +------------------+      +-----------------+  |
                                                                    |   +---------+
                                                                    +-->+   Red   |
@@ -67,17 +59,17 @@ Let's deploy the sample applications and mesh with connection pool at virtual ga
 kubectl get virtualnodes,virtualgateway,virtualrouter,virtualservice,pod -n howto-k8s-connection-pools
 
 NAME                                ARN                                                                                                                           AGE
-virtualnode.appmesh.k8s.aws/green   arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualNode/green_howto-k8s-connection-pools   49m
-virtualnode.appmesh.k8s.aws/red     arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualNode/red_howto-k8s-connection-pools     49m
+virtualnode.appmesh.k8s.aws/green   arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualNode/green_howto-k8s-connection-pools   49m
+virtualnode.appmesh.k8s.aws/red     arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualNode/red_howto-k8s-connection-pools     49m
 
 NAME                                        ARN                                                                                                                                   AGE
-virtualgateway.appmesh.k8s.aws/ingress-gw   arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualGateway/ingress-gw_howto-k8s-connection-pools   49m
+virtualgateway.appmesh.k8s.aws/ingress-gw   arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualGateway/ingress-gw_howto-k8s-connection-pools   49m
 
 NAME                                        ARN                                                                                                                                   AGE
-virtualrouter.appmesh.k8s.aws/color-paths   arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualRouter/color-paths_howto-k8s-connection-pools   49m
+virtualrouter.appmesh.k8s.aws/color-paths   arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualRouter/color-paths_howto-k8s-connection-pools   49m
 
 NAME                                         ARN                                                                                                                                                      AGE
-virtualservice.appmesh.k8s.aws/color-paths   arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualService/color-paths.howto-k8s-connection-pools.svc.cluster.local   49m
+virtualservice.appmesh.k8s.aws/color-paths   arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualService/color-paths.howto-k8s-connection-pools.svc.cluster.local   49m
 
 NAME                              READY   STATUS    RESTARTS   AGE
 pod/green-88f8c9c55-6grxc         2/2     Running   0          49m
@@ -117,13 +109,13 @@ Spec:
 
 Let's check the connection pool configuration in AWS App Mesh
 ```
-aws appmesh-preview describe-virtual-node --virtual-node-name green_howto-k8s-connection-pools --mesh-name howto-k8s-connection-pools
+aws appmesh describe-virtual-node --virtual-node-name green_howto-k8s-connection-pools --mesh-name howto-k8s-connection-pools
 
 {
     "virtualNode": {
         "meshName": "howto-k8s-connection-pools",
         "metadata": {
-            "arn": "arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualNode/green_howto-k8s-connection-pools",
+            "arn": "arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualNode/green_howto-k8s-connection-pools",
             "createdAt": 1603667107.741,
             "lastUpdatedAt": 1603668330.257,
             "meshOwner": "123456789",
@@ -170,13 +162,13 @@ aws appmesh-preview describe-virtual-node --virtual-node-name green_howto-k8s-co
 }
 
 
-aws appmesh-preview describe-virtual-gateway --virtual-gateway-name ingress-gw_howto-k8s-connection-pools --mesh-name howto-k8s-connection-pools
+aws appmesh describe-virtual-gateway --virtual-gateway-name ingress-gw_howto-k8s-connection-pools --mesh-name howto-k8s-connection-pools
 
 {
     "virtualGateway": {
         "meshName": "howto-k8s-connection-pools",
         "metadata": {
-            "arn": "arn:aws:appmesh-preview:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualGateway/ingress-gw_howto-k8s-connection-pools",
+            "arn": "arn:aws:appmesh:us-west-2:123456789:mesh/howto-k8s-connection-pools/virtualGateway/ingress-gw_howto-k8s-connection-pools",
             "createdAt": 1603667107.705,
             "lastUpdatedAt": 1603668330.25,
             "meshOwner": "123456789",
