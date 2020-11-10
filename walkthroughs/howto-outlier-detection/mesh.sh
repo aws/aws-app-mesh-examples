@@ -19,7 +19,7 @@ err() {
     exit ${code}
 }
 
-appmesh_cmd="aws appmesh-preview"
+appmesh_cmd="aws appmesh"
 
 create_mesh() {
     cmd=( $appmesh_cmd create-mesh --mesh-name "${MESH_NAME}" \

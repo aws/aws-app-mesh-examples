@@ -21,29 +21,7 @@ Here are the necessary fields to configure Outlier Detection:
 
 ## Step 1: Prerequisites
 
-We will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
-
-If you are using AWS CLI version 1:
-
-```bash
-
-aws configure add-model \
-
---service-name appmesh-preview \
-
---service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-
-```
-
-If you are using AWS CLI version 2:
-
-```bash
-
-curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-
-aws configure add-model --service-name appmesh-preview --service-model file://service-model.json
-
-```
+You have version 1.18.172 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.0.62 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
 
 To take a closer look at the related Envoy statistics for outlier detection, we will launch and SSH into a bastion host within the same VPC as the mesh to access the Envoy admin endpoint. Therefore we need an EC2 keypair for the bastion instance.
 You can create a keypair using the command below if you don't already have one. Otherwise follow export the key pair name instruction with the name of your key pair.

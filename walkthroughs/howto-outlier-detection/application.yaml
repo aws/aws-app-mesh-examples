@@ -74,7 +74,6 @@ Resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/CloudWatchFullAccess
           - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
-          - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
   
     TaskExecutionIamRole:
       Type: AWS::IAM::Role
@@ -267,8 +266,6 @@ Resources:
                 awslogs-region: !Ref AWS::Region
                 awslogs-stream-prefix: 'feapp-envoy'
             Environment:
-              - Name: 'APPMESH_PREVIEW'
-                Value: '1' 
               - Name: 'APPMESH_RESOURCE_ARN'
                 Value: !Ref FrontNodeName
               - Name: 'ENVOY_LOG_LEVEL'
@@ -347,8 +344,6 @@ Resources:
                 awslogs-region: !Ref AWS::Region
                 awslogs-stream-prefix: 'color-envoy'
             Environment:
-              - Name: 'APPMESH_PREVIEW'
-                Value: '1' 
               - Name: 'APPMESH_VIRTUAL_NODE_NAME'
                 Value: !Ref ColorNodeName
     
