@@ -23,7 +23,7 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 
 4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields, e.g.
     ```
-    helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=v1.15.0.0-prod
+    helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=<VERSION>
     ```
 
 ## Step 2: Generate the certificates and Kubernetes Secrets
