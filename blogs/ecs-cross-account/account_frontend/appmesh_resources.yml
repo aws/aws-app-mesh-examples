@@ -1,0 +1,79 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+    Default: am-ecs-multi-account
+
+  MeshName:
+    Type: String
+    Description: Name of the shared mesh
+    Default: yelb
+
+  MeshOwner:
+    Type: String
+    Description: Account ID of the owner of the mesh
+
+Resources:
+  UINode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref MeshName
+      MeshOwner: !Ref MeshOwner
+      VirtualNodeName: yelb-ui-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 80
+              Protocol: http
+        Backends:
+          - VirtualService:
+              VirtualServiceName: yelb-appserver
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "yelb-ui.green.${ProjectName}.local"
+
+  UIService:
+    DependsOn:
+      - UINode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !Ref MeshName
+      MeshOwner: !Ref MeshOwner
+      VirtualServiceName: yelb-ui
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: yelb-ui-vn
+
+  AppserverNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref MeshName
+      MeshOwner: !Ref MeshOwner
+      VirtualNodeName: yelb-appserver-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 4567
+              Protocol: http
+        Backends:
+          - VirtualService:
+              VirtualServiceName: yelb-db
+          - VirtualService:
+              VirtualServiceName: redis-server
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "yelb-appserver.green.${ProjectName}.local"
+
+  AppserverService:
+    DependsOn:
+      - AppserverNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !Ref MeshName
+      MeshOwner: !Ref MeshOwner
+      VirtualServiceName: yelb-appserver
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: yelb-appserver-vn

@@ -1,0 +1,17 @@
+{
+    "spec": {
+        "http2Route": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "colorteller-black-vn",
+                        "weight": 1
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/tell"
+            }
+        }
+    }
+}

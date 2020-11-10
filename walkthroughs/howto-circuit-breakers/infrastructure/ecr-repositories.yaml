@@ -1,0 +1,21 @@
+Parameters:
+
+  ColorTellerImageName:
+    Description: The name for the color teller image
+    Type: String
+
+  WrkToolImageName:
+    Description: The name for the wrk2 image
+    Type: String
+
+Resources:
+
+  ColorTellerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ColorTellerImageName
+
+  WrkToolRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref WrkToolImageName

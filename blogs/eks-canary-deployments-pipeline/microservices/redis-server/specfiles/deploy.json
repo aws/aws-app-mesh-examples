@@ -1,0 +1,9 @@
+{
+  "cluster_name": "blogpost",
+  "microservice_name": "redis-server",
+  "kubernetes_namespace": "yelb",
+  "percentage_step": 25,
+  "wait_time": 60,
+  "failure_threshold_value": 5,
+  "failure_threshold_time": 300
+}
