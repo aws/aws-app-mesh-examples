@@ -62,7 +62,7 @@ Resources:
             StartPeriod: 10
             Timeout: 2
         - Name: envoy
-          Image: "840364872350.dkr.ecr.eu-west-2.amazonaws.com/aws-appmesh-envoy:v1.11.2.0-prod"
+          Image: "840364872350.dkr.ecr.eu-west-2.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod"
           Essential: true
           User: 1337
           Environment:
