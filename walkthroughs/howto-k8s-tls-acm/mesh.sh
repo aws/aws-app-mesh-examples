@@ -12,11 +12,6 @@ if [ -z $AWS_DEFAULT_REGION ]; then
     exit 1
 fi
 
-if [ -z $ENVOY_IMAGE ]; then
-    echo "ENVOY_IMAGE environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html"
-    exit 1
-fi
-
 action="$1"
 if [ -z "$action" ]; then
     echo "Usage:"
