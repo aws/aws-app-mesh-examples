@@ -28,11 +28,7 @@ v1.1.0
     export AWS_DEFAULT_REGION=us-west-2
 ```
 
-4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields, e.g.
-
-```
-helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=<VERSION>
-```
+4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
 
 5. Deploy
 ```
