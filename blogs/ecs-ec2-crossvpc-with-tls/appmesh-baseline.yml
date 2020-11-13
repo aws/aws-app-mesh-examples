@@ -9,6 +9,10 @@ Parameters:
     Type: String
     Default: AppMesh-Workshop-Admin
 
+  EnvoyImage:
+    Description: App Mesh Envoy container image. See https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+	Type: String 	
+
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
@@ -74,7 +78,7 @@ Resources:
             StartPeriod: 10
             Timeout: 2
         - Name: envoy
-          Image: "840364872350.dkr.ecr.eu-west-2.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod"
+          Image: !Ref EnvoyImage
           Essential: true
           User: 1337
           Environment:
@@ -208,12 +212,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub PublicTwo-${AWS::StackName}
-        - Key: kubernetes.io/role/elb
-          Value: 1
-        - Key: kubernetes.io/cluster/appmesh-workshop
-          Value: shared
-        - Key: kubernetes.io/role/alb-ingress
-          Value: 1
   PublicSubnetThree:
     Type: AWS::EC2::Subnet
     Properties:
@@ -227,13 +225,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub PublicThree-${AWS::StackName}
-        - Key: kubernetes.io/role/elb
-          Value: 1
-        - Key: kubernetes.io/cluster/appmesh-workshop
-          Value: shared
-        - Key: kubernetes.io/role/alb-ingress
-          Value: 1
-
+        
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
@@ -246,12 +238,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub PrivateOne-${AWS::StackName}
-        - Key: kubernetes.io/role/internal-elb
-          Value: 1
-        - Key: kubernetes.io/cluster/appmesh-workshop
-          Value: shared
-        - Key: kubernetes.io/role/alb-ingress
-          Value: 1
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
@@ -264,12 +250,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub PrivateTwo-${AWS::StackName}
-        - Key: kubernetes.io/role/internal-elb
-          Value: 1
-        - Key: kubernetes.io/cluster/appmesh-workshop
-          Value: shared
-        - Key: kubernetes.io/role/alb-ingress
-          Value: 1
   PrivateSubnetThree:
     Type: AWS::EC2::Subnet
     Properties:
@@ -282,12 +262,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub PrivateThree-${AWS::StackName}
-        - Key: kubernetes.io/role/internal-elb
-          Value: 1
-        - Key: kubernetes.io/cluster/appmesh-workshop
-          Value: shared
-        - Key: kubernetes.io/role/alb-ingress
-          Value: 1
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
