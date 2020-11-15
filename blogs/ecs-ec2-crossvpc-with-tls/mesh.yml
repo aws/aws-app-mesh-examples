@@ -6,9 +6,6 @@ Resources:
     Type: "AWS::AppMesh::Mesh"
     Properties:  
       MeshName: "appmesh-workshop"
-      Spec:
-        EgressFilter:
-          Type: "DROP_ALL"
   CrystalVirtualNode:
     Type: "AWS::AppMesh::VirtualNode"
     Properties:
@@ -43,7 +40,7 @@ Resources:
               Port: 3000
               Protocol: http
             TLS:
-              Mode: PERMISSIVE
+              Mode: STRICT
               Certificate:
                 ACM:
                   CertificateArn: !ImportValue AppMeshCert
@@ -90,7 +87,7 @@ Resources:
               Port: 3000
               Protocol: http
             TLS:
-              Mode: PERMISSIVE
+              Mode: STRICT
               Certificate:
                 ACM:
                   CertificateArn: !ImportValue AppMeshCert
@@ -142,7 +139,7 @@ Resources:
               Port: 3000
               Protocol: http
             TLS:
-              Mode: PERMISSIVE
+              Mode: STRICT
               Certificate:
                 ACM:
                   CertificateArn: !ImportValue AppMeshCert
