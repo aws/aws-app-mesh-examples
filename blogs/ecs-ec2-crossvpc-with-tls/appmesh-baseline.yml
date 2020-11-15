@@ -11,7 +11,7 @@ Parameters:
 
   EnvoyImage:
     Description: App Mesh Envoy container image. See https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-	Type: String 	
+      Type: String 
 
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
@@ -515,7 +515,6 @@ Resources:
         - Effect: Allow
           Principal:
             Service:
-            - ecs.amazonaws.com
             - ecs-tasks.amazonaws.com
           Action:
           - sts:AssumeRole
@@ -567,13 +566,6 @@ Resources:
             Statement:
             - Effect: Allow
               Action:
-                - 'ecr:GetAuthorizationToken'
-                - 'ecr:BatchCheckLayerAvailability'
-                - 'ecr:GetDownloadUrlForLayer'
-                - 'ecr:BatchGetImage'
-                - 'logs:CreateLogStream'
-                - 'logs:CreateLogGroup'
-                - 'logs:PutLogEvents'
                 - 'appmesh:StreamAggregatedResources'
                 - 'acm:ExportCertificate'
                 - 'acm-pca:GetCertificateAuthorityCertificate'
