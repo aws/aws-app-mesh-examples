@@ -13,6 +13,10 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
 
+  EnvoyImage:
+    Description: App Mesh Envoy container image. See https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+      Type: String
+
 Mappings:
 
   SubnetConfig:
@@ -62,7 +66,7 @@ Resources:
             StartPeriod: 10
             Timeout: 2
         - Name: envoy
-          Image: "840364872350.dkr.ecr.eu-west-2.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod"
+          Image: !Ref EnvoyImage
           Essential: true
           User: 1337
           Environment:
@@ -476,7 +480,6 @@ Resources:
         - Effect: Allow
           Principal:
             Service:
-            - ecs.amazonaws.com
             - ecs-tasks.amazonaws.com
           Action:
           - sts:AssumeRole
@@ -528,13 +531,6 @@ Resources:
             Statement:
             - Effect: Allow
               Action:
-                - 'ecr:GetAuthorizationToken'
-                - 'ecr:BatchCheckLayerAvailability'
-                - 'ecr:GetDownloadUrlForLayer'
-                - 'ecr:BatchGetImage'
-                - 'logs:CreateLogStream'
-                - 'logs:CreateLogGroup'
-                - 'logs:PutLogEvents'
                 - 'appmesh:StreamAggregatedResources'
                 - 'acm:ExportCertificate'
                 - 'acm-pca:GetCertificateAuthorityCertificate'
