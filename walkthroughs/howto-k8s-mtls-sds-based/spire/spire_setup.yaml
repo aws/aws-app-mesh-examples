@@ -1,0 +1,311 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spire
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-server
+  namespace: spire
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-agent
+  namespace: spire
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-trust-role
+rules:
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["patch", "get", "list"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-trust-role-binding
+subjects:
+- kind: ServiceAccount
+  name: spire-server
+  namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-server-trust-role
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-agent-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["pods","nodes","nodes/proxy"]
+  verbs: ["get"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-agent-cluster-role-binding
+subjects:
+- kind: ServiceAccount
+  name: spire-agent
+  namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-agent-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-bundle
+  namespace: spire
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-server
+  namespace: spire
+data:
+  server.conf: |
+    server {
+      bind_address = "0.0.0.0"
+      bind_port = "8081"
+      registration_uds_path = "/tmp/spire-registration.sock"
+      trust_domain = "howto-k8s-mtls-sds-based.com"
+      data_dir = "/run/spire/data"
+      log_level = "DEBUG"
+      #AWS requires the use of RSA.  EC cryptography is not supported
+      ca_key_type = "rsa-2048"
+
+      default_svid_ttl = "1h"
+      ca_subject = {
+        country = ["US"],
+        organization = ["SPIFFE"],
+        common_name = "",
+      }
+    }
+
+    plugins {
+      DataStore "sql" {
+        plugin_data {
+          database_type = "sqlite3"
+          connection_string = "/run/spire/data/datastore.sqlite3"
+        }
+      }
+
+      NodeAttestor "k8s_sat" {
+        plugin_data {
+          clusters = {
+            # NOTE: Change this to your cluster name
+            "demo-cluster" = {
+              use_token_review_api_validation = true
+              service_account_whitelist = ["spire:spire-agent"]
+            }
+          }
+        }
+      }
+
+      NodeResolver "noop" {
+        plugin_data {}
+      }
+
+      KeyManager "disk" {
+        plugin_data {
+          keys_path = "/run/spire/data/keys.json"
+        }
+      }
+
+      Notifier "k8sbundle" {
+        plugin_data {
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spire-server
+  namespace: spire
+  labels:
+    app: spire-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-server
+  serviceName: spire-server
+  template:
+    metadata:
+      namespace: spire
+      labels:
+        app: spire-server
+    spec:
+      serviceAccountName: spire-server
+      containers:
+        - name: spire-server
+          image: gcr.io/spiffe-io/spire-server:0.10.0
+          args:
+            - -config
+            - /run/spire/config/server.conf
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-data
+              mountPath: /run/spire/data
+              readOnly: false
+          livenessProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-server
+                - healthcheck
+            failureThreshold: 2
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 3
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-server
+  volumeClaimTemplates:
+    - metadata:
+        name: spire-data
+        namespace: spire
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-server
+  namespace: spire
+spec:
+  type: NodePort
+  ports:
+    - name: grpc
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+  selector:
+    app: spire-server
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-agent
+  namespace: spire
+data:
+  agent.conf: |
+    agent {
+      data_dir = "/run/spire"
+      log_level = "DEBUG"
+      server_address = "spire-server"
+      server_port = "8081"
+      socket_path = "/run/spire/sockets/agent.sock"
+      trust_bundle_path = "/run/spire/bundle/bundle.crt"
+      trust_domain = "howto-k8s-mtls-sds-based.com"
+      enable_sds = true
+    }
+
+    plugins {
+      NodeAttestor "k8s_sat" {
+        plugin_data {
+          # NOTE: Change this to your cluster name
+          cluster = "demo-cluster"
+        }
+      }
+
+      KeyManager "memory" {
+        plugin_data {
+        }
+      }
+
+      WorkloadAttestor "k8s" {
+        plugin_data {
+          # Defaults to the secure kubelet port by default.
+          skip_kubelet_verification = true
+        }
+      }
+
+      WorkloadAttestor "unix" {
+          plugin_data {
+          }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spire-agent
+  namespace: spire
+  labels:
+    app: spire-agent
+spec:
+  selector:
+    matchLabels:
+      app: spire-agent
+  template:
+    metadata:
+      namespace: spire
+      labels:
+        app: spire-agent
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: spire-agent
+      initContainers:
+        - name: init
+          image: gcr.io/spiffe-io/wait-for-it
+          args: ["-t", "30", "spire-server:8081"]
+      containers:
+        - name: spire-agent
+          image: gcr.io/spiffe-io/spire-agent:0.10.0
+          args: ["-config", "/run/spire/config/agent.conf"]
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-bundle
+              mountPath: /run/spire/bundle
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+              readOnly: false
+          livenessProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-agent
+                - healthcheck
+                - -socketPath
+                - /run/spire/sockets/agent.sock
+            failureThreshold: 2
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 3
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-agent
+        - name: spire-bundle
+          configMap:
+            name: spire-bundle
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate
