@@ -4,6 +4,8 @@ cat <<-"EOF" > /tmp/install_envoy.yml
 schemaVersion: '2.2'
 description: Install Envoy Proxy
 parameters: 
+  envoyimage:
+    type: String
   region:
     type: String
   meshName:
@@ -50,7 +52,7 @@ mainSteps:
           --log-opt awslogs-group=appmesh-workshop-frontend-envoy \
           --log-opt tag=ec2/envoy/{{.FullID}} \
           -u {{ignoredUID}} --network host \
-          840364872350.dkr.ecr.{{region}}.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod
+          {{envoyimage}}
 - action: aws:runShellScript
   name: installXRay
   inputs:
@@ -128,4 +130,5 @@ aws ssm create-association \
       "region=$AWS_REGION,
         meshName=appmesh-workshop,
         vNodeName=frontend,
+        envoyimage=840364872350.dkr.ecr.$AWS_REGION.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod,
         appPorts=3000"
