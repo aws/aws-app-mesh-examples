@@ -130,5 +130,5 @@ aws ssm create-association \
       "region=$AWS_REGION,
         meshName=appmesh-workshop,
         vNodeName=frontend,
-        envoyimage=840364872350.dkr.ecr.$AWS_REGION.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod,
+        envoyimage=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>,
         appPorts=3000"
