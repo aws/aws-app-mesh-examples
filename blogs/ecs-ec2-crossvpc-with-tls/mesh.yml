@@ -139,7 +139,7 @@ Resources:
               Port: 3000
               Protocol: http
             TLS:
-              Mode: STRICT
+              Mode: PERMISSIVE
               Certificate:
                 ACM:
                   CertificateArn: !ImportValue AppMeshCert
