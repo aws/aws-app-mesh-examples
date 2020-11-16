@@ -155,14 +155,14 @@ Resources:
       TargetType: instance
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /health
-      HealthCheckProtocol: HTTP
+      HealthCheckProtocol: HTTPS
       HealthCheckTimeoutSeconds: 5      
       HealthyThresholdCount: 2
       Matcher:
         HttpCode: 200-299      
       UnhealthyThresholdCount: 10
       Port: 3000
-      Protocol: HTTP
+      Protocol: HTTPS
       VpcId: !Ref VPC
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
