@@ -1,0 +1,155 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: This stack deploys the AppMesh resources
+Resources:
+  AppMesh:
+    Type: "AWS::AppMesh::Mesh"
+    Properties:  
+      MeshName: "appmesh-workshop"
+  CrystalVirtualNode:
+    Type: "AWS::AppMesh::VirtualNode"
+    Properties:
+      VirtualNodeName: "crystal-lb-vanilla"
+      MeshName: !GetAtt AppMesh.MeshName
+      Spec:
+        ServiceDiscovery:
+          DNS:
+            Hostname: "crystal.appmeshworkshop.hosted.local"
+        BackendDefaults:
+          ClientPolicy:
+            TLS:
+              Validation:
+                Trust:
+                  ACM:
+                    CertificateAuthorityArns:
+                      - !ImportValue RootCA
+        Logging:
+          AccessLog:
+            File:
+              Path: "/dev/stdout"
+        Listeners:
+          - HealthCheck:
+              HealthyThreshold: 3
+              IntervalMillis: 10000
+              Path: /health
+              Port: 3000
+              Protocol: http
+              UnhealthyThreshold: 3
+              TimeoutMillis: 5000
+            PortMapping:
+              Port: 3000
+              Protocol: http
+            TLS:
+              Mode: STRICT
+              Certificate:
+                ACM:
+                  CertificateArn: !ImportValue AppMeshCert
+  CrystalVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt AppMesh.MeshName
+      VirtualServiceName: "crystal.appmeshworkshop.hosted.local"
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: !GetAtt CrystalVirtualNode.VirtualNodeName
+  NodejsVirtualNode:
+    Type: "AWS::AppMesh::VirtualNode"
+    Properties:
+      VirtualNodeName: "nodejs-lb-strawberry"
+      MeshName: !GetAtt AppMesh.MeshName
+      Spec:
+        ServiceDiscovery:
+          DNS:
+            Hostname: "nodejs.appmeshworkshop.hosted.local"
+        BackendDefaults:
+          ClientPolicy:
+            TLS:
+              Validation:
+                Trust:
+                  ACM:
+                    CertificateAuthorityArns:
+                      - !ImportValue RootCA
+        Logging:
+          AccessLog:
+            File:
+              Path: "/dev/stdout"
+        Listeners:
+          - HealthCheck:
+              HealthyThreshold: 3
+              IntervalMillis: 10000
+              Path: /health
+              Port: 3000
+              Protocol: http
+              UnhealthyThreshold: 3
+              TimeoutMillis: 5000
+            PortMapping:
+              Port: 3000
+              Protocol: http
+            TLS:
+              Mode: STRICT
+              Certificate:
+                ACM:
+                  CertificateArn: !ImportValue AppMeshCert
+  NodejsVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt AppMesh.MeshName
+      VirtualServiceName: "nodejs.appmeshworkshop.hosted.local"
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: !GetAtt NodejsVirtualNode.VirtualNodeName
+  FrontendVirtualNode:
+    Type: "AWS::AppMesh::VirtualNode"
+    Properties:
+      VirtualNodeName: "frontend"
+      MeshName: !GetAtt AppMesh.MeshName
+      Spec:
+        ServiceDiscovery:
+          DNS:
+            Hostname: !ImportValue EXTLB
+        BackendDefaults:
+          ClientPolicy:
+            TLS:
+              Validation:
+                Trust:
+                  ACM:
+                    CertificateAuthorityArns:
+                      - !ImportValue RootCA
+        Backends:
+          - VirtualService:
+              VirtualServiceName: "crystal.appmeshworkshop.hosted.local"
+          - VirtualService:
+              VirtualServiceName: "nodejs.appmeshworkshop.hosted.local"
+        Logging:
+          AccessLog:
+            File:
+              Path: "/dev/stdout"
+        Listeners:
+          - HealthCheck:
+              HealthyThreshold: 3
+              IntervalMillis: 10000
+              Path: /health
+              Port: 3000
+              Protocol: http
+              UnhealthyThreshold: 3
+              TimeoutMillis: 5000
+            PortMapping:
+              Port: 3000
+              Protocol: http
+            TLS:
+              Mode: STRICT
+              Certificate:
+                ACM:
+                  CertificateArn: !ImportValue AppMeshCert
+  FrontendVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt AppMesh.MeshName
+      VirtualServiceName: "frontend.appmeshworkshop.hosted.local"
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: !GetAtt FrontendVirtualNode.VirtualNodeName       
+          
