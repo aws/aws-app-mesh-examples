@@ -193,12 +193,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub PublicOne-${AWS::StackName}
-        - Key: kubernetes.io/role/elb
-          Value: 1
-        - Key: kubernetes.io/cluster/appmesh-workshop
-          Value: shared
-        - Key: kubernetes.io/role/alb-ingress
-          Value: 1
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
