@@ -1,3 +1,4 @@
+# Please modify the envoy image parameter with the latest image from  https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html 
 # Create YAML file #
 cat <<-"EOF" > /tmp/install_envoy.yml
 ---
@@ -130,5 +131,5 @@ aws ssm create-association \
       "region=$AWS_REGION,
         meshName=appmesh-workshop,
         vNodeName=frontend,
-        envoyimage=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>,
+        envoyimage=$envoyimage,
         appPorts=3000"
