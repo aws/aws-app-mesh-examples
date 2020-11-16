@@ -15,7 +15,7 @@ Parameters:
 
   EnvoyImage:
     Description: App Mesh Envoy container image. See https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-      Type: String
+    Type: String
 
 Mappings:
 
