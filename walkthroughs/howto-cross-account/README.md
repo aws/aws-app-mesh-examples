@@ -82,7 +82,7 @@ These backends will be configured in distinct accounts and made accessible throu
         ```
         export KEY_PAIR=...
         ```
-3. Source the `env.vars` file using `source env.vars`
+3. Source the `vars.env` file using `source vars.env`
 4. Setup base cloudformation stack by running
     ```
     ./deploy.sh
