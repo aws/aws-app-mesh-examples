@@ -3,9 +3,6 @@
 ```
 cat ~/.aws/credentials
 
-[default]
-aws_access_key_id =  ...
-aws_secret_access_key = ...
 [frontend]
 aws_access_key_id =  ...
 aws_secret_access_key = ...
@@ -15,8 +12,6 @@ aws_secret_access_key = ...
 
 cat ~/.aws/config
 
-[default]
-region = sa-east-1
 [profile frontend]
 region = us-west-2
 [profile backend]
