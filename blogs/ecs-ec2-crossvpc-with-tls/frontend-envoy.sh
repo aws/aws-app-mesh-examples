@@ -131,5 +131,5 @@ aws ssm create-association \
       "region=$AWS_REGION,
         meshName=appmesh-workshop,
         vNodeName=frontend,
-        envoyimage=$envoyimage,
+        envoyimage=$ENVOY_IMAGE,
         appPorts=3000"
