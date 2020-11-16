@@ -519,14 +519,12 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-              - 'iam:PassRole'
               - 'ecr:GetAuthorizationToken'
               - 'ecr:BatchCheckLayerAvailability'
               - 'ecr:GetDownloadUrlForLayer'
               - 'ecr:BatchGetImage'
               - 'logs:DescribeLogStreams'
               - 'logs:CreateLogStream'
-              - 'logs:CreateLogGroup'
               - 'logs:PutLogEvents'
             Resource: '*'
 
