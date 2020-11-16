@@ -523,7 +523,6 @@ Resources:
               - 'ecr:BatchCheckLayerAvailability'
               - 'ecr:GetDownloadUrlForLayer'
               - 'ecr:BatchGetImage'
-              - 'logs:DescribeLogStreams'
               - 'logs:CreateLogStream'
               - 'logs:PutLogEvents'
             Resource: '*'
