@@ -84,7 +84,6 @@ data:
       trust_domain = "howto-k8s-mtls-sds-based.com"
       data_dir = "/run/spire/data"
       log_level = "DEBUG"
-      #AWS requires the use of RSA.  EC cryptography is not supported
       ca_key_type = "rsa-2048"
 
       default_svid_ttl = "1h"
@@ -106,8 +105,7 @@ data:
       NodeAttestor "k8s_sat" {
         plugin_data {
           clusters = {
-            # NOTE: Change this to your cluster name
-            "demo-cluster" = {
+            "eks-cluster" = {
               use_token_review_api_validation = true
               service_account_whitelist = ["spire:spire-agent"]
             }
@@ -226,8 +224,7 @@ data:
     plugins {
       NodeAttestor "k8s_sat" {
         plugin_data {
-          # NOTE: Change this to your cluster name
-          cluster = "demo-cluster"
+          cluster = "eks-cluster"
         }
       }
 
@@ -238,7 +235,6 @@ data:
 
       WorkloadAttestor "k8s" {
         plugin_data {
-          # Defaults to the secure kubelet port by default.
           skip_kubelet_verification = true
         }
       }

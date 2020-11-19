@@ -1,11 +1,11 @@
 ## Overview
 In this walk through, we'll enable mTLS between two applications in App Mesh using Envoy's Secret Discovery Service(SDS). SDS allows envoy to fetch certificates from a remote SDS Server. When SDS is enabled and configured in Envoy, it will fetch the certificates from a central SDS server. SDS server will automatically renew the certs when they are about to expire and will push them to respective envoys. This greatly simplifies the certificate management process for individual services/apps and is more secure when compared to file based certs as the certs are no longer stored on the disk. If the envoy fails to fetch a certificate from the SDS server for any reason, the listener will be marked as active and the port will be open but the connection to the port will be reset. 
 
-Please refer to https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret for more details on Envoy's Secret Discovery Service.
+Refer to [Envoy SDS](https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret) docs for additional details on Envoy's Secret Discovery Service.
 
 SPIRE will be used as SDS provider in this walk through and will be the only SDS provider option supported in the Preview release. SPIRE is an Identity Management platform which at its heart is a tool chain that automatically issues and rotates authorized SVIDs (SPIFFE Verifiable Identity Document). A SPIRE Agent will run on each of the nodes on the cluster and will expose a Workload API via a Unix Domain Socket. All the envoys on a particular node will reach out to the local SPIRE Agent over UDS. Please refer to https://spiffe.io/docs/latest/spire/understand/ for more details.
 
-In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy(envoy) to negotiate and terminate TLS on your application's behalf. We will be configuring an SDS cluster in Envoy to obtain certificates from the SDS provider (i.e.,) SPIRE.
+In App Mesh, traffic encryption is enabled between Virtual Nodes and VirtualGateways, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy(envoy) to negotiate and terminate TLS on your application's behalf. We will be configuring an SDS cluster in Envoy to obtain certificates from the SDS provider (i.e.,) SPIRE.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ This feature is currently only available in [App Mesh preview](https://docs.aws.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.2.0-preview
+v1.2.0-mtls-preview
 ```
 3. [Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
 ```
@@ -27,9 +27,9 @@ aws configure add-model \
     --service-model file://$HOME/appmesh-preview-model.json
 ```
 
-4. Install Docker. `deploy.sh` script builds the demo application images using Docker CLI.
+4. Install Docker. `deploy_app.sh` script builds the demo application images using Docker CLI.
 
-## Step 1: Setup environment
+## Step 1: Setup Environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-mtls-sds-based folder, all commands will be ran from this location
 2. Your AWS account id:
 
@@ -39,6 +39,7 @@ aws configure add-model \
 
     export AWS_DEFAULT_REGION=us-west-2
 
+**Optional**
 4. ENVOY_IMAGE environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
 
     export ENVOY_IMAGE=...
@@ -48,9 +49,9 @@ aws configure add-model \
 
 **Option 1: Quick setup**
 
-Walk through provides a quick and simple way to install and configure both SPIRE Server and Agent. If you don't have SPIRE Server and Agent(s) already running on your cluster, you can execute the below SPIRE installation script. It will install and configure SPIRE Server and Agent(s) with the trust domain of this walkthrough (howto-k8s-mtls-sds-based.com). SPIRE Server will be installed as a Stateful set and SPIRE Agent will be installed as a Daemonset (under namespace `spire`). SPIRE Agent is configured with a 'trust_bundle_path' pointing to SPIRE Server's CA bundle.
+Walk through provides a quick and simple way to install and configure both SPIRE Server and Agent. This installation is purely for demo purposes. If you don't have SPIRE Server and Agent(s) already running on your cluster, you can execute the below SPIRE installation script. It will install and configure SPIRE Server and Agent(s) with the trust domain of this walkthrough (howto-k8s-mtls-sds-based.com). SPIRE Server will be installed as a Stateful set and SPIRE Agent will be installed as a Daemonset (under namespace `spire`). SPIRE Agent is configured with a 'trust_bundle_path' pointing to SPIRE Server's CA bundle.
 
-Walk through uses built-in k8s node attestor(k8s_sat) and workload attestor(k8s) plugins. You can use "aws_iid" as a Node attestor plugin if you wish to attest an Agent's identity using an AWS Instance Identity Document. Please refer to https://github.com/spiffe/spire/blob/master/doc/spire_agent.md#built-in-plugins for list of available built-in plugins.
+Walk through uses built-in k8s node attestor([k8s_sat](https://github.com/spiffe/spire/blob/master/doc/plugin_agent_nodeattestor_k8s_sat.md)) and workload attestor([k8s](https://github.com/spiffe/spire/blob/master/doc/plugin_agent_workloadattestor_k8s.md)) plugins. You can use "[aws_iid](https://github.com/spiffe/spire/blob/master/doc/plugin_server_nodeattestor_aws_iid.md)" as a Node attestor plugin if you wish to attest an Agent's identity using an AWS Instance Identity Document. Check out list of available [built-in plugins](https://github.com/spiffe/spire/blob/master/doc/spire_agent.md#built-in-plugins)
 
 ```bash
 ./deploy_spire.sh
@@ -69,7 +70,7 @@ pod/spire-server-0      1/1     Running   0          7m38s
 
 ```
 
-**SPIRE Observability:** SPIRE supports metrics collection via most of the common metrics collectors (i.e.,) Prometheus, StatsD, DogStatsd etc. You can configure them via configuring "telemetry" section in the SPIRE config. Please refer to https://spiffe.io/docs/latest/spire/using/telemetry_config/ for more details.
+**SPIRE Observability:** SPIRE supports metrics collection via most of the common metrics collectors (i.e.,) Prometheus, StatsD, DogStatsd etc. You can configure them via configuring "telemetry" section in the SPIRE config. Check [SPIRE telemetry](https://spiffe.io/docs/latest/spire/using/telemetry_config/) for more details.
 
 **Option 2: Working with existing SPIRE installation on your cluster**
 
@@ -77,9 +78,9 @@ If you prefer to instead work with an existing SPIRE installation, you would nee
 
 ## Step 3: Register Node and Workload entries with SPIRE Server
 
-Once we have SPIRE Server and Agent(s) up and running, we need to register Node and Workload entries with SPIRE Server. SPIRE Server will share the list of all the registered entries with individual SPIRE agents. SPIRE Agents will cache these entries locally. When a Workload/Pod reaches out to the local SPIRE Agent via the Workload API that it exposes, SPIRE Agent will collect info about that pod and compares it against the registered entries to determine the SVID they need to issue for this particular pod.
+Once we have SPIRE Server and Agent(s) up and running, we need to register node and workload entries with SPIRE Server. SPIRE Server will share the list of all the registered entries with individual SPIRE agents. SPIRE Agents will cache these entries locally. When a Workload/Pod reaches out to the local SPIRE Agent via the Workload API that it exposes, SPIRE Agent will collect info about that pod/workload and compares it against the registered entries to determine the SVID it needs to issue for this particular pod.
 
-Please refer to https://spiffe.io/docs/latest/spire/using/registering/ for more details
+Refer to [SPIRE entry registration](https://spiffe.io/docs/latest/spire/using/registering/) for more details
 
 Let's go ahead and register the entries with SPIRE server.
 
@@ -401,7 +402,7 @@ kubectl exec -it $RED_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://lo
 listener.0.0.0.0_15000.ssl.handshake: 1
 ```
 
-## Setup 4: Verify traffic with mTLS
+## Step 5: Verify traffic with mTLS
 
 Let's start a sample `curler` pod
 
@@ -427,7 +428,7 @@ You should see the listener ssl.handshake count go up by 1 from the previous val
 listener.0.0.0.0_15000.ssl.handshake: 2
 ```
 
-## Setup 4: Verify client policy
+## Step 6: Verify client policy
 
 Let's try reaching out to `green` service which is missing required certs.
 
@@ -488,8 +489,10 @@ kubectl exec -it $GREEN_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://
 
 Now, we should see a successful SSL handshake between `front` and `green` apps. As a result, `green` backend cluster should now turn healthy in the front app's envoy.
 
+Note: It might take about 15 secs for the cluster to turn healthy.
+
 ```bash
-kubectl exec -it $FRONT_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://localhost:9901/clusters | grep green.*healthy
+kubectl exec -it $FRONT_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://localhost:9901/clusters | grep green.*health
 
 cds_egress_howto-k8s-mtls-sds-based_green_howto-k8s-mtls-sds-based_http_8080::10.100.121.235:8080::health_flags::healthy
 ```
@@ -525,11 +528,11 @@ kubectl exec -it $GREEN_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://
 listener.0.0.0.0_15000.ssl.handshake: 2
 ```
 
-## Step 4: mTLS on VirtualGateway
+## Step 7: mTLS on VirtualGateway
 
 You can configure mTLS (via file or SDS) on a VirtualGateway similar to how we configured mTLS on a VirtualNode in this walk through (i.e.,) configure `certificate` and `validation` sections under `backend` or `backendDefaults` or `listener` sections based on your requirement. For SPIRE to uniquely identify the envoys that are part of a VirtualGateway deployment, you can add a label to the envoy containers and use that as a selector in the SPIRE registration entry.
 
-## Step 5: Cleanup
+## Step 8: Cleanup
 
 If you want to keep the application running, you can do so, but this is the end of this walk through. Run the following commands to clean up and tear down the resources that we’ve created.
 
