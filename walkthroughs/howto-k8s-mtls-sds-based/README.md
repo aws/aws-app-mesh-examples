@@ -39,7 +39,6 @@ aws configure add-model \
 
     export AWS_DEFAULT_REGION=us-west-2
 
-**Optional**
 4. ENVOY_IMAGE environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
 
     export ENVOY_IMAGE=...
@@ -70,6 +69,7 @@ pod/spire-server-0      1/1     Running   0          7m38s
 
 ```
 
+**Optional**
 **SPIRE Observability:** SPIRE supports metrics collection via most of the common metrics collectors (i.e.,) Prometheus, StatsD, DogStatsd etc. You can configure them via configuring "telemetry" section in the SPIRE config. Check [SPIRE telemetry](https://spiffe.io/docs/latest/spire/using/telemetry_config/) for more details.
 
 **Option 2: Working with existing SPIRE installation on your cluster**

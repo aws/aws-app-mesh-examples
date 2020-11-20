@@ -271,7 +271,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: 928111597794.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-tls-file-based/feapp:latest
+          image: ${FRONT_APP_IMAGE}
           ports:
             - containerPort: 8080
           env:
@@ -310,7 +310,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: 928111597794.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-tls-file-based/colorapp:latest
+          image: ${COLOR_APP_IMAGE}
           ports:
             - containerPort: 8080
           env:
@@ -349,7 +349,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: 928111597794.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-tls-file-based/colorapp:latest
+          image: ${COLOR_APP_IMAGE}
           ports:
             - containerPort: 8080
           env:
@@ -388,7 +388,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: 928111597794.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-tls-file-based/colorapp:latest
+          image: ${COLOR_APP_IMAGE}
           ports:
             - containerPort: 8080
           env:
