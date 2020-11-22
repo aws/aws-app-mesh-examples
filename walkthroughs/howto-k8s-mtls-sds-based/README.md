@@ -48,7 +48,7 @@ aws configure add-model \
 
 **Option 1: Quick setup**
 
-Walk through provides a quick and simple way to install and configure both SPIRE Server and Agent. This installation is purely for demo purposes. If you don't have SPIRE Server and Agent(s) already running on your cluster, you can execute the below SPIRE installation script. It will install and configure SPIRE Server and Agent(s) with the trust domain of this walkthrough (howto-k8s-mtls-sds-based.com). SPIRE Server will be installed as a Stateful set and SPIRE Agent will be installed as a Daemonset (under namespace `spire`). SPIRE Agent is configured with a 'trust_bundle_path' pointing to SPIRE Server's CA bundle.
+Walk through provides a quick and simple way to install and configure both SPIRE Server and Agent. This installation is purely for demo purposes. If you don't have SPIRE Server and Agent(s) already running on your cluster, you can execute the below SPIRE installation script. It will install and configure SPIRE Server and Agent(s) with the trust domain of this walkthrough (howto-k8s-mtls-sds-based.aws). SPIRE Server will be installed as a Stateful set and SPIRE Agent will be installed as a Daemonset (under namespace `spire`). SPIRE Agent is configured with a 'trust_bundle_path' pointing to SPIRE Server's CA bundle.
 
 Walk through uses built-in k8s node attestor([k8s_sat](https://github.com/spiffe/spire/blob/master/doc/plugin_agent_nodeattestor_k8s_sat.md)) and workload attestor([k8s](https://github.com/spiffe/spire/blob/master/doc/plugin_agent_workloadattestor_k8s.md)) plugins. You can use "[aws_iid](https://github.com/spiffe/spire/blob/master/doc/plugin_server_nodeattestor_aws_iid.md)" as a Node attestor plugin if you wish to attest an Agent's identity using an AWS Instance Identity Document. Check out list of available [built-in plugins](https://github.com/spiffe/spire/blob/master/doc/spire_agent.md#built-in-plugins)
 
@@ -74,7 +74,7 @@ pod/spire-server-0      1/1     Running   0          7m38s
 
 **Option 2: Working with existing SPIRE installation on your cluster**
 
-If you prefer to instead work with an existing SPIRE installation, you would need to modify the trust domain that is configured on your cluster to the one used by this walkthrough (howto-k8s-mtls-sds-based.com). Update the 'trust_domain' field in your SPIRE Server and Agent configs (kubectl edit - server/agent configmaps) and apply the changes. Also, update the "server_address", "server_port" and "trust_bundle_path" in the Server/Agent ConfigMaps to match with your environment.
+If you prefer to instead work with an existing SPIRE installation, you would need to modify the trust domain that is configured on your cluster to the one used by this walkthrough (howto-k8s-mtls-sds-based.aws). Update the 'trust_domain' field in your SPIRE Server and Agent configs (kubectl edit - server/agent configmaps) and apply the changes. Also, update the "server_address", "server_port" and "trust_bundle_path" in the Server/Agent ConfigMaps to match with your environment.
 
 ## Step 3: Register Node and Workload entries with SPIRE Server
 
@@ -92,11 +92,10 @@ You should now be able to check the registered entries in the SPIRE Server
 
 ```bash
 kubectl exec -n spire spire-server-0 -- /opt/spire/bin/spire-server entry show
-
 Found 4 entries
-Entry ID      : a036533e-b911-452d-9b72-c0689b715e04
-SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.com/colorblue
-Parent ID     : spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent
+Entry ID      : 20ab95a6-e988-4628-9191-cc7e24acdb84
+SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.aws/colorblue
+Parent ID     : spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent
 TTL           : 3600
 Selector      : k8s:container-name:envoy
 Selector      : k8s:ns:howto-k8s-mtls-sds-based
@@ -104,9 +103,9 @@ Selector      : k8s:pod-label:app:color
 Selector      : k8s:pod-label:version:blue
 Selector      : k8s:sa:default
 
-Entry ID      : 38aaae74-b90a-486b-b0a5-d4b811562dc2
-SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.com/colorred
-Parent ID     : spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent
+Entry ID      : 97ba7159-9e89-48be-9fd1-f7324f6fd81e
+SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.aws/colorred
+Parent ID     : spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent
 TTL           : 3600
 Selector      : k8s:container-name:envoy
 Selector      : k8s:ns:howto-k8s-mtls-sds-based
@@ -114,26 +113,26 @@ Selector      : k8s:pod-label:app:color
 Selector      : k8s:pod-label:version:red
 Selector      : k8s:sa:default
 
-Entry ID      : 23489df4-5aff-4661-bfc2-ec19dd20e469
-SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.com/front
-Parent ID     : spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent
+Entry ID      : f0490524-907d-4a4b-b4e3-8dfc6f4628a9
+SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.aws/front
+Parent ID     : spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent
 TTL           : 3600
 Selector      : k8s:container-name:envoy
 Selector      : k8s:ns:howto-k8s-mtls-sds-based
 Selector      : k8s:pod-label:app:front
 Selector      : k8s:sa:default
 
-Entry ID      : d65777e1-4f48-43af-b5e5-089def4e7f90
-SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent
-Parent ID     : spiffe://howto-k8s-mtls-sds-based.com/spire/server
+Entry ID      : f58159ad-0cc4-4856-b122-ddf3f0e0ef9a
+SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent
+Parent ID     : spiffe://howto-k8s-mtls-sds-based.aws/spire/server
 TTL           : 3600
 Selector      : k8s_sat:agent_ns:spire
 Selector      : k8s_sat:agent_sa:spire-agent
-Selector      : k8s_sat:cluster:demo-cluster
+Selector      : k8s_sat:cluster:eks-cluster
 
 ```
 
-So, for example a K8S Pod running in namespace 'howto-k8s-mtls-sds-based' with 'default' ServiceAccount and with a pod label 'app:front' will receive  "spiffe://howto-k8s-mtls-sds-based.com/front" as SPIFFE ID. If it doesn't find a match with any of the registered entries then it will not issue an SVID for that workload/pod. We set a default TTL value of "3600" in this walk through, so the certs are automatically renewed every 1 hr. If you wish to change this, you can modify "default_svid_ttl" value in SPIRE Server's ConfigMap. Also, as we can see from the output above, we didn't register an entry to match on the `green` app. We will use this to illustrate how SPIRE vends out identities as well as to show how mTLS communication fails between `front` and `green` without valid certs on both ends.
+So, for example a K8S Pod running in namespace 'howto-k8s-mtls-sds-based' with 'default' ServiceAccount and with a pod label 'app:front' will receive  "spiffe://howto-k8s-mtls-sds-based.aws/front" as SPIFFE ID. If it doesn't find a match with any of the registered entries then it will not issue an SVID for that workload/pod. We set a default TTL value of "3600" in this walk through, so the certs are automatically renewed every 1 hr. If you wish to change this, you can modify "default_svid_ttl" value in SPIRE Server's ConfigMap. Also, as we can see from the output above, we didn't register an entry to match on the `green` app. We will use this to illustrate how SPIRE vends out identities as well as to show how mTLS communication fails between `front` and `green` without valid certs on both ends.
                                                                                                                                        
 ## Step 4: Create a Mesh with mTLS enabled
 
@@ -230,17 +229,17 @@ spec:
         mode: STRICT
         certificate:
           sds:
-            secretName: spiffe://howto-k8s-mtls-sds-based.com/front
+            secretName: spiffe://howto-k8s-mtls-sds-based.aws/front
         validation:
           trust:
             sds:
-              secretName: spiffe://howto-k8s-mtls-sds-based.com
+              secretName: spiffe://howto-k8s-mtls-sds-based.aws
           subjectAlternativeNames:
             match:
               exact:
-              - spiffe://howto-k8s-mtls-sds-based.com/colorblue
-              - spiffe://howto-k8s-mtls-sds-based.com/colorred
-              - spiffe://howto-k8s-mtls-sds-based.com/colorgreen
+              - spiffe://howto-k8s-mtls-sds-based.aws/colorblue
+              - spiffe://howto-k8s-mtls-sds-based.aws/colorred
+              - spiffe://howto-k8s-mtls-sds-based.aws/colorgreen
   serviceDiscovery:
     dns:
       hostname: front.howto-k8s-mtls-sds-based.svc.cluster.local
@@ -274,18 +273,89 @@ spec:
         mode: STRICT
         certificate:
           sds:
-            secretName: spiffe://howto-k8s-mtls-sds-based.com/colorblue
+            secretName: spiffe://howto-k8s-mtls-sds-based.aws/colorblue
         validation:
           trust:
             sds:
-              secretName: spiffe://howto-k8s-mtls-sds-based.com
+              secretName: spiffe://howto-k8s-mtls-sds-based.aws
           subjectAlternativeNames:
             match:
               exact:
-              - spiffe://howto-k8s-mtls-sds-based.com/front
+              - spiffe://howto-k8s-mtls-sds-based.aws/front
   serviceDiscovery:
     dns:
       hostname: color-blue.howto-k8s-mtls-sds-based.svc.cluster.local
+```
+
+We can check VirtualNode info in App Mesh Preview. Let's check blue VirtualNode config with mTLS enabled under listener.
+
+```
+aws appmesh-preview describe-virtual-node --virtual-node-name blue_howto-k8s-mtls-sds-based --mesh-name howto-k8s-mtls-sds-based
+{
+    "virtualNode": {
+        "meshName": "howto-k8s-mtls-sds-based",
+        "metadata": {
+            "arn": "arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/blue_howto-k8s-mtls-sds-based",
+            "createdAt": 1606022091.476,
+            "lastUpdatedAt": 1606022091.476,
+            "meshOwner": "1111111111",
+            "resourceOwner": "1111111111",
+            "uid": "1783f48d-39fe-4364-adc7-c7d5c1c786b6",
+            "version": 1
+        },
+        "spec": {
+            "backends": [],
+            "listeners": [
+                {
+                    "healthCheck": {
+                        "healthyThreshold": 2,
+                        "intervalMillis": 5000,
+                        "path": "/ping",
+                        "port": 8080,
+                        "protocol": "http",
+                        "timeoutMillis": 2000,
+                        "unhealthyThreshold": 2
+                    },
+                    "portMapping": {
+                        "port": 8080,
+                        "protocol": "http"
+                    },
+                    "tls": {
+                        "certificate": {
+                            "sds": {
+                                "secretName": "spiffe://howto-k8s-mtls-sds-based.aws/colorblue"
+                            }
+                        },
+                        "mode": "STRICT",
+                        "validation": {
+                            "subjectAlternativeNames": {
+                                "match": {
+                                    "exact": [
+                                        "spiffe://howto-k8s-mtls-sds-based.aws/front"
+                                    ]
+                                }
+                            },
+                            "trust": {
+                                "sds": {
+                                    "secretName": "spiffe://howto-k8s-mtls-sds-based.aws"
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            "serviceDiscovery": {
+                "dns": {
+                    "hostname": "color-blue.howto-k8s-mtls-sds-based.svc.cluster.local"
+                }
+            }
+        },
+        "status": {
+            "status": "ACTIVE"
+        },
+        "virtualNodeName": "blue_howto-k8s-mtls-sds-based"
+    }
+}
 ```
 
 Now that we have the Mesh deployed. Let's derive the pod identities which we will use through the rest of the walk through.
@@ -319,40 +389,34 @@ kubectl exec -it $FRONT_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://
 It should output the certs that Envoy currently has and we should see both the app cert and the CA cert.
 
 ```
-{
- "certificates": [
-  {
    "ca_cert": [
     {
      "path": "\u003cinline\u003e",
      "serial_number": "0",
      "subject_alt_names": [
       {
-       "uri": "spiffe://howto-k8s-mtls-sds-based.com"
+       "uri": "spiffe://howto-k8s-mtls-sds-based.aws"
       }
      ],
      "days_until_expiration": "0",
-     "valid_from": "2020-11-11T20:49:06Z",
-     "expiration_time": "2020-11-12T20:49:16Z"
+     "valid_from": "2020-11-22T05:13:03Z",
+     "expiration_time": "2020-11-23T05:13:13Z"
     }
    ],
    "cert_chain": [
     {
      "path": "\u003cinline\u003e",
-     "serial_number": "7b177c736290d0fe5527a7ccf0ecee4c",
+     "serial_number": "47d78411ed47a779ae54d25263671a0c",
      "subject_alt_names": [
       {
-       "uri": "spiffe://howto-k8s-mtls-sds-based.com/front"
+       "uri": "spiffe://howto-k8s-mtls-sds-based.aws/front"
       }
      ],
      "days_until_expiration": "0",
-     "valid_from": "2020-11-11T23:19:45Z",
-     "expiration_time": "2020-11-12T00:19:55Z"
+     "valid_from": "2020-11-22T05:13:50Z",
+     "expiration_time": "2020-11-22T06:14:00Z"
     }
    ]
-  }
- ]
-}
 ```
 
 We also have health checks enabled for all the Virtualnodes, so we should be able to check if envoy health check is working as expected with mTLS enabled between the individual envoys. We should also see a successful TLS handshake between `front` and the backend VirtualNode envoys (`blue`, `red` and `green`). Since, we didn't register an entry for `green` service with the SPIRE Server, it will not be able to issue an SVID for it. So, we should see a failed health check for `green` and healthy clusters for `red` and `green` backends.
@@ -459,26 +523,26 @@ kubectl exec -it $GREEN_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://
      "serial_number": "0",
      "subject_alt_names": [
       {
-       "uri": "spiffe://howto-k8s-mtls-sds-based.com"
+       "uri": "spiffe://howto-k8s-mtls-sds-based.aws"
       }
      ],
      "days_until_expiration": "0",
-     "valid_from": "2020-11-12T19:22:40Z",
-     "expiration_time": "2020-11-13T19:22:50Z"
+     "valid_from": "2020-11-22T05:13:03Z",
+     "expiration_time": "2020-11-23T05:13:13Z"
     }
    ],
    "cert_chain": [
     {
      "path": "\u003cinline\u003e",
-     "serial_number": "b2d629e0f8de238779eff25e5cbaa749",
+     "serial_number": "52f3b82ebb99af2d826bc1c3ac3835ba",
      "subject_alt_names": [
       {
-       "uri": "spiffe://howto-k8s-mtls-sds-based.com/colorgreen"
+       "uri": "spiffe://howto-k8s-mtls-sds-based.aws/colorgreen"
       }
      ],
      "days_until_expiration": "0",
-     "valid_from": "2020-11-12T19:51:23Z",
-     "expiration_time": "2020-11-12T20:51:33Z"
+     "valid_from": "2020-11-22T05:18:29Z",
+     "expiration_time": "2020-11-22T06:18:39Z"
     }
    ]
   }

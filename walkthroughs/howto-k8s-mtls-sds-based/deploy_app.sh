@@ -17,11 +17,11 @@ if [ -z $ENVOY_IMAGE ]; then
     exit 1
 fi
 
-SVID_CA_TRUST_DOMAIN=spiffe://howto-k8s-mtls-sds-based.com
-FRONTEND_APP_SVID=spiffe://howto-k8s-mtls-sds-based.com/front
-COLORAPP_BLUE_SVID=spiffe://howto-k8s-mtls-sds-based.com/colorblue
-COLORAPP_GREEN_SVID=spiffe://howto-k8s-mtls-sds-based.com/colorgreen
-COLORAPP_RED_SVID=spiffe://howto-k8s-mtls-sds-based.com/colorred
+SVID_CA_TRUST_DOMAIN=spiffe://howto-k8s-mtls-sds-based.aws
+FRONTEND_APP_SVID=spiffe://howto-k8s-mtls-sds-based.aws/front
+COLORAPP_BLUE_SVID=spiffe://howto-k8s-mtls-sds-based.aws/colorblue
+COLORAPP_GREEN_SVID=spiffe://howto-k8s-mtls-sds-based.aws/colorgreen
+COLORAPP_RED_SVID=spiffe://howto-k8s-mtls-sds-based.aws/colorred
 
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"

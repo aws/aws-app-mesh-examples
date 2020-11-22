@@ -81,7 +81,7 @@ data:
       bind_address = "0.0.0.0"
       bind_port = "8081"
       registration_uds_path = "/tmp/spire-registration.sock"
-      trust_domain = "howto-k8s-mtls-sds-based.com"
+      trust_domain = "howto-k8s-mtls-sds-based.aws"
       data_dir = "/run/spire/data"
       log_level = "DEBUG"
       ca_key_type = "rsa-2048"
@@ -217,7 +217,7 @@ data:
       server_port = "8081"
       socket_path = "/run/spire/sockets/agent.sock"
       trust_bundle_path = "/run/spire/bundle/bundle.crt"
-      trust_domain = "howto-k8s-mtls-sds-based.com"
+      trust_domain = "howto-k8s-mtls-sds-based.aws"
       enable_sds = true
     }
 

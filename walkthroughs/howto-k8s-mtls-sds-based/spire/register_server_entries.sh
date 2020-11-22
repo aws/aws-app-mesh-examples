@@ -10,7 +10,7 @@ register_server_entries() {
 if [ "$1" == "register" ]; then
   echo "Registering an entry for spire agent..."
   register_server_entries \
-    -spiffeID spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent \
+    -spiffeID spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent \
     -selector k8s_sat:cluster:eks-cluster \
     -selector k8s_sat:agent_ns:spire \
     -selector k8s_sat:agent_sa:spire-agent \
@@ -18,8 +18,8 @@ if [ "$1" == "register" ]; then
 
   echo "Registering an entry for the front app..."
   register_server_entries \
-    -parentID spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent \
-    -spiffeID spiffe://howto-k8s-mtls-sds-based.com/front \
+    -parentID spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent \
+    -spiffeID spiffe://howto-k8s-mtls-sds-based.aws/front \
     -selector k8s:ns:howto-k8s-mtls-sds-based \
     -selector k8s:sa:default \
     -selector k8s:pod-label:app:front \
@@ -27,8 +27,8 @@ if [ "$1" == "register" ]; then
 
   echo "Registering an entry for the color app - version:red..."
   register_server_entries \
-    -parentID spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent \
-    -spiffeID spiffe://howto-k8s-mtls-sds-based.com/colorred \
+    -parentID spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent \
+    -spiffeID spiffe://howto-k8s-mtls-sds-based.aws/colorred \
     -selector k8s:ns:howto-k8s-mtls-sds-based \
     -selector k8s:sa:default \
     -selector k8s:pod-label:app:color \
@@ -37,8 +37,8 @@ if [ "$1" == "register" ]; then
 
   echo "Registering an entry for the color app - version:blue..."
   register_server_entries \
-    -parentID spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent \
-    -spiffeID spiffe://howto-k8s-mtls-sds-based.com/colorblue \
+    -parentID spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent \
+    -spiffeID spiffe://howto-k8s-mtls-sds-based.aws/colorblue \
     -selector k8s:ns:howto-k8s-mtls-sds-based \
     -selector k8s:sa:default \
     -selector k8s:pod-label:app:color \
@@ -47,8 +47,8 @@ if [ "$1" == "register" ]; then
 elif [ "$1" == "registerGreen" ]; then
   echo "Registering an entry for the color app - version:green..."
   register_server_entries \
-    -parentID spiffe://howto-k8s-mtls-sds-based.com/ns/spire/sa/spire-agent \
-    -spiffeID spiffe://howto-k8s-mtls-sds-based.com/colorgreen \
+    -parentID spiffe://howto-k8s-mtls-sds-based.aws/ns/spire/sa/spire-agent \
+    -spiffeID spiffe://howto-k8s-mtls-sds-based.aws/colorgreen \
     -selector k8s:ns:howto-k8s-mtls-sds-based \
     -selector k8s:sa:default \
     -selector k8s:pod-label:app:color \
