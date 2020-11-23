@@ -42,6 +42,8 @@ aws configure add-model \
 4. ENVOY_IMAGE environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
 
     export ENVOY_IMAGE=...
+    
+    **Note:** 1.15.1.0 is the minimum envoy version required for mTLS support using SDS.
 
 
 ## Step 2: SPIRE Installation
