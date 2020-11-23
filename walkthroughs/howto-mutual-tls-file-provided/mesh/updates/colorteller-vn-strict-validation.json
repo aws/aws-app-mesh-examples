@@ -1,0 +1,41 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 9080,
+                    "protocol": "http"
+                },
+                "tls": {
+                    "mode": "STRICT",
+                    "certificate": {
+                        "file": {
+                            "certificateChain": "/keys/colorteller_cert_chain.pem",
+                            "privateKey": "/keys/colorteller_key.pem"
+                        }
+                    },
+                    "validation": {
+                        "trust": {
+                            "file": {
+                                "certificateChain": "/keys/ca_cert.pem"
+                            }
+                        },
+                        "subjectAlternativeNames": {
+                            "match": {
+                                "exact": [
+                                    $GATEWAY_SAN
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "awsCloudMap": {
+                "namespaceName": $SERVICES_DOMAIN,
+                "serviceName": "colorteller"
+            }
+        }
+    }
+}
