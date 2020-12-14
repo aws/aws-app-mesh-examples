@@ -4,6 +4,9 @@ This tutorial provides a walkthrough of the basics of App Mesh service. This int
 1. Migrate an existing backend service sitting behind an internal ALB to Cloud Map service discovery. Along the way you will learn about Cloud Map's HttpNamespace, and how ECS service integrates with Cloud Map service discovery.
 2. Adopt App Mesh for service to service communication via Envoy proxy. This will build on Cloud Map service discovery integration.
 
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images
+
 ## Bootstrap
 
 1. Clone this repository and navigate to the walkthrough/howto-ecs-basics folder, all commands will be ran from this location

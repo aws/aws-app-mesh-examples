@@ -14,6 +14,10 @@ Validation typically involves checking at least that the certificate is signed b
 
 In this guide, we will be configuring Envoy proxies using certificates hosted in AWS Secrets Manager, which a modified Envoy image will retrieve during startup. We will have a virtual gateway connected to a single backend service. Both the gateway and backend proxies will present certificates signed by the same Certificate Authority (CA), though you could choose to use separate CAs.
 
+## Prerequisites
+
+1. Install Docker. It is needed to build the demo application images
+
 ## Part 1: Setup
 
 ### Step 1: Download the App Mesh Preview CLI

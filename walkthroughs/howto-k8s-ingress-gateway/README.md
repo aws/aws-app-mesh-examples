@@ -6,12 +6,14 @@ A virtual gateway allows resources outside your mesh to communicate to resources
 
 ## Prerequisites
 
-This example requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.1.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.1.0). Run the following to check the version of controller you are running.
+1. This example requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.1.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.1.0). Run the following to check the version of controller you are running.
 ```
 kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
 v1.1.0
 ```
+
+2. Install Docker. It is needed to build the demo application images
 
 ## Setup
 

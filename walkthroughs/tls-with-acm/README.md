@@ -10,6 +10,10 @@ With ACM, you can host some or all of your Public Key Infrastructure (PKI) in AW
 
 Let's jump into a brief example of App Mesh TLS in action.
 
+## Prerequisites
+
+1. Install Docker. It is needed to build the demo application images
+
 ## Step 1: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.

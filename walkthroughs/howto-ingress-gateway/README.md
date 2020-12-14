@@ -89,7 +89,7 @@ Internet --> (terminate TLS) NLB (originate TLS) --> (terminate TLS) Gateway (or
 
 ## Step 1: Prerequisites
 
-You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+1. You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
@@ -99,7 +99,9 @@ chmod go-r ~/.ssh/color-app.pem
 This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
 `~/.ssh/color-app.pem`.
 
-Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+2. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+
+3. Install Docker. It is needed to build the demo application images
 
 ## Step 2: Set Environment Variables
 We need to set a few environment variables before provisioning the

@@ -15,7 +15,7 @@ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".sp
 v1.2.0
 ```
 
-3. Install Docker. `deploy.sh` script builds the demo application images using Docker CLI.
+3. Install Docker. It is needed to build the demo application images
 
 
 ## Step 1: Setup environment

@@ -4,12 +4,14 @@ In this walkthrough we'll enable TLS encryption between two applications in App 
 In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf. We will be configuring Envoy to use the file based strategy (via Kubernetes Secrets) to setup certificates.
 
 ## Prerequisites
-[Walkthrough: App Mesh with EKS](../eks/)
+1. [Walkthrough: App Mesh with EKS](../eks/)
 
-The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+2. The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
+
+3. Install Docker. It is needed to build the demo application images
 
 ## Step 1: Setup environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-tls-file-based folder, all commands will be ran from this location
