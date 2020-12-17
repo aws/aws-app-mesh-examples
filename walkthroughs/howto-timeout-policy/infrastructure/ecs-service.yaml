@@ -16,7 +16,7 @@ Parameters:
     Type: String
     Description: The image to use for the Envoy container
 
-  ColorGatewayImageName:
+  FrontendImageName:
     Description: The name for the gateway image
     Type: String
 
@@ -281,11 +281,11 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerRedTaskDefinition }
 
-  ### colorgateway.default.svc.cluster.local
-  ColorGatewayServiceDiscoveryRecord:
+  ### frontend.default.svc.cluster.local
+  FrontendServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
-      Name: "colorgateway"
+      Name: "frontend"
       DnsConfig:
         NamespaceId:
           'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
@@ -295,7 +295,7 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  ColorGatewayTaskDefinition:
+  FrontendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
@@ -324,7 +324,7 @@ Resources:
             Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
         - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorGatewayImageName}'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${FrontendImageName}'
           Essential: true
           DependsOn:
             - ContainerName: 'envoy'
@@ -377,13 +377,13 @@ Resources:
               awslogs-stream-prefix: 'gateway-envoy'
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorGateway'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/Frontend'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'  
 
-  ColorGatewayService:
+  FrontendService:
     Type: 'AWS::ECS::Service'
     DependsOn:
       - WebLoadBalancerRule
@@ -397,7 +397,7 @@ Resources:
       LaunchType: FARGATE
       ServiceRegistries:
         - RegistryArn:
-            'Fn::GetAtt': ColorGatewayServiceDiscoveryRecord.Arn
+            'Fn::GetAtt': FrontendServiceDiscoveryRecord.Arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -406,7 +406,7 @@ Resources:
           Subnets: 
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      TaskDefinition: { Ref: ColorGatewayTaskDefinition }
+      TaskDefinition: { Ref: FrontendTaskDefinition }
       LoadBalancers:
           - ContainerName: app
             ContainerPort: 80

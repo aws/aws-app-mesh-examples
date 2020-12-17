@@ -14,5 +14,5 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     ECSServicesDomain="${SERVICES_DOMAIN}" \
     AppMeshMeshName="${MESH_NAME}" \
     EnvoyImage="${ENVOY_IMAGE}" \
-    ColorGatewayImageName="${COLOR_GATEWAY_IMAGE_NAME}" \
+    FrontendImageName="${FRONTEND_IMAGE_NAME}" \
     ColorTellerImageName="${COLOR_TELLER_IMAGE_NAME}"

@@ -13,9 +13,9 @@ Parameters:
     Type: String
     Description: Color Teller container image
 
-  ColorGatewayImage:
+  FrontendImage:
     Type: String
-    Description: Color Gateway container image
+    Description: Color Frontend container image
 
   LaunchType:
     Type: String
@@ -97,10 +97,10 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  ColorGatewayServiceRegistry:
+  FrontendServiceRegistry:
     Type: AWS::ServiceDiscovery::Service
     Properties:
-      Name: 'colorgateway'
+      Name: 'frontend'
       DnsConfig:
         NamespaceId: !GetAtt 'CloudMapNamespace.Id'
         DnsRecords:
@@ -180,12 +180,12 @@ Resources:
       ListenerArn: !Ref PublicLoadBalancerListener
       Priority: 1
 
-  ColorGatewayTaskDefinition:
+  FrontendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
       - !Ref LaunchType
-      Family: 'colorgateway'
+      Family: 'frontend'
       NetworkMode: 'awsvpc'
       Cpu: 256
       Memory: 512
@@ -207,7 +207,7 @@ Resources:
           Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
       - Name: 'app'
-        Image: !Ref ColorGatewayImage
+        Image: !Ref FrontendImage
         Essential: true
         DependsOn:
         - ContainerName: "envoy"
@@ -217,7 +217,7 @@ Resources:
           Options:
             awslogs-group: !Sub '${AWS::StackName}-log-group'
             awslogs-region: !Ref AWS::Region
-            awslogs-stream-prefix: 'colorgateway'
+            awslogs-stream-prefix: 'frontend'
         PortMappings:
         - ContainerPort: 9080
           Protocol: 'tcp'
@@ -257,10 +257,10 @@ Resources:
           Options:
             awslogs-group: !Sub '${AWS::StackName}-log-group'
             awslogs-region: !Ref AWS::Region
-            awslogs-stream-prefix: 'colorgateway'
+            awslogs-stream-prefix: 'frontend'
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-          Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/colorgateway-node'
+          Value: !Sub 'mesh/${AWS::StackName}-mesh/virtualNode/frontend-node'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 
@@ -428,7 +428,7 @@ Resources:
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 
-  ColorGatewayService:
+  FrontendService:
     Type: AWS::ECS::Service
     DependsOn:
     - WebLoadBalancerRule
@@ -440,7 +440,7 @@ Resources:
       DesiredCount: 1
       LaunchType: !Ref LaunchType
       ServiceRegistries:
-      - RegistryArn: !GetAtt 'ColorGatewayServiceRegistry.Arn'
+      - RegistryArn: !GetAtt 'FrontendServiceRegistry.Arn'
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -451,7 +451,7 @@ Resources:
               !Sub '${AWS::StackName}-vpc:PrivateSubnet1'
           - Fn::ImportValue:
               !Sub '${AWS::StackName}-vpc:PrivateSubnet2'
-      TaskDefinition: !Ref ColorGatewayTaskDefinition
+      TaskDefinition: !Ref FrontendTaskDefinition
       LoadBalancers:
       - ContainerName: app
         ContainerPort: 9080
@@ -504,8 +504,8 @@ Resources:
       TaskDefinition: !Ref GreenColorTellerTaskDefinition
 
 Outputs:
-  ColorGatewayEndpoint:
-    Description: 'Public endpoint for Color Gateway service'
+  FrontendEndpoint:
+    Description: 'Public endpoint for Color Frontend service'
     Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
     Export:
-      Name: !Sub '${AWS::StackName}:ColorGatewayEndpoint'
+      Name: !Sub '${AWS::StackName}:FrontendEndpoint'

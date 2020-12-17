@@ -17,8 +17,8 @@ Parameters:
     AllowedValues: [0, 1]
     Default: 0
 
-  ColorGatewayTlsValidationPath:
-    Description: The path to use for TLS client validation on the Color Gateway
+  FrontendTlsValidationPath:
+    Description: The path to use for TLS client validation on the Frontend
     Type: String
     Default: ""
   
@@ -29,7 +29,7 @@ Parameters:
 
 Conditions:
   EnableClientValidation: !Equals [!Ref EnableClientValidationFlag, "true"]
-  ColorGatewayTlsValidationPathPresent: !Not [!Equals [!Ref ColorGatewayTlsValidationPath, ""]]
+  FrontendTlsValidationPathPresent: !Not [!Equals [!Ref FrontendTlsValidationPath, ""]]
 
 
 Resources:
@@ -39,11 +39,11 @@ Resources:
     Properties:
       MeshName: !Ref MeshName
 
-  ColorGatewayVirtualNode:
+  FrontendVirtualNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: ColorGateway
+      VirtualNodeName: Frontend
       Spec:
         Backends:
           - VirtualService:
@@ -52,12 +52,12 @@ Resources:
           ClientPolicy:
             TLS:
               Fn::If: 
-              - ColorGatewayTlsValidationPathPresent
+              - FrontendTlsValidationPathPresent
               - Enforce: !If [EnableClientValidation, True, False]
                 Validation:
                   Trust:
                     File: 
-                      CertificateChain: !Ref ColorGatewayTlsValidationPath
+                      CertificateChain: !Ref FrontendTlsValidationPath
               - !Ref AWS::NoValue
         Listeners:
           - PortMapping:
@@ -65,7 +65,7 @@ Resources:
               Protocol: http
         ServiceDiscovery:
           DNS:
-            Hostname: !Sub "colorgateway.${ServicesDomain}"
+            Hostname: !Sub "Frontend.${ServicesDomain}"
 
   ColorTellerWhiteVirtualNode:
     Type: AWS::AppMesh::VirtualNode

@@ -12,9 +12,9 @@ Parameters:
     Type: String
     Description: DNS namespace used by services e.g. default.svc.cluster.local
 
-  ColorGatewayTaskDefinition:
+  FrontendTaskDefinition:
     Type: String
-    Description: Task definition for ColorGateway Service
+    Description: Task definition for Frontend Service
 
   ColorTellerWhiteTaskDefinition:
     Type: String
@@ -201,11 +201,11 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerBlackTaskDefinition }
 
-  ### colorgateway.default.svc.cluster.local
-  ColorGatewayServiceDiscoveryRecord:
+  ### frontend.default.svc.cluster.local
+  FrontendServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
-      Name: "colorgateway"
+      Name: "frontend"
       DnsConfig:
         NamespaceId:
           'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
@@ -215,7 +215,7 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  ColorGatewayService:
+  FrontendService:
     Type: 'AWS::ECS::Service'
     DependsOn:
       - WebLoadBalancerRule
@@ -229,7 +229,7 @@ Resources:
       LaunchType: EC2
       ServiceRegistries:
         - RegistryArn:
-            'Fn::GetAtt': ColorGatewayServiceDiscoveryRecord.Arn
+            'Fn::GetAtt': FrontendServiceDiscoveryRecord.Arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -238,7 +238,7 @@ Resources:
           Subnets: 
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      TaskDefinition: { Ref: ColorGatewayTaskDefinition }
+      TaskDefinition: { Ref: FrontendTaskDefinition }
       LoadBalancers:
         - ContainerName: app
           ContainerPort: 9080
@@ -275,7 +275,7 @@ Resources:
           Image: "tstrohmeier/alpine-infinite-curl"
           Essential: true
           Command:
-            - !Sub "-h http://colorgateway.${ECSServicesDomain}:9080/color"
+            - !Sub "-h http://frontend.${ECSServicesDomain}:9080/color"
           LogConfiguration:
             LogDriver: "awslogs"
             Options:
@@ -367,7 +367,7 @@ Resources:
           - CidrIp: 0.0.0.0/0
             IpProtocol: -1
 
-  # public ALB for color gateway
+  # public ALB for color frontend
   PublicLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:

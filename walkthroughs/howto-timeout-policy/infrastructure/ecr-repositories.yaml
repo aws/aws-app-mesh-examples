@@ -1,6 +1,6 @@
 Parameters:
 
-  GatewayImageName:
+  FrontendImageName:
     Description: The name for the gateway image
     Type: String
 
@@ -10,10 +10,10 @@ Parameters:
 
 
 Resources:
-  GatewayRepository:
+  FrontendRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Ref GatewayImageName
+      RepositoryName: !Ref FrontendImageName
 
   ColorTellerRepository:
     Type: AWS::ECR::Repository

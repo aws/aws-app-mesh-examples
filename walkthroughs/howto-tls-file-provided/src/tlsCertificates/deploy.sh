@@ -13,7 +13,7 @@ deploySecret() {
 
 
 main() {
-    # Color Gateway
+    # Frontend
     deploySecret "ca_1_cert"
     deploySecret "ca_2_cert"
     deploySecret "ca_1_ca_2_bundle"

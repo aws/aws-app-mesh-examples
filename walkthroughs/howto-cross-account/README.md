@@ -4,9 +4,9 @@ This example shows how to enable App Mesh between multiple accounts for cross ac
 
 ![System Diagram](./CrossAccount.png "System Diagram")
 
-### Gateway
+### Frontend
 
-The gateway image is an NGINX proxy which listens on a given port and forwards requests to the backend service on a given port. It also responds to NLB HealthChecks.
+The frontend image is an NGINX proxy which listens on a given port and forwards requests to the backend service on a given port. It also responds to NLB HealthChecks.
 
 ### Backend
 
@@ -15,7 +15,7 @@ The two backends are "Hello World!" applications that each listen on port 80.
 * The first backend is dockercloud/hello-world 
 * The secondary backend is karthequian/helloworld
 
-These backends will be configured in distinct accounts and made accessible through the gateway. We will manipulate routes that show that we are able to migrate traffic from one destination to another using the App Mesh APIs.
+These backends will be configured in distinct accounts and made accessible through the frontend. We will manipulate routes that show that we are able to migrate traffic from one destination to another using the App Mesh APIs.
 
 ## Setup
 
@@ -82,7 +82,7 @@ These backends will be configured in distinct accounts and made accessible throu
         ```
         export KEY_PAIR=...
         ```
-3. Source the `env.vars` file using `source env.vars`
+3. Source the `vars.env` file using `source vars.env`
 4. Setup base cloudformation stack by running
     ```
     ./deploy.sh

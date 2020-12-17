@@ -13,8 +13,8 @@ if [ -z $AWS_DEFAULT_REGION ]; then
     exit 1
 fi
 
-if [ -z $GATEWAY_IMAGE_NAME ]; then
-    echo "GATEWAY_IMAGE_NAME environment variable is not set"
+if [ -z $FRONTEND_IMAGE_NAME ]; then
+    echo "FRONTEND_IMAGE_NAME environment variable is not set"
     exit 1
 fi
 
@@ -22,7 +22,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
 ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-IMAGE="${ECR_URL}/${GATEWAY_IMAGE_NAME}:latest"
+IMAGE="${ECR_URL}/${FRONTEND_IMAGE_NAME}:latest"
 
 ecr_login() {
     if [ $AWS_CLI_VERSION -gt 1 ]; then

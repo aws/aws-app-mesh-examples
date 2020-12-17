@@ -3,7 +3,7 @@
 ## Prerequisites
 * Install latest [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/installing.html).
 
-* Build and push the colorteller and gateway images using deploy.sh from within /examples/apps/colorapp/src/
+* Build and push the colorteller and frontend images using deploy.sh from within /examples/apps/colorapp/src/
 * Configure aws-cli to support Appmesh APIs
 
 ```
@@ -20,7 +20,7 @@ export KEY_PAIR_NAME=<key-pair to access ec2 instances where apps are running>
 export ENVOY_IMAGE=<the latest recommended envoy image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export CLUSTER_SIZE=<number of ec2 instances to spin up to join cluster
 export SERVICES_DOMAIN=<domain under which services will be discovered, e.g. "default.svc.cluster.local">
-export COLOR_GATEWAY_IMAGE=<image location for colorapp's gateway, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/gateway:latest" - you need to build this image and use your own ECR repository, see below>
+export FRONTEND_IMAGE=<image location for colorapp's frontend, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/frontend:latest" - you need to build this image and use your own ECR repository, see below>
 export COLOR_TELLER_IMAGE=<image location for colorapp's teller, e.g. "<youraccountnumber>.dkr.ecr.amazonaws.com/colorteller:latest" - you need to build this image and use your own ECR repository, see below>
 ```
 
@@ -57,14 +57,14 @@ To add new app, create a directory under apps and follow the setup as in colorap
 
 In Elastic Container Registry, created two new repositories:
  - colorteller
- - gateway
+ - frontend
 
 Build the docker images as follow:
 ```
 cd apps/colorapp/src/colorteller/
 ./deploy.sh
 cd -
-cd apps/colorapp/src/gateway
+cd apps/colorapp/src/frontend
 ./deploy.sh
 cd -
 ```

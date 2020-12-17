@@ -48,7 +48,7 @@ export ENVIRONMENT_NAME=AppMeshTimeoutExample
 export MESH_NAME=ColorApp-Timeout
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
-export COLOR_GATEWAY_IMAGE_NAME="colorgateway"
+export FRONTEND_IMAGE_NAME="frontend"
 export COLOR_TELLER_IMAGE_NAME="colorteller"
 ```
 
@@ -73,13 +73,13 @@ Finally, build and deploy the color app images.
 
 ```bash
 ./src/colorteller/deploy.sh
-./src/colorgateway/deploy.sh
+./src/frontend/deploy.sh
 ```
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
-GO_PROXY=direct ./src/colorgateway/deploy.sh
+GO_PROXY=direct ./src/frontend/deploy.sh
 ```
 
 ## Step 4: Create a Mesh 
@@ -185,7 +185,7 @@ aws appmesh-preview update-route --mesh-name $MESH_NAME --cli-input-json file://
 
 Confirm that we see request timeout as 20sec in the response
 
-Then update the ColorGateway Virtual Node and ColortellerWhite Virtual Node to add timeout of 20secs at the listener. The spec at ColortellerWhite Virtual Node looks like below, similar timeout is set at ColorGateway Virtual Node too.
+Then update the Frontend Virtual Node and ColortellerWhite Virtual Node to add timeout of 20secs at the listener. The spec at ColortellerWhite Virtual Node looks like below, similar timeout is set at Frontend Virtual Node too.
 
 ```json
 {
@@ -222,7 +222,7 @@ Then update the ColorGateway Virtual Node and ColortellerWhite Virtual Node to a
 }
 ```
 ```bash
-./mesh/mesh.sh update_colorgateway-vn mesh/colorgateway-vn-timeout20s.json
+./mesh/mesh.sh update_frontend-vn mesh/frontend-vn-timeout20s.json
 ./mesh/mesh.sh update_colorteller-white-vn mesh/colorteller-vn-timeout20s.json
 ```
 Confirm that the response contains the timeout as 20secs and wait for few seconds for envoys to receive the latest config. Then curl the endpoint again with latency as 17, and this time we should get a successful response.
@@ -237,7 +237,7 @@ Virtual Gateway and Gateway Routes are new App Mesh resources that are in previe
 
 Timeouts at Virtual Gateways are calculated implicitly based on the timeouts of the routes present in the Virtual Service that the Gateway Route points to. Currently there is no API to define the timeouts for gateways explicitly. In case you need any such feature, please request it using [App Mesh Github roadmap](https://github.com/aws/aws-app-mesh-roadmap/issues).
 
-Lets create a Virtual Gateway(VG) and route the requests through it (basically replacing ColorGateway Virtual Node with public gateway VG) to verify that the timeout works well with VG too.
+Lets create a Virtual Gateway(VG) and route the requests through it (basically replacing Frontend Virtual Node with public gateway VG) to verify that the timeout works well with VG too.
 
 ```bash
 ./mesh/mesh.sh add_virtual_gateway

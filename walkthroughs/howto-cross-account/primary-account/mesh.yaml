@@ -9,11 +9,11 @@ Resources:
     Properties:
       MeshName: !Sub '${ProjectName}-mesh'
 
-  GatewayNode:
+  FrontendNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: gateway-vn
+      VirtualNodeName: frontend-vn
       Spec:
         Backends:
         - VirtualService:
@@ -24,7 +24,7 @@ Resources:
             Protocol: http
         ServiceDiscovery:
           DNS:
-            Hostname: !Sub "gateway.${ProjectName}.local"
+            Hostname: !Sub "frontend.${ProjectName}.local"
 
   BackendNode:
     Type: AWS::AppMesh::VirtualNode

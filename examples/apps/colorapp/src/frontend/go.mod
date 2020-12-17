@@ -1,4 +1,4 @@
-module github.com/aws/aws-app-mesh-examples/colorapp/gateway
+module github.com/aws/aws-app-mesh-examples/colorapp/frontend
 
 go 1.12
 

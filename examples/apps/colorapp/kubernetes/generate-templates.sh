@@ -8,35 +8,35 @@ cat << CONFIG_EOF > "${DIR}/colorapp.yaml"
 apiVersion: v1
 kind: Service
 metadata:
-  name: colorgateway
+  name: frontend
   labels:
-    app: colorgateway
+    app: frontend
 spec:
   ports:
   - port: 9080
     name: http
   selector:
-    app: colorgateway
+    app: frontend
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: colorgateway
+  name: frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: colorgateway
+      app: frontend
       version: v1
   template:
     metadata:
       labels:
-        app: colorgateway
+        app: frontend
         version: v1
     spec:
       containers:
-        - name: colorgateway
-          image: "${COLOR_GATEWAY_IMAGE}"
+        - name: frontend
+          image: "${FRONTEND_IMAGE}"
           ports:
             - containerPort: 9080
           env:
@@ -52,7 +52,7 @@ spec:
             runAsUser: 1337
           env:
             - name: "APPMESH_VIRTUAL_NODE_NAME"
-              value: "mesh/${MESH_NAME}/virtualNode/colorgateway-vn"
+              value: "mesh/${MESH_NAME}/virtualNode/frontend-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
             - name: "AWS_REGION"
@@ -400,7 +400,7 @@ spec:
           image: "tstrohmeier/alpine-infinite-curl"
           env:
             - name: "HOST"
-              value: "http://colorgateway.${SERVICES_DOMAIN}:9080/color"
+              value: "http://frontend.${SERVICES_DOMAIN}:9080/color"
 ---
 
 # tcpecho

@@ -20,7 +20,7 @@ aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     EnvironmentName="${ENVIRONMENT_NAME}" \
     ECSServicesDomain="${SERVICES_DOMAIN}" \
     AppMeshMeshName="${MESH_NAME}" \
-    ColorGatewayTaskDefinition="${colorgateway_task_def_arn}" \
+    FrontendTaskDefinition="${frontend_task_def_arn}" \
     ColorTellerWhiteTaskDefinition="${colorteller_white_task_def_arn}" \
     ColorTellerRedTaskDefinition="${colorteller_red_task_def_arn}" \
     ColorTellerBlueTaskDefinition="${colorteller_blue_task_def_arn}" \

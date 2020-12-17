@@ -11,7 +11,7 @@ Parameters:
     Type: String
     Description: Color client app container image
 
-  GatewayImage:
+  FrontendImage:
     Type: String
     Description: Color server app container image
 
@@ -147,10 +147,10 @@ Resources:
           Fn::ImportValue: !Sub '${ProjectName}:VpcCIDR'
         IpProtocol: -1
  
-  GatewayRegistry:
+  FrontendRegistry:
     Type: AWS::ServiceDiscovery::Service
     Properties:
-      Name: 'gateway'
+      Name: 'frontend'
       DnsConfig:
         NamespaceId:
           Fn::ImportValue: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
@@ -160,12 +160,12 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  GatewayTaskDef:
+  FrontendTaskDef:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
       - 'FARGATE'
-      Family: !Sub '${ProjectName}-gateway'
+      Family: !Sub '${ProjectName}-frontend'
       NetworkMode: 'awsvpc'
       Cpu: 256
       Memory: 512
@@ -187,14 +187,14 @@ Resources:
           Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
       - Name: 'app'
-        Image: !Ref GatewayImage
+        Image: !Ref FrontendImage
         Essential: true
         LogConfiguration:
           LogDriver: 'awslogs'
           Options:
             awslogs-group: !Sub '${ProjectName}-log-group'
             awslogs-region: !Ref AWS::Region
-            awslogs-stream-prefix: 'gateway'
+            awslogs-stream-prefix: 'frontend'
         PortMappings:
         - ContainerPort: !Ref ContainerPort
           Protocol: 'tcp'
@@ -225,14 +225,14 @@ Resources:
           Options:
             awslogs-group: !Sub '${ProjectName}-log-group'
             awslogs-region: !Ref AWS::Region
-            awslogs-stream-prefix: 'gateway-envoy'
+            awslogs-stream-prefix: 'frontend-envoy'
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-          Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/gateway-vn'
+          Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/frontend-vn'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 
-  GatewayService:
+  FrontendService:
     Type: AWS::ECS::Service
     DependsOn:
     - WebLoadBalancerRule
@@ -246,7 +246,7 @@ Resources:
       DesiredCount: 1
       LaunchType: 'FARGATE'
       ServiceRegistries:
-      - RegistryArn: !GetAtt 'GatewayRegistry.Arn'
+      - RegistryArn: !GetAtt 'FrontendRegistry.Arn'
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -255,7 +255,7 @@ Resources:
           Subnets:
           - Fn::ImportValue: !Sub '${ProjectName}:PrivateSubnet1'
           - Fn::ImportValue: !Sub '${ProjectName}:PrivateSubnet2'
-      TaskDefinition: !Ref GatewayTaskDef
+      TaskDefinition: !Ref FrontendTaskDef
       LoadBalancers:
       - ContainerName: app
         ContainerPort: !Ref ContainerPort

@@ -15,7 +15,7 @@ fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-COLOR_GATEWAY_IMAGE=${COLOR_GATEWAY_IMAGE:-"${ECR_URL}/gateway"}
+FRONTEND_IMAGE=${FRONTEND_IMAGE:-"${ECR_URL}/frontend"}
 GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
@@ -29,8 +29,8 @@ ecr_login() {
 }
 
 # build
-docker build --build-arg GO_PROXY=$GO_PROXY -t $COLOR_GATEWAY_IMAGE ${DIR}
+docker build --build-arg GO_PROXY=$GO_PROXY -t $FRONTEND_IMAGE ${DIR}
 
 # push
 ecr_login
-docker push $COLOR_GATEWAY_IMAGE
+docker push $FRONTEND_IMAGE

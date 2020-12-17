@@ -41,13 +41,13 @@ Log into the App Mesh console and drill down into "Virtual routers" for the mesh
 Test the service and confirm in X-Ray that the traffic flows through the `colorteller-blue` as expected with no errors.
 
 ![](../../examples/apps/colorapp/img/appmesh-xray-tracing-1.png)
-<p align="center"><b><i>Figure 5.</i></b> Tracing the colorgateway virtual node.</p>
+<p align="center"><b><i>Figure 5.</i></b> Tracing the frontend virtual node.</p>
 
 ### Deploy the new colorteller to Fargate
 
 For this configuration, we will deploy `colorteller-green`, which represents version 2 of our colorteller service. Initally, we will only send 30% of our traffic over to it. If our monitoring indicates that the service is healthy, we'll increase it to 60%, then finally to 100%. In the real world, you might choose more granular increases with automated rollout (and rollback if issues are indicated), but we're keeping things simple for the demo.
 
-As part of the original [walkthrough] we pushed the `gateway` and `colorteller` images to ECR (see [Deploy Images]) and then launched ECS tasks with these images. We will now launch an ECS task using the Fargate launch type with the same `colorteller` and `envoy` images. When the task is deployed, the running `envoy` container will be a sidecar for the `colorteller` container. Even with the Fargate launch type where we don't manually configure EC2 instances, a sidecar container will always be co-located on the same physical instance and its lifecycle coupled to the lifecycle of the primary application container (see [Sidecar Pattern]).
+As part of the original [walkthrough] we pushed the `frontend` and `colorteller` images to ECR (see [Deploy Images]) and then launched ECS tasks with these images. We will now launch an ECS task using the Fargate launch type with the same `colorteller` and `envoy` images. When the task is deployed, the running `envoy` container will be a sidecar for the `colorteller` container. Even with the Fargate launch type where we don't manually configure EC2 instances, a sidecar container will always be co-located on the same physical instance and its lifecycle coupled to the lifecycle of the primary application container (see [Sidecar Pattern]).
 
 #### 1. Update the mesh configuration
 
@@ -85,7 +85,7 @@ The endpoint for the ColorApp is one of the CloudFormation template's outputs. Y
 
 ```
 $ colorapp=$(aws cloudformation describe-stacks --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0
-].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text); echo $colorapp> ].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text); echo $colorapp
+].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text); echo $colorapp
 http://DEMO-Publi-YGZIJQXL5U7S-471987363.us-west-2.elb.amazonaws.com
 ```
 

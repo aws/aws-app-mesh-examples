@@ -12,13 +12,20 @@ fi
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 ECR_IMAGE_PREFIX=${AWS_PRIMARY_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${PROJECT_NAME}
+ECR_URL="${AWS_PRIMARY_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
 deploy_image() {
-    echo "Deploying Gateway image to ECR..."
-    aws ecr describe-repositories --repository-name ${PROJECT_NAME}/gateway >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/gateway
-    docker build -t ${ECR_IMAGE_PREFIX}/gateway ${DIR}/gateway --build-arg BACKEND_SERVICE=backend.${PROJECT_NAME}.local
-    $(aws --profile ${AWS_PROFILE} ecr get-login --no-include-email)
-    docker push ${ECR_IMAGE_PREFIX}/gateway
+    echo "Deploying Frontend image to ECR..."
+    aws ecr describe-repositories --repository-name ${PROJECT_NAME}/frontend >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/frontend
+    docker build -t ${ECR_IMAGE_PREFIX}/frontend ${DIR}/frontend --build-arg BACKEND_SERVICE=backend.${PROJECT_NAME}.local
+    if [ $AWS_CLI_VERSION -gt 1 ]; then
+        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_URL}
+    else
+        $(aws ecr get-login --no-include-email)
+    fi
+    docker push ${ECR_IMAGE_PREFIX}/frontend
 }
 
 deploy_infra() {
@@ -38,7 +45,7 @@ deploy_app() {
         --stack-name "${PROJECT_NAME}-app" \
         --template-file "${DIR}/app.yaml" \
         --capabilities CAPABILITY_IAM \
-        --parameter-overrides "ProjectName=${PROJECT_NAME}" "EnvoyImage=${ENVOY_IMAGE}" "GatewayImage=${ECR_IMAGE_PREFIX}/gateway" "BackendImage=${BACKEND_1_IMAGE}"
+        --parameter-overrides "ProjectName=${PROJECT_NAME}" "EnvoyImage=${ENVOY_IMAGE}" "FrontendImage=${ECR_IMAGE_PREFIX}/frontend" "BackendImage=${BACKEND_1_IMAGE}"
 }
 
 deploy_mesh() {
@@ -80,7 +87,7 @@ delete_cfn_stack() {
 delete_image() {
     echo "deleting repository \"${app}\"..."
     aws ecr delete-repository \
-       --repository-name $PROJECT_NAME/gateway \
+       --repository-name $PROJECT_NAME/frontend \
        --force
 }
 

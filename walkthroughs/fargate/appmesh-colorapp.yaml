@@ -195,14 +195,14 @@ Resources:
           VirtualNode:
             VirtualNodeName: tcpecho-vn
 
-  ColorGatewayVirtualNode:
+  FrontendVirtualNode:
     Type: AWS::AppMesh::VirtualNode
     DependsOn:
       - ColorTellerVirtualService
       - TcpEchoVirtualService
     Properties:
       MeshName: !Ref AppMeshMeshName
-      VirtualNodeName: colorgateway-vn
+      VirtualNodeName: frontend-vn
       Spec:
         Listeners:
           - PortMapping:
@@ -210,7 +210,7 @@ Resources:
               Protocol: http
         ServiceDiscovery:
           DNS:
-            Hostname: !Sub "colorgateway.${ServicesDomain}"
+            Hostname: !Sub "frontend.${ServicesDomain}"
         Backends:
           - VirtualService:
               VirtualServiceName: !Sub "colorteller.${ServicesDomain}"

@@ -7,7 +7,7 @@ getSecret() {
 }
 
 getCertificates() {
-    if [[ $CERTIFICATE_NAME = "colorgateway" ]];
+    if [[ $CERTIFICATE_NAME = "frontend" ]];
     then
         getSecret "ca_1_cert"
         getSecret "ca_2_cert"

@@ -3,8 +3,8 @@
 
 set -ex
 
-if [ -z $COLOR_GATEWAY_IMAGE_NAME ]; then
-    echo "COLOR_GATEWAY_IMAGE_NAME environment variable is not set"
+if [ -z $FRONTEND_IMAGE_NAME ]; then
+    echo "FRONTEND_IMAGE_NAME environment variable is not set"
     exit 1
 fi
 
@@ -12,7 +12,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
 
-IMAGE="${ECR_URL}/${COLOR_GATEWAY_IMAGE_NAME}:latest"
+IMAGE="${ECR_URL}/${FRONTEND_IMAGE_NAME}:latest"
 
 # build
 docker build -t $IMAGE $DIR --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}

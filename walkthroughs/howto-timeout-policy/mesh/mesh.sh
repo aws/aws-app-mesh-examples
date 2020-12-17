@@ -242,7 +242,7 @@ main() {
     case "$action" in
     up)
         create_mesh "${TEST_MESH_DIR}/mesh.json"
-        create_vnode "${TEST_MESH_DIR}/colorgateway-vn.json" "ColorGateway" "colorgateway"
+        create_vnode "${TEST_MESH_DIR}/frontend-vn.json" "Frontend" "frontend"
         create_vnode "${TEST_MESH_DIR}/colorteller-vn.json" "ColorTellerWhite" "colorteller"
 
         create_vrouter "${TEST_MESH_DIR}/colorteller-vr.json" "colorteller-vr"
@@ -254,7 +254,7 @@ main() {
         delete_vservice "colorteller.${SERVICES_DOMAIN}"
         delete_route "colorteller-vr" "colorteller-route"
         delete_vrouter "colorteller-vr"
-        delete_vnode "ColorGateway"
+        delete_vnode "Frontend"
         delete_vnode "ColorTellerWhite"
         delete_mesh
         ;;
@@ -280,8 +280,8 @@ main() {
     update_colorteller-red-vn)
         update_vnode "$2" "ColorTellerRed" "colorteller-red"
         ;;
-    update_colorgateway-vn)
-        update_vnode "$2" "ColorGateway" "colorgateway"
+    update_frontend-vn)
+        update_vnode "$2" "Frontend" "frontend"
         ;;
     *)
         err "Invalid action specified: $action"

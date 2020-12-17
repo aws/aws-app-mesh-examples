@@ -23,7 +23,7 @@ sanity_check() {
 
 # $1 ColorTellerGreenRouteWeight
 # $2 EnableClientValidationFlag
-# $3 ColorGatewayTlsValidationPath
+# $3 FrontendTlsValidationPath
 callCloudformation() {
     aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
         cloudformation deploy \
@@ -35,7 +35,7 @@ callCloudformation() {
         ServicesDomain="${SERVICES_DOMAIN}" \
         ColorTellerGreenRouteWeight=$1 \
         EnableClientValidationFlag=$2 \
-        ColorGatewayTlsValidationPath=$3
+        FrontendTlsValidationPath=$3
 }
 
 
@@ -43,7 +43,7 @@ main() {
     action="$1"
     if [ -z "$action" ]; then
         echo "Usage:"
-        echo "mesh.sh [up|addGreen|updateGateway|updateGateway2]"
+        echo "mesh.sh [up|addGreen|updateFrontend|updateFrontend2]"
     fi
     sanity_check
 
@@ -54,10 +54,10 @@ main() {
     addGreen)
         callCloudformation 1 "false"
         ;;
-    updateGateway)
+    updateFrontend)
         callCloudformation 1 "true" "/keys/ca_1_cert.pem"
         ;;
-    updateGateway2)
+    updateFrontend2)
         callCloudformation 1 "true" "/keys/ca_1_ca_2_bundle.pem"
         ;;    
     *)

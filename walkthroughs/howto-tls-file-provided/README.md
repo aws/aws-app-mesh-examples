@@ -24,7 +24,7 @@ export ENVIRONMENT_NAME="AppMeshTLSExample"
 export MESH_NAME="ColorApp-TLS"
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
-export GATEWAY_IMAGE_NAME="gateway"
+export FRONTEND_IMAGE_NAME="frontend"
 export COLOR_TELLER_IMAGE_NAME="colorteller"
 export COLOR_APP_ENVOY_IMAGE_NAME="colorapp-envoy"
 ```
@@ -63,14 +63,14 @@ Next, build and deploy the color app images.
 
 ```bash
 ./src/colorteller/deploy.sh
-./src/gateway/deploy.sh
+./src/frontend/deploy.sh
 ```
 
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
-GO_PROXY=direct ./src/gateway/deploy.sh
+GO_PROXY=direct ./src/frontend/deploy.sh
 ```
 
 ## Step 2: Generate the Certficates
@@ -161,7 +161,7 @@ Now with the mesh defined, we can deploy our service to ECS and test it out.
 ./infrastructure/ecs-service.sh
 ```
 
-Let's issue a request to the color gateway.
+Let's issue a request to the frontend.
 
 ```bash
 COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
@@ -182,13 +182,13 @@ ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
 curl -s http://colorteller.default.svc.cluster.local:9901/stats | grep ssl.handshake
 ```
 
-You should see output similar to: `listener.0.0.0.0_15000.ssl.handshake: 1`, indicating a successful SSL handshake was achieved between gateway and color teller.
+You should see output similar to: `listener.0.0.0.0_15000.ssl.handshake: 1`, indicating a successful SSL handshake was achieved between frontend and color teller.
 
 Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
 
 ## Client TLS Validation Tutorial
 
-Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the Color Gateway should also be responsible for defining what certificate authorities are trusted. App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
+Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the frontend should also be responsible for defining what certificate authorities are trusted. App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
 
 ## Step 6: Add the Green Color Teller
 
@@ -227,15 +227,15 @@ After a couple seconds, when you hit the service, you should see both green and 
 curl "${COLORAPP_ENDPOINT}/color"
 ```
 
-### Step 7: Add TLS Validation to the Gateway
+### Step 7: Add TLS Validation to the Frontend
 
-As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem.  
+As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Frontend was able to communicate with it no problem.  
 
 In the client/server relationship, if the server decides to turn on TLS, App Mesh configures the client Envoys to accept the certificate offered. However, clients should also validate that the certificate offered by the server is from a certificate authority they trust. App Mesh allows you to define a client policy for TLS validation to ensure that the certificate is valid and issued from a trustworthy source.
 
 If you recall, the Green Color Teller certificates were signed by a different CA than the White Color Teller certificates.  Perhaps this is not the intended behavior and we want to reject certificates from any CA that is not CA 1.
 
-We are going to update the Color Gateway backend to have this configuration:
+We are going to update the Frontend's backend to have this configuration:
 
 ```yaml
 Backends:
@@ -254,7 +254,7 @@ BackendDefaults:
 In this situation, we add a backend default for the Client Policy that instructs Envoy to only allow certificates signed by CA 1 to be accepted. If we had a separate backend with a `ClientPolicy` defined for `TLS`, then the default policy would not be applied for `TLS`.
 
 ```bash
-./mesh/mesh.sh updateGateway
+./mesh/mesh.sh updateFrontend
 ```  
 
 Now when call the service, you will see `white` is working properly, but you will start to see `upstream connect error or disconnect/reset before headers. reset reason: connection failure` from the Green Colorteller.
@@ -268,7 +268,7 @@ curl "${COLORAPP_ENDPOINT}/color"
 We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instructs Envoy to accept certificates signed by both CA 1 and CA 2.
 
 ```bash
-./mesh/mesh.sh updateGateway2
+./mesh/mesh.sh updateFrontend2
 ```
 
 Now when you call the service, you will see both `white` and `green` again.
@@ -292,7 +292,7 @@ Run the following commands to clean up and tear down the resources that we’ve 
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
 aws ecr delete-repository --force --repository-name $COLOR_TELLER_IMAGE_NAME
-aws ecr delete-repository --force --repository-name $GATEWAY_IMAGE_NAME
+aws ecr delete-repository --force --repository-name $FRONTEND_IMAGE_NAME
 aws ecr delete-repository --force --repository-name $COLOR_APP_ENVOY_IMAGE_NAME
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc

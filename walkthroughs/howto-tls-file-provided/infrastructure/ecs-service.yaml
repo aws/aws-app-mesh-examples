@@ -16,8 +16,8 @@ Parameters:
     Type: String
     Description: The image to use for the Envoy container
 
-  GatewayImageName:
-    Description: The name for the gateway image
+  FrontendImageName:
+    Description: The name for the frontend image
     Type: String
 
   ColorTellerImageName:
@@ -280,11 +280,11 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerGreenTaskDefinition }
 
-  ### colorgateway.default.svc.cluster.local
-  ColorGatewayServiceDiscoveryRecord:
+  ### frontend.default.svc.cluster.local
+  FrontendServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
-      Name: "colorgateway"
+      Name: "frontend"
       DnsConfig:
         NamespaceId:
           'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
@@ -294,12 +294,12 @@ Resources:
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
-  ColorGatewayTaskDefinition:
+  FrontendTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       RequiresCompatibilities:
         - 'FARGATE'
-      Family: 'gateway'
+      Family: 'frontend'
       NetworkMode: 'awsvpc'
       Cpu: 256
       Memory: 512
@@ -323,7 +323,7 @@ Resources:
             Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
         - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GatewayImageName}'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${FrontendImageName}'
           Essential: true
           DependsOn:
             - ContainerName: 'envoy'
@@ -334,7 +334,7 @@ Resources:
               awslogs-group:
                 Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
               awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'gateway'
+              awslogs-stream-prefix: 'frontend'
           PortMappings:
             - ContainerPort: 80
               Protocol: 'http'
@@ -373,14 +373,14 @@ Resources:
               awslogs-group:
                 Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
               awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'gateway-envoy'
+              awslogs-stream-prefix: 'frontend-envoy'
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorGateway'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/Frontend'
             - Name: CERTIFICATE_NAME
-              Value: 'colorgateway'
+              Value: 'frontend'
 
-  ColorGatewayService:
+  FrontendService:
     Type: 'AWS::ECS::Service'
     DependsOn:
       - WebLoadBalancerRule
@@ -394,7 +394,7 @@ Resources:
       LaunchType: FARGATE
       ServiceRegistries:
         - RegistryArn:
-            'Fn::GetAtt': ColorGatewayServiceDiscoveryRecord.Arn
+            'Fn::GetAtt': FrontendServiceDiscoveryRecord.Arn
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
@@ -403,7 +403,7 @@ Resources:
           Subnets: 
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      TaskDefinition: { Ref: ColorGatewayTaskDefinition }
+      TaskDefinition: { Ref: FrontendTaskDefinition }
       LoadBalancers:
         - ContainerName: app
           ContainerPort: 80
@@ -419,7 +419,7 @@ Resources:
           - CidrIp: 0.0.0.0/0
             IpProtocol: -1
 
-  # public ALB for color gateway
+  # public ALB for frontend
   PublicLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:

@@ -12,7 +12,7 @@
     - [Configure App Mesh resources](#configure-app-mesh-resources)
     - [Deploy services to ECS](#deploy-services-to-ecs)
       - [Deploy images to ECR for your account](#deploy-images-to-ecr-for-your-account)
-      - [Deploy gateway and colorteller services](#deploy-gateway-and-colorteller-services)
+      - [Deploy frontend and colorteller services](#deploy-frontend-and-colorteller-services)
       - [Test the application](#test-the-application)
   - [Shape traffic](#shape-traffic)
     - [Apply traffic rules](#apply-traffic-rules)
@@ -40,7 +40,7 @@ Finally, we deploy the services that will comprise our application to ECS along 
 ![appmesh-color-app-demo-3](img/appmesh-color-app-demo-3.png)
 <p align="center"><b><i>Figure 3.</i></b> Amazon ECS perspective of the Color App.</p>
 
-The key thing to note about this is that actual routing configuration is completely transparent to the application code. The code deployed to the `gateway` containers will send requests to the DNS name `colorteller.demo.local`, which we configure as a virtual service in App Mesh. App Mesh will push updates to all of the `envoy` sidecar containers to ensure traffic is sent directly to colorteller tasks running on EC2 instances according to the routing rules we specify through App Mesh configuration. There are no physical routers at runtime since App Mesh route rules are transformed to Envoy configuration and pushed directly to the `envoy` sidecars within the dependent tasks.
+The key thing to note about this is that actual routing configuration is completely transparent to the application code. The code deployed to the `frontend` containers will send requests to the DNS name `colorteller.demo.local`, which we configure as a virtual service in App Mesh. App Mesh will push updates to all of the `envoy` sidecar containers to ensure traffic is sent directly to colorteller tasks running on EC2 instances according to the routing rules we specify through App Mesh configuration. There are no physical routers at runtime since App Mesh route rules are transformed to Envoy configuration and pushed directly to the `envoy` sidecars within the dependent tasks.
 
 
 ## Overview
@@ -71,7 +71,7 @@ Each template has a corresponding shell script with a `.sh` extension that you r
 * `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`).
 * `KEY_PAIR_NAME` - your [Amazon EC2 Key Pair].
 * `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image.
-* `COLOR_GATEWAY_IMAGE` - Docker image for the Color App gateway microservice in ECR.
+* `FRONTEND_IMAGE` - Docker image for the Color App frontend microservice in ECR.
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice in ECR.
 
 See below for more detail and to see where these environment variables are used.
@@ -168,7 +168,7 @@ Our infrastructure requires compute resources to run our services on. The follow
 
 In addition to the previously defined environment variables, you will also need to export the following:
 
-* `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`). For this demo, we will use `demo.local`. This means that the gateway virtual service will send requests to the colorteller virtual service at `colorteller.demo.local`.
+* `SERVICES_DOMAIN` - the base namespace to use for service discovery (e.g., `cluster.local`). For this demo, we will use `demo.local`. This means that the frontend virtual service will send requests to the colorteller virtual service at `colorteller.demo.local`.
 * `KEY_PAIR_NAME` - your [Amazon EC2 Key Pair] to log into your EC2 instances.
 
 ***Create the ECS cluster***
@@ -251,28 +251,28 @@ $
 
 #### Deploy images to ECR for your account
 
-Before you can deploy the services, you will need to deploy the images that ECS will use for `gateway` and `colorteller` to ECR image repositories for your account. You can build these images from source under the `examples/apps/colorteller/src` and push them using the provided deploy scripts after you create repositories for them on ECR, as shown below.
+Before you can deploy the services, you will need to deploy the images that ECS will use for `frontend` and `colorteller` to ECR image repositories for your account. You can build these images from source under the `examples/apps/colorteller/src` and push them using the provided deploy scripts after you create repositories for them on ECR, as shown below.
 
 In addition to the previously defined environment variables, you will also need to export the following:
 
 * `AWS_ACCOUNT_ID` - Your AWS account ID.
 
-Deploy the `gateway` image:
+Deploy the `frontend` image:
 
 ```
 # from the colorapp repo root...
-$ cd examples/apps/colorapp/src/gateway
-$ aws ecr create-repository --repository-name=gateway
-$ export COLOR_GATEWAY_IMAGE=$(aws ecr describe-repositories --repository-names=gateway --query 'repositories[0].repositoryUri' --output text)
+$ cd examples/apps/colorapp/src/frontend
+$ aws ecr create-repository --repository-name=frontend
+$ export FRONTEND_IMAGE=$(aws ecr describe-repositories --repository-names=frontend --query 'repositories[0].repositoryUri' --output text)
 $ export AWS_ACCOUNT_ID=<replace-with-your-account-id>
 $ ./deploy.sh
-+ '[' -z 226767807331.dkr.ecr.us-west-2.amazonaws.com/gateway ']'
-+ docker build -t 226767807331.dkr.ecr.us-west-2.amazonaws.com/gateway .
++ '[' -z 226767807331.dkr.ecr.us-west-2.amazonaws.com/frontend ']'
++ docker build -t 226767807331.dkr.ecr.us-west-2.amazonaws.com/frontend .
 Sending build context to Docker daemon      1MB
 Step 1/11 : FROM golang:1.10 AS builder
 ...
-+ docker push 226767807331.dkr.ecr.us-west-2.amazonaws.com/gateway
-The push refers to repository [226767807331.dkr.ecr.us-west-2.amazonaws.com/gateway]
++ docker push 226767807331.dkr.ecr.us-west-2.amazonaws.com/frontend
+The push refers to repository [226767807331.dkr.ecr.us-west-2.amazonaws.com/frontend]
 latest: digest: sha256:ce597511c0230af89b81763eb51c808303e9ef8e1fbe677af02109d1f73a868c size: 528
 $
 ```
@@ -296,13 +296,13 @@ The push refers to repository [226767807331.dkr.ecr.us-west-2.amazonaws.com/colo
 latest: digest: sha256:ca16f12268907c32140586e2568e2032f04b95d70b373c00fcee7e776e2d29da size: 528
 $
 ```
-NOTE: If you run into issues with certificate because GO PROXY server is not reachable, you can turn it off by setting the environment variable `GO_PROXY` as below and then build the gateway and colorteller images
+NOTE: If you run into issues with certificate because GO PROXY server is not reachable, you can turn it off by setting the environment variable `GO_PROXY` as below and then build the frontend and colorteller images
 ```
 export GO_PROXY=direct
 ```
 
 
-#### Deploy gateway and colorteller services
+#### Deploy frontend and colorteller services
 
 We will now deploy our services on ECS. The following CloudFormation template will be used to create these resources for our application:
 
@@ -311,7 +311,7 @@ We will now deploy our services on ECS. The following CloudFormation template wi
 In addition to the previously defined environment variables, you will also need to export the following:
 
 * `ENVOY_IMAGE` - see [Envoy Image] for latest recommended Docker image.
-* `COLOR_GATEWAY_IMAGE` - Docker image for the Color App gateway microservice (see example below).
+* `FRONTEND_IMAGE` - Docker image for the Color App frontend microservice (see example below).
 * `COLOR_TELLER_IMAGE` - Docker image for the Color App colorteller microservice (see example below).
   
 ***Deploy services to ECS***
@@ -327,7 +327,7 @@ $ export ENVIRONMENT_NAME=DEMO
 $ export SERVICES_DOMAIN=demo.local
 $ export KEY_PAIR_NAME=tony_devbox2
 $ export ENVOY_IMAGE=12345689012.dkr.ecr.us-west-2.amazonzaws.com/appmesh-envoy:version
-$ export COLOR_GATEWAY_IMAGE=$(aws ecr describe-repositories --repository-names=gateway --query 'repositories[0].repositoryUri' --output text)
+$ export FRONTEND_IMAGE=$(aws ecr describe-repositories --repository-names=frontend --query 'repositories[0].repositoryUri' --output text)
 $ export COLOR_TELLER_IMAGE=$(aws ecr describe-repositories --repository-names=colorteller --query 'repositories[0].repositoryUri' --output text)
 $ ./examples/apps/colorapp/ecs/ecs-colorapp.sh
 ...
@@ -340,7 +340,7 @@ $
 
 #### Test the application
 
-Once we have deployed the app, we can curl the frontend service (`gateway`). To get the endpoint, run the following code:
+Once we have deployed the app, we can curl the frontend service (`frontend`). To get the endpoint, run the following code:
 
 ```
 $ colorapp=$(aws cloudformation describe-stacks --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0
@@ -487,17 +487,17 @@ In the next section we'll experiment with updating the route using the App Mesh 
 
 [AWS X-Ray] helps us to monitor and analyze distributed microservice applications through request tracing, providing an end-to-end view of requests traveling through the application so we can identify the root cause of errors and performance issues. We'll use X-Ray to provide a visual map of how App Mesh is distributing traffic and inspect traffic latency through our routes.
 
-When you open the AWS X-Ray console the view might appear busier than you expected due to traffic from automated healthchecks. We'll create a filter to focus on the traffic we're sending to the application frontend (colorgateway) when we request a color on the `/color` route.
+When you open the AWS X-Ray console the view might appear busier than you expected due to traffic from automated healthchecks. We'll create a filter to focus on the traffic we're sending to the application frontend (frontend) when we request a color on the `/color` route.
 
-The Color App has already been instrumented for X-Ray support and has created a [Segment] called "Default" to provide X-Ray with request context as it flows through the gateway service. Click on the "Default" button (shown in the figure below) to create a group to filter the visual map:
+The Color App has already been instrumented for X-Ray support and has created a [Segment] called "Default" to provide X-Ray with request context as it flows through the frontend service. Click on the "Default" button (shown in the figure below) to create a group to filter the visual map:
 
 ![appmesh-xray-create-group-1](img/appmesh-xray-create-group-1.png)
 <p align="center"><b><i>Figure 6.</i></b> Creating a group for the X-Ray service map.</p>
 
-Choose "Create group", name the group "color", and enter an expression that filters on requests to the `/color` route going through the `colorgateway-vn` node:
+Choose "Create group", name the group "color", and enter an expression that filters on requests to the `/color` route going through the `frontend-vn` node:
 
 ```
-(service("appmesh-mesh/colorgateway-vn")) AND http.url ENDSWITH "/color"
+(service("appmesh-mesh/frontend-vn")) AND http.url ENDSWITH "/color"
 ```
 
 ![appmesh-xray-create-group-2](img/appmesh-xray-create-group-2.png)
@@ -510,16 +510,16 @@ After creating the group, make sure to select it from the dropdown to apply it a
 
 What the map reveals is that:
 
-1. Our color request first flows through an Envoy proxy for ingress to the gateway service.
-2. Envoy passes the request to the gateway service, which makes a request to a colorteller.
-3. The gateway service makes a request to a colorteller service to fetch a color. Egress traffic also flows through the Envoy proxy, which has been configured by App Mesh to route 100% of traffic for the colorteller to colorteller-blue.
+1. Our color request first flows through an Envoy proxy for ingress to the frontend service.
+2. Envoy passes the request to the frontend service, which makes a request to a colorteller.
+3. The frontend service makes a request to a colorteller service to fetch a color. Egress traffic also flows through the Envoy proxy, which has been configured by App Mesh to route 100% of traffic for the colorteller to colorteller-blue.
 4. Traffic flows through another Envoy proxy for ingress to the colorteller-blue service.
 5. Envoy passes the request to the colorteller-blue service.
 
-Click on the `colorgateway-vn` node to display Service details:
+Click on the `frontend-vn` node to display Service details:
 
 ![appmesh-xray-tracing-1](img/appmesh-xray-tracing-1.png)
-<p align="center"><b><i>Figure 8.</i></b> Tracing the colorgateway virtual node.</p>
+<p align="center"><b><i>Figure 8.</i></b> Tracing the frontend virtual node.</p>
 
 We can see an overview on latency and that 100% of the requests are "OK".
 
@@ -569,7 +569,7 @@ AWS X-Ray is a valuable tool for providing insight into your application request
 
 The following is the condensed version of all the steps we performed to run the Color App.
 
-1. Export the following environment variables needed by our deployment scripts. You can use most of the example values below for your own demo, but you will need to modify the last four using your own EC2 key pair and ECR URLs for the color images (see [Deploy gateway and colorteller services]) and Envoy (see [Envoy Image]).
+1. Export the following environment variables needed by our deployment scripts. You can use most of the example values below for your own demo, but you will need to modify the last four using your own EC2 key pair and ECR URLs for the color images (see [Deploy frontend and colorteller services]) and Envoy (see [Envoy Image]).
 
 `.env`
 ```
@@ -581,7 +581,7 @@ export MESH_NAME=appmesh-mesh
 export SERVICES_DOMAIN=demo.local
 export ENVOY_IMAGE=12345689012.dkr.ecr.us-west-2.amazonzaws.com/appmesh-envoy:version
 export KEY_PAIR_NAME=tony_devbox2
-export COLOR_GATEWAY_IMAGE=226767807331.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/gateway
+export FRONTEND_IMAGE=226767807331.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/frontend
 export COLOR_TELLER_IMAGE=226767807331.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/colorteller:latest
 ```
 
@@ -600,7 +600,7 @@ $ ./examples/apps/colorapp/servicemesh/appmesh-colorapp.sh
 $ ./examples/apps/colorapp/ecs/ecs-colorapp.sh
 ```
 
-3. After the application is deployed, fetch the Color Gateway endpoint
+3. After the application is deployed, fetch the Color Frontend endpoint
 
 ```
 $ colorapp=$(aws cloudformation describe-stacks --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0
@@ -619,7 +619,7 @@ $ curl $colorapp/color
 
 In this walkthrough, we stepped through the process of deploying the Color App example with App Mesh. We saw how easy it was to update routes to distribute traffic between different versions of a backend service and to access logs and distributed traces for the app in the AWS Console.
 
-One of the key takeaways is that our control of traffic routing is transparent to the application. The application code for the gateway service that was deployed as an ECS task used the DNS name associated with the virtual service for the colorteller configured in App Mesh (`colorteller.demo.local`). App Mesh propagated the configuration updates throughout the mesh that ensured traffic from dependent services to their backends was routed according to the policies we specified using App Mesh configuration, not application configuration.
+One of the key takeaways is that our control of traffic routing is transparent to the application. The application code for the frontend service that was deployed as an ECS task used the DNS name associated with the virtual service for the colorteller configured in App Mesh (`colorteller.demo.local`). App Mesh propagated the configuration updates throughout the mesh that ensured traffic from dependent services to their backends was routed according to the policies we specified using App Mesh configuration, not application configuration.
 
 In this demo, our services ran only on ECS. In the next post in this series, we'll update the demo and deploy some of the services across different compute environments, including EC2, and see how App Mesh lets us control and monitor our running application managed within the same mesh.
 

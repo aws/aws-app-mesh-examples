@@ -12,7 +12,7 @@ removeSecret() {
 
 
 main() {
-    # Color Gateway
+    # Frontend
     removeSecret "ca_1_cert"
     removeSecret "ca_2_cert"
     removeSecret "ca_1_ca_2_bundle"

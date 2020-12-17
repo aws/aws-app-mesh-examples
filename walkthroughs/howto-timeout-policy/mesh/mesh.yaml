@@ -26,11 +26,11 @@ Resources:
     Properties:
       MeshName: !Ref MeshName
 
-  ColorGatewayVirtualNode:
+  FrontendVirtualNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: ColorGateway
+      VirtualNodeName: Frontend
       Spec:
         BackendDefaults:
           ClientPolicy:
@@ -49,7 +49,7 @@ Resources:
               Protocol: http
         ServiceDiscovery:
           DNS:
-            Hostname: !Sub "colorgateway.${ServicesDomain}"
+            Hostname: !Sub "frontend.${ServicesDomain}"
 
   ColorTellerVirtualNode:
     Type: AWS::AppMesh::VirtualNode

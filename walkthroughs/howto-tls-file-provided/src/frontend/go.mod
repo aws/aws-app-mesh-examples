@@ -1,4 +1,4 @@
-module github.com/aws/aws-app-mesh-examples/walkthroughs/howto-tls-file-provided/src/colorgateway
+module github.com/aws/aws-app-mesh-examples/walkthroughs/howto-tls-file-provided/src/frontend
 
 go 1.13
 

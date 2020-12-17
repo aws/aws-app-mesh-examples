@@ -59,18 +59,18 @@ Resources:
             TimeoutMillis: 2000
             IntervalMillis: 5000
   
-  ColorGatewayNode:
+  FrontendNode:
     Type: AWS::AppMesh::VirtualNode
     DependsOn:
     - ColorTellerService
     Properties:
       MeshName: !Ref AWS::StackName
-      VirtualNodeName: "colorgateway-node"
+      VirtualNodeName: "frontend-node"
       Spec:
         ServiceDiscovery:
           AWSCloudMap:
             NamespaceName: !Sub "${AWS::StackName}.local"
-            ServiceName: "colorgateway"
+            ServiceName: "frontend"
         Listeners:
         - PortMapping:
             Port: 9080

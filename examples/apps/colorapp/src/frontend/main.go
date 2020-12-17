@@ -174,7 +174,7 @@ func (h *tcpEchoHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 	}
 	defer conn.Close()
 
-	strEcho := "Hello from gateway"
+	strEcho := "Hello from frontend"
 	log.Printf("Writing '%s'", strEcho)
 	_, err = fmt.Fprintf(conn, strEcho)
 	if err != nil {
@@ -215,7 +215,7 @@ func main() {
 	log.Println("Using color-teller at " + colorTellerEndpoint)
 	log.Println("Using tcp-echo at " + tcpEchoEndpoint)
 
-	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-gateway", getStage()))
+	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-frontend", getStage()))
 
 	http.Handle("/color", xray.Handler(xraySegmentNamer, &colorHandler{}))
 	http.Handle("/color/clear", xray.Handler(xraySegmentNamer, &clearColorStatsHandler{}))
