@@ -1,24 +1,16 @@
-# Configuring Ingress Gateway (Preview only)
+# Configuring Ingress Gateway
 
 In this walkthrough, we'll configure an Ingress Gateway in our existing example color app but with a VirtualGateway resource instead of VirtualNode for ingress traffic.
 
 A virtual gateway allows resources outside your mesh to communicate to resources that are inside your mesh. The virtual gateway represents an Envoy proxy running in an Amazon ECS, in a Kubernetes service, or on an Amazon EC2 instance. Unlike a virtual node, which represents a proxy running with an application, a virtual gateway represents the proxy deployed by itself.
 
 ## Prerequisites
-This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided the `us-west-2` region.
 
-Run the following to check the version of controller you are running.
+This example requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.1.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.1.0). Run the following to check the version of controller you are running.
 ```
 kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.0.0-preview
-```
-
-[Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
-```
-aws configure add-model \
-    --service-name appmesh-preview \
-    --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
+v1.1.0
 ```
 
 ## Setup
@@ -36,11 +28,7 @@ aws configure add-model \
     export AWS_DEFAULT_REGION=us-west-2
 ```
 
-4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-
-```
-    export ENVOY_IMAGE=...
-```
+4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
 
 5. Deploy
 ```
@@ -59,16 +47,16 @@ Let's look at the VirtualGateway deployed in Kubernetes and AWS App Mesh:
 ```
 kubectl get virtualgateway -n howto-k8s-ingress-gateway                                         
 NAME         ARN                                                                                                                                 AGE
-ingress-gw   arn:aws:appmesh-preview:us-west-2:112233333455:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway   113s
+ingress-gw   arn:aws:appmesh:us-west-2:112233333455:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway   113s
 ```
 
 ```
-aws appmesh-preview list-virtual-gateways --mesh-name howto-k8s-ingress-gateway
+aws appmesh list-virtual-gateways --mesh-name howto-k8s-ingress-gateway
 
 # {
 #    "virtualGateways": [
 #        {
-#            "arn": "arn:aws:appmesh-preview:us-west-2:1234567890:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway",
+#            "arn": "arn:aws:appmesh:us-west-2:1234567890:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway",
 #            "createdAt": 1592601321.986,
 #            "lastUpdatedAt": 1592601321.986,
 #            "meshName": "howto-k8s-ingress-gateway",
@@ -80,12 +68,12 @@ aws appmesh-preview list-virtual-gateways --mesh-name howto-k8s-ingress-gateway
 #    ]
 # }
 
-aws appmesh-preview list-gateway-routes --virtual-gateway-name ingress-gw_howto-k8s-ingress-gateway --mesh-name howto-k8s-ingress-gateway
+aws appmesh list-gateway-routes --virtual-gateway-name ingress-gw_howto-k8s-ingress-gateway --mesh-name howto-k8s-ingress-gateway
 
 # {
 #    "gatewayRoutes": [
 #        {
-#            "arn": "arn:aws:appmesh-preview:us-west-2:1234567890:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway/gatewayRoute/gateway-route-paths_howto-k8s-ingress-gateway",
+#            "arn": "arn:aws:appmesh:us-west-2:1234567890:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway/gatewayRoute/gateway-route-paths_howto-k8s-ingress-gateway",
 #            "createdAt": 1592601647.409,
 #            "gatewayRouteName": "gateway-route-paths_howto-k8s-ingress-gateway",
 #            "lastUpdatedAt": 1592601647.409,
@@ -96,7 +84,7 @@ aws appmesh-preview list-gateway-routes --virtual-gateway-name ingress-gw_howto-
 #            "virtualGatewayName": "ingress-gw_howto-k8s-ingress-gateway"
 #        },
 #        {
-#            "arn": "arn:aws:appmesh-preview:us-west-2:1234567890:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway/gatewayRoute/gateway-route-headers_howto-k8s-ingress-gateway",
+#            "arn": "arn:aws:appmesh:us-west-2:1234567890:mesh/howto-k8s-ingress-gateway/virtualGateway/ingress-gw_howto-k8s-ingress-gateway/gatewayRoute/gateway-route-headers_howto-k8s-ingress-gateway",
 #            "createdAt": 1592601647.395,
 #            "gatewayRouteName": "gateway-route-headers_howto-k8s-ingress-gateway",
 #            "lastUpdatedAt": 1592601647.395,

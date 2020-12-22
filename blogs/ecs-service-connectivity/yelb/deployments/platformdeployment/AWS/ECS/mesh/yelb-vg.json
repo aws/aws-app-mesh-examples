@@ -1,0 +1,14 @@
+{
+   "meshName" : "yelb",
+   "spec" : {
+      "listeners" : [
+         {
+            "portMapping" : {
+               "port" : 80,
+               "protocol" : "http"
+            }
+         }
+      ]
+   },
+   "virtualGatewayName" : "yelb-gateway"
+}

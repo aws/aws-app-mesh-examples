@@ -1,0 +1,13 @@
+/* You can add global styles to this file, and also import other style files */
+
+
+* {
+    box-sizing: border-box;
+}
+
+ngx-charts-advanced-pie-chart .advanced-pie-legend .legend-items-container .legend-items .legend-item .item-value {
+    font-size: 24px;
+    margin-top: 0px;
+    margin-left: 11px;
+    overflow: inherit;
+}

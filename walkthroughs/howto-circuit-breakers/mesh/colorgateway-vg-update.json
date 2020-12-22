@@ -1,0 +1,18 @@
+{
+    "spec": {
+      "listeners": [
+        {
+          "portMapping": {
+            "port": 9080,
+            "protocol": "http"
+          },
+          "connectionPool": {
+            "http": {
+              "maxConnections": 100,
+              "maxPendingRequests": 10000
+            }
+          }
+        }
+      ]
+    }
+}

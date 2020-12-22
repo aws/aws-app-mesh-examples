@@ -7,6 +7,8 @@ try:
 except Exception as e:
     print(f'[ERROR] {e}')
 
+FAULT_TIME = 1
+
 COLOR = os.environ.get('COLOR', 'no color!')
 print(f'COLOR is {COLOR}')
 
@@ -24,7 +26,7 @@ class Handler(BaseHTTPRequestHandler):
         curr_time = time.time()
         time_diff = curr_time - req_time
 
-        if time_diff > 1 :
+        if time_diff > FAULT_TIME :
             print('success!')
             self.send_response(200)
         else :

@@ -1,0 +1,9 @@
+{
+    "spec": {
+        "provider": {
+            "virtualNode": {
+                "virtualNodeName": "colorteller-vn"
+            }
+        }
+    }
+}

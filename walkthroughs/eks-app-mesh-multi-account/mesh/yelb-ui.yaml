@@ -1,0 +1,32 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-ui
+  namespace: yelb
+spec:
+  podSelector:
+    matchLabels:
+      app: yelb-ui
+  listeners:
+    - portMapping:
+        port: 4567
+        protocol: http  
+  serviceDiscovery:
+    dns:
+      hostname: yelb-ui.yelb.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceARN: <yelb-appserver virtualServiceARN>
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: yelb-ui
+  namespace: yelb
+spec:
+  awsName: yelb-ui
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: yelb-ui

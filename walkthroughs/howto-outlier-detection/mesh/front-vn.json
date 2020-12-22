@@ -1,0 +1,40 @@
+{
+    "virtualNodeName": "front-node",
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 8080,
+                    "protocol": "http"
+                },
+                "healthCheck": {
+                    "protocol": "http",
+                    "path": "/ping",
+                    "healthyThreshold": 2,
+                    "unhealthyThreshold": 2,
+                    "timeoutMillis": 2000,
+                    "intervalMillis": 5000
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "awsCloudMap": {
+                "namespaceName": $NAMESPACE_NAME,
+                "serviceName": "front",
+                "attributes": [
+                    {
+                        "key": "ECS_TASK_DEFINITION_FAMILY",
+                        "value": "front"
+                    }
+                ]
+            }
+        },
+        "backends": [
+            {
+                "virtualService": {
+                    "virtualServiceName": $BACKEND_VS_NAME
+                }
+            }
+        ]
+    }
+}

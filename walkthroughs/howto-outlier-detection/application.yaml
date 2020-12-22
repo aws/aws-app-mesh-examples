@@ -1,0 +1,441 @@
+Parameters:
+
+    ProjectName:
+      Type: String
+      Description: Project name to link stacks
+  
+    EnvoyImage:
+      Type: String
+      Description: Envoy container image
+  
+    FrontAppImage:
+      Type: String
+      Description: Frontend app container image
+  
+    ColorAppImage:
+      Type: String
+      Description: Color app container image
+
+    FrontNodeName:
+      Type: String
+      Description: AWS_RESOURCE_ARN env variable for the front service's envoy
+      Default: 'mesh/howto-outlier-detection/virtualNode/front-node'  
+    
+    ColorNodeName:
+      Type: String
+      Description: AWS_RESOURCE_ARN env variable for the color service's envoy
+      Default: 'mesh/howto-outlier-detection/virtualNode/color-node'
+
+    BastionEC2Ami:
+      Description: EC2 AMI ID
+      Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+      Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+
+    BastionKeyName:
+      Description: The EC2 Key Pair to allow SSH access to the bastion host
+      Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+  
+    Cluster:
+      Type: AWS::ECS::Cluster
+      Properties:
+        ClusterName: !Ref ProjectName
+  
+    SecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: "Security group for the instances"
+        VpcId:
+          Fn::ImportValue: !Sub '${ProjectName}:VPC'
+        SecurityGroupIngress:
+          - CidrIp:
+              Fn::ImportValue: !Sub '${ProjectName}:VpcCIDR'
+            IpProtocol: -1
+  
+    LogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: !Sub '${ProjectName}-log-group'
+        RetentionInDays: 30
+  
+    TaskIamRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        AssumeRolePolicyDocument: |
+          {
+              "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                  "Action": [ "sts:AssumeRole" ]
+              }]
+          }
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/CloudWatchFullAccess
+          - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+  
+    TaskExecutionIamRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        AssumeRolePolicyDocument: |
+          {
+              "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                  "Action": [ "sts:AssumeRole" ]
+              }]
+          }
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+          - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+  
+    CloudMapNamespace:
+      Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+      Properties:
+        Name: !Sub '${ProjectName}.local'
+        Vpc:
+          Fn::ImportValue:
+            !Sub "${ProjectName}:VPC"
+  
+    ColorServiceRegistry:
+      Type: AWS::ServiceDiscovery::Service
+      Properties:
+        Name: 'color'
+        DnsConfig:
+          NamespaceId: !GetAtt 'CloudMapNamespace.Id'
+          DnsRecords:
+            - Type: A
+              TTL: 300
+        HealthCheckCustomConfig:
+          FailureThreshold: 1
+  
+    FrontServiceRegistry:
+      Type: AWS::ServiceDiscovery::Service
+      Properties:
+        Name: 'front'
+        DnsConfig:
+          NamespaceId: !GetAtt 'CloudMapNamespace.Id'
+          DnsRecords:
+            - Type: A
+              TTL: 300
+        HealthCheckCustomConfig:
+          FailureThreshold: 1
+  
+    PublicLoadBalancerSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: 'Access to the public facing load balancer'
+        VpcId:
+          Fn::ImportValue:
+            !Sub "${ProjectName}:VPC"
+        SecurityGroupIngress:
+          - CidrIp: 0.0.0.0/0
+            IpProtocol: -1
+  
+    PublicLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Scheme: internet-facing
+        LoadBalancerAttributes:
+          - Key: idle_timeout.timeout_seconds
+            Value: '30'
+        Subnets:
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:PublicSubnet1'
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:PublicSubnet2'
+        SecurityGroups:
+          - !Ref PublicLoadBalancerSecurityGroup
+  
+    WebTargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        HealthCheckIntervalSeconds: 6
+        HealthCheckPath: '/ping'
+        HealthCheckProtocol: HTTP
+        HealthCheckTimeoutSeconds: 5
+        HealthyThresholdCount: 2
+        TargetType: ip
+        Name: !Sub '${ProjectName}-target'
+        Port: 80
+        Protocol: HTTP
+        UnhealthyThresholdCount: 2
+        TargetGroupAttributes:
+          - Key: deregistration_delay.timeout_seconds
+            Value: 120
+        VpcId:
+          Fn::ImportValue:
+            !Sub "${ProjectName}:VPC"
+  
+    PublicLoadBalancerListener:
+      DependsOn:
+        - PublicLoadBalancer
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+          - TargetGroupArn: !Ref WebTargetGroup
+            Type: 'forward'
+        LoadBalancerArn: !Ref PublicLoadBalancer
+        Port: 80
+        Protocol: HTTP
+  
+    WebLoadBalancerRule:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+          - TargetGroupArn: !Ref WebTargetGroup
+            Type: 'forward'
+        Conditions:
+          - Field: path-pattern
+            Values:
+              - '*'
+        ListenerArn: !Ref PublicLoadBalancerListener
+        Priority: 1
+  
+    FrontTaskDef:
+      Type: AWS::ECS::TaskDefinition
+      Properties:
+        RequiresCompatibilities:
+          - 'FARGATE'
+        Family: 'front'
+        NetworkMode: 'awsvpc'
+        Cpu: 256
+        Memory: 512
+        TaskRoleArn: !Ref TaskIamRole
+        ExecutionRoleArn: !Ref TaskExecutionIamRole
+        ProxyConfiguration:
+          Type: 'APPMESH'
+          ContainerName: 'envoy'
+          ProxyConfigurationProperties:
+            - Name: 'IgnoredUID'
+              Value: '1337'
+            - Name: 'ProxyIngressPort'
+              Value: '15000'
+            - Name: 'ProxyEgressPort'
+              Value: '15001'
+            - Name: 'AppPorts'
+              Value: '8080'
+            - Name: 'EgressIgnoredIPs'
+              Value: '169.254.170.2,169.254.169.254'
+        ContainerDefinitions:
+          - Name: 'app'
+            Image: !Ref FrontAppImage
+            Essential: true
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub '${ProjectName}-log-group'
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: 'feapp'
+            PortMappings:
+              - ContainerPort: 8080
+                Protocol: 'tcp'
+            Environment:
+              - Name: 'SERVER_PORT'
+                Value: '8080'
+              - Name: 'COLOR_SERVICE_ENDPOINT'
+                Value: !Sub 'color.${ProjectName}.local:8080'
+          - Name: envoy
+            Image: !Ref EnvoyImage
+            Essential: true
+            User: '1337'
+            Ulimits:
+              - Name: "nofile"
+                HardLimit: 15000
+                SoftLimit: 15000
+            PortMappings:
+              - ContainerPort: 9901
+                Protocol: 'tcp'
+              - ContainerPort: 15000
+                Protocol: 'tcp'
+              - ContainerPort: 15001
+                Protocol: 'tcp'
+            HealthCheck:
+              Command:
+                - 'CMD-SHELL'
+                - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
+              Interval: 5
+              Timeout: 2
+              Retries: 3
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub '${ProjectName}-log-group'
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: 'feapp-envoy'
+            Environment:
+              - Name: 'APPMESH_RESOURCE_ARN'
+                Value: !Ref FrontNodeName
+              - Name: 'ENVOY_LOG_LEVEL'
+                Value: 'debug'
+  
+    ColorTaskDef:
+      Type: AWS::ECS::TaskDefinition
+      Properties:
+        RequiresCompatibilities:
+          - 'FARGATE'
+        Family: 'color'
+        NetworkMode: 'awsvpc'
+        Cpu: 256
+        Memory: 512
+        TaskRoleArn: !Ref TaskIamRole
+        ExecutionRoleArn: !Ref TaskExecutionIamRole
+        ProxyConfiguration:
+          Type: 'APPMESH'
+          ContainerName: 'envoy'
+          ProxyConfigurationProperties:
+            - Name: 'IgnoredUID'
+              Value: '1337'
+            - Name: 'ProxyIngressPort'
+              Value: '15000'
+            - Name: 'ProxyEgressPort'
+              Value: '15001'
+            - Name: 'AppPorts'
+              Value: '8080'
+            - Name: 'EgressIgnoredIPs'
+              Value: '169.254.170.2,169.254.169.254'
+        ContainerDefinitions:
+          - Name: 'app'
+            Image: !Ref ColorAppImage
+            Essential: true
+            DependsOn:
+              - ContainerName: 'envoy'
+                Condition: 'HEALTHY'
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub ${ProjectName}-log-group
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: 'color'
+            PortMappings:
+              - ContainerPort: 8080
+                Protocol: 'tcp'
+            Environment:
+              - Name: 'SERVER_PORT'
+                Value: '8080'
+          - Name: envoy
+            Image: !Ref EnvoyImage
+            Essential: true
+            User: '1337'
+            Ulimits:
+              - Name: "nofile"
+                HardLimit: 15000
+                SoftLimit: 15000
+            PortMappings:
+              - ContainerPort: 9901
+                Protocol: 'tcp'
+              - ContainerPort: 15000
+                Protocol: 'tcp'
+              - ContainerPort: 15001
+                Protocol: 'tcp'
+            HealthCheck:
+              Command:
+                - 'CMD-SHELL'
+                - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
+              Interval: 5
+              Timeout: 2
+              Retries: 3
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub '${ProjectName}-log-group'
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: 'color-envoy'
+            Environment:
+              - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+                Value: !Ref ColorNodeName
+    
+    FrontService:
+      Type: AWS::ECS::Service
+      DependsOn:
+        - WebLoadBalancerRule
+      Properties:
+        Cluster: !Ref Cluster
+        ServiceName: FrontService
+        DeploymentConfiguration:
+          MaximumPercent: 200
+          MinimumHealthyPercent: 100
+        DesiredCount: 1
+        LaunchType: 'FARGATE'
+        ServiceRegistries:
+          - RegistryArn: !GetAtt 'FrontServiceRegistry.Arn'
+        NetworkConfiguration:
+          AwsvpcConfiguration:
+            AssignPublicIp: DISABLED
+            SecurityGroups:
+              - !Ref SecurityGroup
+            Subnets:
+              - Fn::ImportValue:
+                  !Sub '${ProjectName}:PrivateSubnet1'
+              - Fn::ImportValue:
+                  !Sub '${ProjectName}:PrivateSubnet2'
+        TaskDefinition: !Ref FrontTaskDef
+        LoadBalancers:
+          - ContainerName: app
+            ContainerPort: 8080
+            TargetGroupArn: !Ref WebTargetGroup
+  
+    ColorService:
+      Type: AWS::ECS::Service
+      Properties:
+        Cluster: !Ref Cluster
+        ServiceName: ColorService
+        DeploymentConfiguration:
+          MaximumPercent: 200
+          MinimumHealthyPercent: 100
+        DesiredCount: 4
+        LaunchType: 'FARGATE'
+        ServiceRegistries:
+          - RegistryArn: !GetAtt 'ColorServiceRegistry.Arn'
+        NetworkConfiguration:
+          AwsvpcConfiguration:
+            AssignPublicIp: DISABLED
+            SecurityGroups:
+              - !Ref SecurityGroup
+            Subnets:
+              - Fn::ImportValue:
+                  !Sub '${ProjectName}:PrivateSubnet1'
+              - Fn::ImportValue:
+                  !Sub '${ProjectName}:PrivateSubnet2'
+        TaskDefinition: !Ref ColorTaskDef
+
+    BastionSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Security group for the bastion instance
+        VpcId:
+          'Fn::ImportValue': !Sub "${ProjectName}:VPC"
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  
+    BastionHost:
+      Type: AWS::EC2::Instance
+      Properties:
+        ImageId: !Ref BastionEC2Ami
+        KeyName: !Ref BastionKeyName
+        InstanceType: t2.micro
+        SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+        SubnetId:
+          'Fn::ImportValue': !Sub "${ProjectName}:PublicSubnet1"
+        Tags:
+          - Key: Name
+            Value: ${ProjectName}-bastion-host
+
+Outputs:
+    FrontendEndpoint:
+      Description: 'Public endpoint for Frontend service'
+      Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
+      Export:
+        Name: !Sub '${ProjectName}:FrontendEndpoint'
+
+    BastionIP:
+      Description: Public IP for ssh access to bastion host
+      Value:
+        'Fn::GetAtt': [ BastionHost, PublicIp ]
+  

@@ -1,0 +1,18 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 9080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "serviceDiscovery": {
+            "awsCloudMap": {
+                "namespaceName": $SERVICES_DOMAIN,
+                "serviceName": "colorteller"
+            }
+        }
+    }
+}

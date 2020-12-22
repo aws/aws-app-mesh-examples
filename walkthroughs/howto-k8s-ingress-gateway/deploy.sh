@@ -12,11 +12,6 @@ if [ -z $AWS_DEFAULT_REGION ]; then
     exit 1
 fi
 
-if [ -z $ENVOY_IMAGE ]; then
-    echo "ENVOY_IMAGE environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html"
-    exit 1
-fi
-
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="howto-k8s-ingress-gateway"
 APP_NAMESPACE=${PROJECT_NAME}
@@ -58,7 +53,7 @@ check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     if [ "$MANIFEST_VERSION" = "v1beta2" ]; then
         currentver=$(kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
-        requiredver="v1.0.0"
+        requiredver="v1.1.0"
         check_k8s_virtualgateway
         check_k8s_gatewayroutes
     else

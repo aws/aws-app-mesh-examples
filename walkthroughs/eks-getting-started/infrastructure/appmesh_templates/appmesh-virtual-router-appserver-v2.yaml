@@ -1,0 +1,30 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: yelb
+  name: yelb-appserver
+spec:
+  awsName: yelb-appserver-virtual-router
+  listeners:
+    - portMapping:
+        port: 4567
+        protocol: http
+  routes:
+    - name: route-to-yelb-appserver
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef: 
+                name: yelb-appserver-v2
+              weight: 1
+        retryPolicy:
+            maxRetries: 2
+            perRetryTimeout:
+                unit: ms
+                value: 2000
+            httpRetryEvents:
+                - server-error
+                - client-error
+                - gateway-error

@@ -1,0 +1,24 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-appserver-v2
+  namespace: yelb
+spec:
+  awsName: yelb-appserver-virtual-node-v2
+  podSelector:
+    matchLabels:
+      app: yelb-appserver-v2
+  listeners:
+    - portMapping:
+        port: 4567
+        protocol: http  
+  serviceDiscovery:
+    dns:
+      hostname: yelb-appserver-v2.yelb.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: yelb-db
+    - virtualService:
+       virtualServiceRef:
+          name: redis-server
