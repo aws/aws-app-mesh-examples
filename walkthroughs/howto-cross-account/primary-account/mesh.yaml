@@ -23,8 +23,9 @@ Resources:
             Port: 80
             Protocol: http
         ServiceDiscovery:
-          DNS:
-            Hostname: !Sub "gateway.${ProjectName}.local"
+          AWSCloudMap:
+            NamespaceName: !Sub "${ProjectName}.local"
+            ServiceName: "gateway"
 
   BackendNode:
     Type: AWS::AppMesh::VirtualNode
@@ -37,8 +38,9 @@ Resources:
             Port: 80
             Protocol: http
         ServiceDiscovery:
-          DNS:
-            Hostname: !Sub "backend.${ProjectName}.local"
+          AWSCloudMap:
+            NamespaceName: !Sub "${ProjectName}.local"
+            ServiceName: "backend"
               
   VirtualRouter:
     Type: AWS::AppMesh::VirtualRouter

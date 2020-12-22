@@ -22,5 +22,6 @@ Resources:
             Port: 80
             Protocol: http
         ServiceDiscovery:
-          DNS:
-            Hostname: !Sub "backend.secondary.${ProjectName}.local"
+          AWSCloudMap:
+            Namespace: !Sub "secondar.${ProjectName}.local"
+            ServiceName: "backend"
