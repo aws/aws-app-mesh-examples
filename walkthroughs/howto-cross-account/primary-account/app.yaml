@@ -11,10 +11,6 @@ Parameters:
     Type: String
     Description: Color client app container image
 
-  GatewayImage:
-    Type: String
-    Description: Color server app container image
-
   ContainerPort:
     Type: Number
     Description: Port number to use for applications
@@ -171,37 +167,10 @@ Resources:
       Memory: 512
       TaskRoleArn: !Ref TaskIamRole
       ExecutionRoleArn: !Ref TaskExecutionIamRole
-      ProxyConfiguration:
-        Type: 'APPMESH'
-        ContainerName: 'envoy'
-        ProxyConfigurationProperties:
-        - Name: 'IgnoredUID'
-          Value: '1337'
-        - Name: 'ProxyIngressPort'
-          Value: '15000'
-        - Name: 'ProxyEgressPort'
-          Value: '15001'
-        - Name: 'AppPorts'
-          Value: !Sub '${ContainerPort}'
-        - Name: 'EgressIgnoredIPs'
-          Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
-      - Name: 'app'
-        Image: !Ref GatewayImage
-        Essential: true
-        LogConfiguration:
-          LogDriver: 'awslogs'
-          Options:
-            awslogs-group: !Sub '${ProjectName}-log-group'
-            awslogs-region: !Ref AWS::Region
-            awslogs-stream-prefix: 'gateway'
-        PortMappings:
-        - ContainerPort: !Ref ContainerPort
-          Protocol: 'tcp'
       - Name: envoy
         Image: !Ref EnvoyImage
         Essential: true
-        User: '1337'
         Ulimits:
         - Name: "nofile"
           HardLimit: 15000
@@ -212,6 +181,8 @@ Resources:
         - ContainerPort: 15000
           Protocol: 'tcp'
         - ContainerPort: 15001
+          Protocol: 'tcp'
+        - ContainerPort: 80
           Protocol: 'tcp'
         HealthCheck:
           Command:
@@ -228,7 +199,7 @@ Resources:
             awslogs-stream-prefix: 'gateway-envoy'
         Environment:
         - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-          Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/gateway-vn'
+          Value: !Sub 'mesh/${ProjectName}-mesh/virtualGateway/gateway-vg'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
 
@@ -236,7 +207,6 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn:
     - WebLoadBalancerRule
-    - BackendService
     Properties:
       Cluster:
         Fn::ImportValue: !Sub '${ProjectName}:ECSCluster'
@@ -257,7 +227,7 @@ Resources:
           - Fn::ImportValue: !Sub '${ProjectName}:PrivateSubnet2'
       TaskDefinition: !Ref GatewayTaskDef
       LoadBalancers:
-      - ContainerName: app
+      - ContainerName: envoy
         ContainerPort: !Ref ContainerPort
         TargetGroupArn: !Ref WebTargetGroup
 

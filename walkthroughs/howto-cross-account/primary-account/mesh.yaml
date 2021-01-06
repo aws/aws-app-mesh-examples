@@ -9,22 +9,34 @@ Resources:
     Properties:
       MeshName: !Sub '${ProjectName}-mesh'
 
-  GatewayNode:
-    Type: AWS::AppMesh::VirtualNode
-    Properties:
+  VirtualGateway:
+    Type: AWS::AppMesh::VirtualGateway
+    Properties: 
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: gateway-vn
-      Spec:
-        Backends:
-        - VirtualService:
-            VirtualServiceName: !Sub 'backend.${ProjectName}.local'
-        Listeners:
+      Spec: 
+        Listeners: 
         - PortMapping:
             Port: 80
             Protocol: http
-        ServiceDiscovery:
-          DNS:
-            Hostname: !Sub "gateway.${ProjectName}.local"
+      VirtualGatewayName: gateway-vg
+
+  GatewayRoute:
+    DependsOn:
+      - VirtualGateway
+      - VirtualService
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: gateway-gr
+      MeshName: !GetAtt Mesh.MeshName
+      Spec:
+        HttpRoute:
+          Action:
+            Target:
+              VirtualService:
+                VirtualServiceName: !Sub 'backend.${ProjectName}.local'
+          Match:
+            Prefix: /
+      VirtualGatewayName: gateway-vg
 
   BackendNode:
     Type: AWS::AppMesh::VirtualNode
