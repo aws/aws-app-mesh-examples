@@ -16,7 +16,7 @@ In this guide, we will be configuring Envoy proxies using certificates hosted in
 
 ## Prerequisites
 
-1. Install Docker. It is needed to build the demo application images
+1. Install Docker. It is needed to build the demo application images.
 
 ## Part 1: Setup
 

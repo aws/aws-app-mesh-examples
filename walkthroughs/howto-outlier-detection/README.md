@@ -35,7 +35,7 @@ export the key pair name: ```bash export KEY_PAIR_NAME=od-bastion```
 
 3. In addition, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
-4. Install Docker. It is needed to build the demo application images
+4. Install Docker. It is needed to build the demo application images.
 
 5. Finally, to generate traffic and observe the server responses, we will leverage the open source Http load testing tool [vegeta](https://github.com/tsenart/vegeta). You can choose to install it locally or run the commands we will use later in a Docker container using this [image](https://hub.docker.com/r/peterevans/vegeta/).
 

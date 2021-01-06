@@ -12,7 +12,7 @@ Let's jump into a brief example of App Mesh TLS in action.
 
 ## Prerequisites
 
-1. Install Docker. It is needed to build the demo application images
+1. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Create Color App Infrastructure
 

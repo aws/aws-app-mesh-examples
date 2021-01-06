@@ -11,7 +11,7 @@ In App Mesh, traffic encryption works between Virtual Nodes, and thus between En
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-3. Install Docker. It is needed to build the demo application images
+3. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Setup environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-tls-file-based folder, all commands will be ran from this location

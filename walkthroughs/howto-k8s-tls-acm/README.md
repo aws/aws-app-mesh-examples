@@ -15,7 +15,7 @@ In this walkthrough we'll enable TLS encryption between two applications in App 
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
-* Install Docker. It is needed to build the demo application images
+* Install Docker. It is needed to build the demo application images.
 
 
 

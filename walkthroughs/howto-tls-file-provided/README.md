@@ -12,7 +12,7 @@ Additionally, this walkthrough makes use of the unix command line utility `jq`. 
 
 ## Prerequisites
 
-1. Install Docker. It is needed to build the demo application images
+1. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Create Color App Infrastructure
 

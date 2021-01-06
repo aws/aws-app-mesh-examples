@@ -13,7 +13,7 @@ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".sp
 v1.1.0
 ```
 
-2. Install Docker. It is needed to build the demo application images
+2. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 

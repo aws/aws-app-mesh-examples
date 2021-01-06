@@ -11,7 +11,7 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 
 You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
-3. Install Docker. It is needed to build the demo application images
+3. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 

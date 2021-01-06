@@ -39,7 +39,7 @@ In order to successfully carry out the base deployment:
 * Make sure to have jq installed (https://stedolan.github.io/jq/download/).
 * Make sure to have aws-iam-authenticator installed (https://github.com/kubernetes-sigs/aws-iam-authenticator), required for eksctl
 * Install eksctl (https://eksctl.io/), for example, on macOS with brew tap weaveworks/tap and brew install weaveworks/tap/eksctl, and make sure it's on at least on version 0.23.0.
-* Install Docker. It is needed to build the demo application images 
+* Install Docker. It is needed to build the demo application images.
 
 v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```

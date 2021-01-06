@@ -26,7 +26,7 @@ This mesh has the following resources:
   1. `color-route-black`: A route with a header match rule to match weather the pseudo header name `:scheme` has a value that matches the prefix `https`.
 
 ## Prerequisites
-1. Install Docker. It is needed to build the demo application images
+1. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 

@@ -21,7 +21,7 @@ Colorapp is configured to respond with a delay of 45 seconds to simulate an upst
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
-3. Install Docker. It is needed to build the demo application images
+3. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 

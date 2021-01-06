@@ -22,7 +22,7 @@ We go through the exercise of setting up connection pool settings at the Virtual
     This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at `~/.ssh/color-app.pem`.
 
 4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
-5. Install Docker. It is needed to build the demo application images
+5. Install Docker. It is needed to build the demo application images.
 
 ## Step 2: Set Environment Variables
 We need to set a few environment variables before provisioning the infrastructure.

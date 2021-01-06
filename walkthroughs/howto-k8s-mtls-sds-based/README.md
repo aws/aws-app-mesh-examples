@@ -27,7 +27,7 @@ aws configure add-model \
     --service-model file://$HOME/appmesh-preview-model.json
 ```
 
-4. Install Docker. It is needed to build the demo application images
+4. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Setup Environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-mtls-sds-based folder, all commands will be ran from this location

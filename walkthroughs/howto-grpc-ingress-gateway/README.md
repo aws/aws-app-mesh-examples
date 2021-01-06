@@ -13,7 +13,7 @@ The Color Server is a gRPC server that implements `SetColor` and `GetColor` meth
 The front-end is Virtual Gateway that maintains a persistent gRPC connection to the Color Server. The Virtual Gateway will be connected to an internet-facing NLB. It forwards the gRPC connections to the same methods in [color.ColorService](./color.proto).
 
 ## Prerequisites
-1. Install Docker. It is needed to build the demo application images
+1. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 

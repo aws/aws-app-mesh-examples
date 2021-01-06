@@ -101,7 +101,7 @@ This command creates an Amazon EC2 Key Pair with name `color-app` and saves the 
 
 2. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
-3. Install Docker. It is needed to build the demo application images
+3. Install Docker. It is needed to build the demo application images.
 
 ## Step 2: Set Environment Variables
 We need to set a few environment variables before provisioning the

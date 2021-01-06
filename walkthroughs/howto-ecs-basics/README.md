@@ -5,7 +5,7 @@ This tutorial provides a walkthrough of the basics of App Mesh service. This int
 2. Adopt App Mesh for service to service communication via Envoy proxy. This will build on Cloud Map service discovery integration.
 
 ## Prerequisites
-1. Install Docker. It is needed to build the demo application images
+1. Install Docker. It is needed to build the demo application images.
 
 ## Bootstrap
 
