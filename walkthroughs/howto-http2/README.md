@@ -12,6 +12,9 @@ The Color Server is a simple go HTTP2 server returns a color. In this example, w
 
 The Color Client is a HTTP/1.1 front-end webserver that communicates to the Color Server over HTTP2. The HTTP/1.1 webserver will be connected to an internet-facing ALB. It forwards requests for `/color` to a Color Server backend. Initially, the Envoy sidecar for the Color Client will be configured to only route the `red`-type virtual-nodes, but we will update the route to load-balance across all three types.
 
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images.
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthroughs/howto-http2 folder, all commands will be ran from this location.
