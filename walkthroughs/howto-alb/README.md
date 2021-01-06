@@ -11,6 +11,9 @@ V1 is registered as a virtual-node with service-discovery set to DNS (ALB's DNS)
 ### Frontend
 Frontend app is ECS service that runs in private subnet behind internet-facing ALB. Frontend is registered with App Mesh as virtual-node with backends set to Backend's virtual-service. Frontend is deployed with Envoy sidecar that communicates with Backend.
 
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images.
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/howto-alb folder, all commands will be ran from this location

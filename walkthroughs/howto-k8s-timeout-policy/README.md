@@ -14,13 +14,14 @@ Front app acts as a gateway that makes remote calls to colorapp. Front app has s
 Colorapp is configured to respond with a delay of 45 seconds to simulate an upstream request that takes more than the default Envoy timeout of 15 seconds. Since, the configured timeout value in _front_virtual-node is 60 seconds(along with route timeout of 60 secs in the backend virtual router), we can see that envoy will not timeout in this scenario.
 
 ## Prerequisites
-[Walkthrough: App Mesh with EKS](../eks/)
+1. [Walkthrough: App Mesh with EKS](../eks/)
 
-v1beta2 example manifest requires aws-app-mesh-controller-for-k8s version >=v1.0.0. Run the following to check the version of controller you are running.
+2. v1beta2 example manifest requires aws-app-mesh-controller-for-k8s version >=v1.0.0. Run the following to check the version of controller you are running.
 
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
+3. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 

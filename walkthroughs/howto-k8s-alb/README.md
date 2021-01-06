@@ -6,6 +6,7 @@ This example shows how to use [ALB Ingress Controller](https://github.com/kubern
 ## Prerequisites
 - [Walkthrough: App Mesh with EKS](../eks/)
 - [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/)
+- Install Docker. It is needed to build the demo application images.
 
 Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
 
