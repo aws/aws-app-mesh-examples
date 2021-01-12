@@ -370,6 +370,8 @@ Resources:
 
   ColorECSService:
     Type: AWS::ECS::Service
+    DependsOn:
+      - ColorLoadBalancer
     Properties:
       Cluster: !Ref ECSCluster
       DeploymentConfiguration:
