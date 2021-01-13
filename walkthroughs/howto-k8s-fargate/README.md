@@ -21,7 +21,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     ```
 
 - Setup EKS cluster with Fargate support.
-  - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
+  - You can use [clusterconfig.yaml](./v1beta2/clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION.
     ```
     eksctl create cluster -f v1beta2/clusterconfig.yaml
     ```
