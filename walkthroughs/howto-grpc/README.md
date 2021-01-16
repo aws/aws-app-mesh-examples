@@ -12,6 +12,9 @@ The Color Server is a gRPC server that implements [color.ColorService](./color.p
 
 The Color Client is a HTTP/1.1 front-end webserver that maintains a persistent gRPC connection to the Color Server. The HTTP/1.1 webserver will be connected to an internet-facing ALB. It forwards requests to `/getColor` and `/setColor` to the same methods in [color.ColorService](./color.proto). Initially, the Envoy sidecar for the Color Client will be configured to only route the `GetColor` gRPC method, but we will update the route to forward all methods to the Color Server.
 
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images.
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthroughs/howto-grpc folder, all commands will be ran from this location.

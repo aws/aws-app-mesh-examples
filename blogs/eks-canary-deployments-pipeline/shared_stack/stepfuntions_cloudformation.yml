@@ -1,0 +1,250 @@
+AWSTemplateFormatVersion: "2010-09-09"
+#------ Parameters ------#
+Parameters:
+  EKSClusterARN:
+    Type: String
+    Description: The EKS cluster ARN that DescribeCluster will be authorized, you can specify * for all clusters
+    MinLength: 1
+  SourceCodeBucket:
+    Type: String
+    Description: The S3 bucket on which the AWS Lambda source code are stored.
+    MinLength: 1
+  LambdaLayerName:
+    Type: String
+    Description: The lambda layer that has aws-cli, kubectl and jq.
+    MinLength: 1
+  ArtifactBucketRetentionDays:
+    Type: Number
+    Description: The number of days that the artifacts should be kept stored in S3.
+    MinValue: 1
+    Default: 31
+
+Resources:
+  #------- S3 Bucket for Artifacts -------#
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays:
+              Ref: ArtifactBucketRetentionDays
+            Status: Enabled
+
+  #------ Check Deployment Version Lambda Function ------#
+  CheckDeploymentVersionFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetParameterPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameter"
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/eks-canary-*-version'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  CheckDeploymentVersionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ CheckDeploymentVersionFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/check_deployment_version/function.zip"
+      Runtime: "python3.8"
+      Timeout: "10"
+
+  #------ Gather Healthcheck Status Lambda Function ------#
+  GatherHealthcheckStatusFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetMetricData
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "cloudwatch:GetMetricData"
+                Resource: "*"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  GatherHealthcheckStatusFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ GatherHealthcheckStatusFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/gather_healthcheck_status/function.zip"
+      Runtime: "python3.8"
+      Timeout: "10"
+
+  #------ Deploy and Switch Traffic Lambda Function ------#
+  EKSDeploymentFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: DescribeEKSCluster
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "eks:DescribeCluster"
+                Resource:
+                  Ref: EKSClusterARN
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  DeploySwitchTrafficFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.handler"
+      Role: !GetAtt [ EKSDeploymentFunctionRole, Arn ]
+      Layers:
+        - Ref: LambdaLayerName
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/deploy_and_switch_traffic/function.zip"
+      Runtime: "provided"
+      Timeout: "30"
+      MemorySize: 512
+   #------ Remove Old Version Lambda Function with same IAM Role------#
+  RollbackOrFinishUpgradeFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.handler"
+      Role: !GetAtt [ EKSDeploymentFunctionRole, Arn ]
+      Layers:
+        - Ref: LambdaLayerName
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/rollback_or_finish_upgrade/function.zip"
+      Runtime: "provided"
+      Timeout: "30"
+      MemorySize: 512
+
+  #------ Update Deployment Version Lambda Function ------#
+  UpdateDeploymentVersionFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetParameterPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ssm:PutParameter"
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/eks-canary-*-version'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  UpdateDeploymentVersionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ UpdateDeploymentVersionFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/update_deployment_version/function.zip"
+      Runtime: "python3.8"
+      Timeout: "10"
+
+  #------ StepFunctions Deployment Orchestrator ------#
+  EKSCanaryDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: ExecutetResources
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: !GetAtt [ CheckDeploymentVersionFunction, Arn ]
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !GetAtt [ CheckDeploymentVersionFunction, Arn ]
+                  - !GetAtt [ UpdateDeploymentVersionFunction, Arn ]
+                  - !GetAtt [ RollbackOrFinishUpgradeFunction, Arn ]
+                  - !GetAtt [ DeploySwitchTrafficFunction, Arn ]
+                  - !GetAtt [ GatherHealthcheckStatusFunction, Arn ]
+  EKSCanaryDeployment:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineType: "STANDARD"
+      DefinitionS3Location:
+        Bucket:
+          Ref: SourceCodeBucket
+        Key: "shared_stack/state_machine_definition.yml"
+      DefinitionSubstitutions: {
+        CheckDeploymentVersionFunctionArn: !GetAtt [ CheckDeploymentVersionFunction, Arn ],
+        UpdateDeploymentVersionFunctionArn: !GetAtt [ UpdateDeploymentVersionFunction, Arn ],
+        RollbackOrFinishUpgradeArn: !GetAtt [RollbackOrFinishUpgradeFunction, Arn ],
+        GatherHealthcheckStatusArn: !GetAtt [GatherHealthcheckStatusFunction, Arn ],
+        DeploySwitchTrafficFunctionArn: !GetAtt [DeploySwitchTrafficFunction, Arn]}
+      RoleArn: !GetAtt [ EKSCanaryDeploymentRole, Arn ]
+
+Outputs:
+  EKSAccessRole:
+    Description: Role that has to be added to Kubernetes RBAC
+    Value: !GetAtt [ EKSDeploymentFunctionRole, Arn ]
+  StateMachine:
+    Description: State Machine ARN that will be referenced on each CodePipeline CloudFormation
+    Value: !GetAtt [ EKSCanaryDeployment, Name ]
+    Export:
+      Name: !Sub '${AWS::StackName}-StateMachineName'
+  S3ArtifactsBucket:
+    Description: Artifacts S3 bucket name
+    Value:
+      Ref: ArtifactsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-Pipeline-Artifacts'

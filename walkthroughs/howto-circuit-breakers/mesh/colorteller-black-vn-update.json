@@ -1,0 +1,30 @@
+{
+    "spec": {
+          "listeners": [
+             {
+                "healthCheck": {
+                   "healthyThreshold": 2,
+                   "intervalMillis": 5000,
+                   "path": "/ping",
+                   "protocol": "http2",
+                   "timeoutMillis": 2000,
+                   "unhealthyThreshold": 2
+                },
+                "portMapping": {
+                   "port": 9080,
+                   "protocol": "http2"
+                },
+                "connectionPool": {
+                  "http2": {
+                    "maxRequests": 10
+                  }
+                }
+             }
+          ],
+          "serviceDiscovery": {
+             "dns": {
+                "hostname": $DNS_HOSTNAME
+             }
+          }
+    }
+}

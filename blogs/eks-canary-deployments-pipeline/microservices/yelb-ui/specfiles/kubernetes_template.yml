@@ -1,0 +1,131 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
+  namespace: ${KUBERNETES_NAMESPACE}
+spec:
+  awsName: ${MICROSERVICE_NAME}-${CANARY_VERSION}-virtual-node
+  podSelector:
+    matchLabels:
+      app: ${MICROSERVICE_NAME}
+      version: "${CANARY_VERSION}"
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+      healthCheck:
+        healthyThreshold: 2
+        intervalMillis: 5000
+        path: "/"
+        port: 80
+        protocol: "http"
+        timeoutMillis: 2000
+        unhealthyThreshold: 2
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
+  serviceDiscovery:
+    dns:
+      hostname: ${MICROSERVICE_NAME}-${CANARY_VERSION}.${KUBERNETES_NAMESPACE}.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: yelb-appserver
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}
+spec:
+  awsName: ${MICROSERVICE_NAME}-virtual-router
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  routes:
+    - name: route-to-${MICROSERVICE_NAME}
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets: [${CANARY_ROUTES}]
+        retryPolicy:
+            maxRetries: 2
+            perRetryTimeout:
+                unit: ms
+                value: 2000
+            httpRetryEvents:
+                - server-error
+                - client-error
+                - gateway-error
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: ${MICROSERVICE_NAME}
+  namespace: ${KUBERNETES_NAMESPACE}
+spec:
+  awsName: ${MICROSERVICE_NAME}
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: ${MICROSERVICE_NAME}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
+  labels:
+    app: ${MICROSERVICE_NAME}
+    version: "${CANARY_VERSION}"
+    tier: frontend
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      name: http
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: ${MICROSERVICE_NAME}
+    version: "${CANARY_VERSION}"
+    tier: frontend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME}-${CANARY_VERSION}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${MICROSERVICE_NAME}
+      version: "${CANARY_VERSION}"
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: ${MICROSERVICE_NAME}
+        version: "${CANARY_VERSION}"
+        tier: frontend
+    spec:
+      containers:
+        - name: ${MICROSERVICE_NAME}
+          image: ${CONTAINER_IMAGE}
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: ${KUBERNETES_NAMESPACE}
+  name: ${MICROSERVICE_NAME} # used to provide a DNS entry for ${MICROSERVICE_NAME} VS
+spec:
+  ports:
+    - port: 80
+      name: http

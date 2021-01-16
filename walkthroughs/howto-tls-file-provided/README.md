@@ -10,6 +10,10 @@ In this guide, we will be configuring Envoy to use the file based strategy.
 
 Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
+## Prerequisites
+
+1. Install Docker. It is needed to build the demo application images.
+
 ## Step 1: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.

@@ -1,0 +1,6 @@
+*.crt
+*.key
+*.csr
+*.pem
+*.srl
+*.generated

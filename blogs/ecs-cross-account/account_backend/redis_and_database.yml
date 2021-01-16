@@ -1,0 +1,342 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+    Default: am-ecs-multi-account
+
+  EnvoyImage:
+    Type: String
+    Description: Envoy container image
+
+  RedisImage:
+    Type: String
+    Description: Container image for Redis
+    Default: redis:4.0.2
+
+  DatabaseImage:
+    Type: String
+    Description: Container image for Database
+    Default: mreferre/yelb-db:0.5
+
+  MeshName:
+    Type: String
+    Description: Name of the Mesh
+    Default: yelb
+
+Resources:
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for the tasks"
+      VpcId:
+        Fn::ImportValue: !Sub "${ProjectName}:VPC"
+      SecurityGroupIngress:
+        - CidrIp:
+            Fn::ImportValue: !Sub "${ProjectName}:VpcCIDR"
+          IpProtocol: -1
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${ProjectName}-log-group"
+      RetentionInDays: 5
+
+  TaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+            "Action": [ "sts:AssumeRole" ]
+          }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+
+  TaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+            "Action": [ "sts:AssumeRole" ]
+          }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for the instances"
+      VpcId:
+        Fn::ImportValue: !Sub "${ProjectName}:VPC"
+      SecurityGroupIngress:
+        - CidrIp:
+            Fn::ImportValue: !Sub "${ProjectName}:VpcCIDR"
+          IpProtocol: -1
+
+  DatabaseRegistry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: "yelb-db"
+      DnsConfig:
+        NamespaceId:
+          Fn::ImportValue: !Sub "${ProjectName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  DatabaseTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - "FARGATE"
+      Family: !Sub "${ProjectName}-yelb-db"
+      NetworkMode: "awsvpc"
+      Cpu: 256
+      Memory: 512
+      TaskRoleArn: !Ref TaskIamRole
+      ExecutionRoleArn: !Ref TaskExecutionIamRole
+      ProxyConfiguration:
+        Type: "APPMESH"
+        ContainerName: "envoy"
+        ProxyConfigurationProperties:
+          - Name: "IgnoredUID"
+            Value: "1337"
+          - Name: "ProxyIngressPort"
+            Value: "15000"
+          - Name: "ProxyEgressPort"
+            Value: "15001"
+          - Name: "AppPorts"
+            Value: "5432"
+          - Name: "EgressIgnoredIPs"
+            Value: "169.254.170.2,169.254.169.254"
+      ContainerDefinitions:
+        - Name: "yelb-db"
+          Image: !Ref DatabaseImage
+          Essential: true
+          DependsOn:
+            - ContainerName: 'xray-daemon'
+              Condition: 'START'
+            - ContainerName: 'envoy'
+              Condition: 'HEALTHY'
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Sub "${ProjectName}-log-group"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "database"
+          PortMappings:
+            - ContainerPort: 5432
+              Protocol: "tcp"
+        - Name: xray-daemon
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: "1337"
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: "udp"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Sub "${ProjectName}-log-group"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "database-xray"
+        - Name: envoy
+          Image: !Ref EnvoyImage
+          Essential: true
+          User: "1337"
+          Ulimits:
+            - Name: "nofile"
+              HardLimit: 15000
+              SoftLimit: 15000
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: "tcp"
+            - ContainerPort: 15000
+              Protocol: "tcp"
+            - ContainerPort: 15001
+              Protocol: "tcp"
+          HealthCheck:
+            Command:
+              - "CMD-SHELL"
+              - "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE"
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Sub "${ProjectName}-log-group"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "database-envoy"
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${MeshName}/virtualNode/yelb-db-vn"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: "debug"
+            - Name: "ENABLE_ENVOY_XRAY_TRACING"
+              Value: "1"
+
+  DatabaseService:
+    Type: AWS::ECS::Service
+    DependsOn: DatabaseRegistry
+    Properties:
+      Cluster:
+        Fn::ImportValue: !Sub "${ProjectName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: "FARGATE"
+      ServiceRegistries:
+        - RegistryArn: !GetAtt "DatabaseRegistry.Arn"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub "${ProjectName}:PrivateSubnet1"
+            - Fn::ImportValue: !Sub "${ProjectName}:PrivateSubnet2"
+      TaskDefinition: !Ref DatabaseTaskDef
+
+  RedisRegistry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: "redis-server"
+      DnsConfig:
+        NamespaceId:
+          Fn::ImportValue: !Sub "${ProjectName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  RedisTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - "FARGATE"
+      Family: !Sub "${ProjectName}-redis-server"
+      NetworkMode: "awsvpc"
+      Cpu: 256
+      Memory: 512
+      TaskRoleArn: !Ref TaskIamRole
+      ExecutionRoleArn: !Ref TaskExecutionIamRole
+      ProxyConfiguration:
+        Type: "APPMESH"
+        ContainerName: "envoy"
+        ProxyConfigurationProperties:
+          - Name: "IgnoredUID"
+            Value: "1337"
+          - Name: "ProxyIngressPort"
+            Value: "15000"
+          - Name: "ProxyEgressPort"
+            Value: "15001"
+          - Name: "AppPorts"
+            Value: "6379"
+          - Name: "EgressIgnoredIPs"
+            Value: "169.254.170.2,169.254.169.254"
+      ContainerDefinitions:
+        - Name: "redis"
+          Image: !Ref RedisImage
+          Essential: true
+          DependsOn:
+            - ContainerName: 'xray-daemon'
+              Condition: 'START'
+            - ContainerName: 'envoy'
+              Condition: 'HEALTHY'
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Sub "${ProjectName}-log-group"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "redis"
+          PortMappings:
+            - ContainerPort: 6379
+              Protocol: "tcp"
+        - Name: xray-daemon
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: "1337"
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: "udp"
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Sub "${ProjectName}-log-group"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "redis-xray"
+        - Name: envoy
+          Image: !Ref EnvoyImage
+          Essential: true
+          User: "1337"
+          Ulimits:
+            - Name: "nofile"
+              HardLimit: 15000
+              SoftLimit: 15000
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: "tcp"
+            - ContainerPort: 15000
+              Protocol: "tcp"
+            - ContainerPort: 15001
+              Protocol: "tcp"
+          HealthCheck:
+            Command:
+              - "CMD-SHELL"
+              - "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE"
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Sub "${ProjectName}-log-group"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: "redis-envoy"
+          Environment:
+            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+              Value: !Sub "mesh/${MeshName}/virtualNode/redis-server-vn"
+            - Name: "ENVOY_LOG_LEVEL"
+              Value: "debug"
+            - Name: "ENABLE_ENVOY_XRAY_TRACING"
+              Value: "1"
+
+  RedisService:
+    Type: AWS::ECS::Service
+    DependsOn: RedisRegistry
+    Properties:
+      Cluster:
+        Fn::ImportValue: !Sub "${ProjectName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: "FARGATE"
+      ServiceRegistries:
+        - RegistryArn: !GetAtt "RedisRegistry.Arn"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub "${ProjectName}:PrivateSubnet1"
+            - Fn::ImportValue: !Sub "${ProjectName}:PrivateSubnet2"
+      TaskDefinition: !Ref RedisTaskDef

@@ -17,6 +17,9 @@ The two backends are "Hello World!" applications that each listen on port 80.
 
 These backends will be configured in distinct accounts and made accessible through the gateway. We will manipulate routes that show that we are able to migrate traffic from one destination to another using the App Mesh APIs.
 
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images.
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthroughs/howto-cross-account folder, all commands will be ran from this location.
@@ -82,7 +85,7 @@ These backends will be configured in distinct accounts and made accessible throu
         ```
         export KEY_PAIR=...
         ```
-3. Source the `env.vars` file using `source env.vars`
+3. Source the `vars.env` file using `source vars.env`
 4. Setup base cloudformation stack by running
     ```
     ./deploy.sh
