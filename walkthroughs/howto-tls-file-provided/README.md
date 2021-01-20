@@ -4,15 +4,14 @@ In this walkthrough we'll enable TLS encryption between two services in App Mesh
 
 ## Introduction
 
-In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
+In App Mesh, traffic encryption works between Virtual Nodes and Virtual Gateways, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
 
-In this guide, we will be configuring Envoy to use the file based strategy.
-
-Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+In this guide, we will be configuring App Mesh to use the file based strategy of providing TLS certificates to Envoy.
 
 ## Prerequisites
 
 1. Install Docker. It is needed to build the demo application images.
+1. The unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
 ## Step 1: Create Color App Infrastructure
 
@@ -28,7 +27,6 @@ export ENVIRONMENT_NAME="AppMeshTLSExample"
 export MESH_NAME="ColorApp-TLS"
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
-export GATEWAY_IMAGE_NAME="gateway"
 export COLOR_TELLER_IMAGE_NAME="colorteller"
 export COLOR_APP_ENVOY_IMAGE_NAME="colorapp-envoy"
 ```
@@ -63,18 +61,16 @@ Next, create the ECS cluster and ECR repositories.
 ./infrastructure/ecr-repositories.sh
 ```
 
-Next, build and deploy the color app images.
+Next, build and deploy the color app image.
 
 ```bash
 ./src/colorteller/deploy.sh
-./src/gateway/deploy.sh
 ```
 
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
-GO_PROXY=direct ./src/gateway/deploy.sh
 ```
 
 ## Step 2: Generate the Certficates
@@ -116,7 +112,8 @@ Finally, we can build and deploy our custom docker image. This container has a `
 
 ## Step 4: Create a Mesh with TLS enabled
 
-We are going to start with a both a White Color Teller and a Green Color Teller. Initially, we will only serve traffic to the White Color Teller.
+Our service will contain three components, a Virtual Gateway that will split requests between a White Color Teller and a Green Color Teller.
+Initially, we will only serve traffic to the White Color Teller.
 
 Let's create the mesh.
 
@@ -188,7 +185,7 @@ curl -s http://colorteller.default.svc.cluster.local:9901/stats | grep ssl.hands
 
 You should see output similar to: `listener.0.0.0.0_15000.ssl.handshake: 1`, indicating a successful SSL handshake was achieved between gateway and color teller.
 
-Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation for more information on enabling encryption between services in App Mesh.
+Check out the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html) documentation for more information on enabling encryption between services in App Mesh.
 
 ## Client TLS Validation Tutorial
 
@@ -231,20 +228,17 @@ After a couple seconds, when you hit the service, you should see both green and 
 curl "${COLORAPP_ENDPOINT}/color"
 ```
 
-### Step 7: Add TLS Validation to the Gateway
+### Step 7: Add TLS Validation to the Virtual Gateway
 
-As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Color Gateway was able to communicate with it no problem.  
+As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Virtual Gateway was able to communicate with it no problem.  
 
 In the client/server relationship, if the server decides to turn on TLS, App Mesh configures the client Envoys to accept the certificate offered. However, clients should also validate that the certificate offered by the server is from a certificate authority they trust. App Mesh allows you to define a client policy for TLS validation to ensure that the certificate is valid and issued from a trustworthy source.
 
 If you recall, the Green Color Teller certificates were signed by a different CA than the White Color Teller certificates.  Perhaps this is not the intended behavior and we want to reject certificates from any CA that is not CA 1.
 
-We are going to update the Color Gateway backend to have this configuration:
+We are going to update the Virtual Gateway backend to have this configuration:
 
 ```yaml
-Backends:
-  - VirtualService:
-      VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
 BackendDefaults:
   ClientPolicy:
     TLS:
@@ -255,7 +249,7 @@ BackendDefaults:
             CertificateChain: "/keys/ca_1_cert.pem"
 ```
 
-In this situation, we add a backend default for the Client Policy that instructs Envoy to only allow certificates signed by CA 1 to be accepted. If we had a separate backend with a `ClientPolicy` defined for `TLS`, then the default policy would not be applied for `TLS`.
+In this situation, we add a backend default for the Client Policy that instructs Envoy to only allow certificates signed by CA 1 to be accepted.
 
 ```bash
 ./mesh/mesh.sh updateGateway
@@ -281,12 +275,6 @@ Now when you call the service, you will see both `white` and `green` again.
 curl "${COLORAPP_ENDPOINT}/color"
 ```
 
-Tip: You can use this command to clear the color teller history
-
-```bash
-curl "${COLORAPP_ENDPOINT}/color/clear"
-```
-
 ### Step 9: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
@@ -296,7 +284,6 @@ Run the following commands to clean up and tear down the resources that we’ve 
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
 aws ecr delete-repository --force --repository-name $COLOR_TELLER_IMAGE_NAME
-aws ecr delete-repository --force --repository-name $GATEWAY_IMAGE_NAME
 aws ecr delete-repository --force --repository-name $COLOR_APP_ENVOY_IMAGE_NAME
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
