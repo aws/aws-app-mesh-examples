@@ -39,7 +39,7 @@ Resources:
     Properties:
       MeshName: !Ref MeshName
 
-  ColorGatewayVirtualService:
+  ColorVirtualGateway:
     Type: AWS::AppMesh::VirtualGateway
     Properties:
       MeshName: !GetAtt Mesh.MeshName
@@ -63,7 +63,7 @@ Resources:
 
   GatewayRoute:
     DependsOn:
-      - ColorGatewayVirtualService
+      - ColorVirtualGateway
       - ColorTellerVirtualService
     Type: AWS::AppMesh::GatewayRoute
     Properties:

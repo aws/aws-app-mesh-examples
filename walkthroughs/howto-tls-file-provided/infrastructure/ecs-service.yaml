@@ -400,8 +400,9 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 6
-      HealthCheckPath: /ping
+      HealthCheckPath: /ready
       HealthCheckProtocol: HTTP
+      HealthCheckPort: 9901
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
