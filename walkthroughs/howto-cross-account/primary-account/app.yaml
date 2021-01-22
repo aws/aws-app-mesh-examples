@@ -198,7 +198,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'gateway-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualGateway/gateway-vg'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
