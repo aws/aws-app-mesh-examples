@@ -59,18 +59,14 @@ Resources:
             TimeoutMillis: 2000
             IntervalMillis: 5000
   
-  ColorGatewayNode:
-    Type: AWS::AppMesh::VirtualNode
+  ColorGateway:
+    Type: AWS::AppMesh::VirtualGateway
     DependsOn:
-    - ColorTellerService
+    - Mesh
     Properties:
       MeshName: !Ref AWS::StackName
-      VirtualNodeName: "colorgateway-node"
+      VirtualGatewayName: "colorgateway"
       Spec:
-        ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: !Sub "${AWS::StackName}.local"
-            ServiceName: "colorgateway"
         Listeners:
         - PortMapping:
             Port: 9080
@@ -82,9 +78,24 @@ Resources:
             UnhealthyThreshold: 2
             TimeoutMillis: 2000
             IntervalMillis: 5000
-        Backends:
-        - VirtualService:
-            VirtualServiceName: !Sub "colorteller.${AWS::StackName}.local"
+
+  ColorGatewayRoute:
+    Type: AWS::AppMesh::GatewayRoute
+    DependsOn:
+      - ColorTellerService
+      - ColorGateway
+    Properties: 
+      GatewayRouteName: gatewayroute
+      MeshName: !Ref AWS::StackName
+      Spec:
+        HttpRoute:
+          Action:
+            Target:
+              VirtualService:
+                VirtualServiceName: !Sub "colorteller.${AWS::StackName}.local"
+          Match:
+            Prefix: /
+      VirtualGatewayName: colorgateway
 
   ColorTellerService:
     Type: AWS::AppMesh::VirtualService
