@@ -16,10 +16,6 @@ Parameters:
     Type: String
     Description: The image to use for the Envoy container
 
-  GatewayImageName:
-    Description: The name for the gateway image
-    Type: String
-
   ColorTellerImageName:
     Description: The name for the color teller image
     Type: String
