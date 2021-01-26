@@ -26,11 +26,11 @@ Resources:
     Properties:
       MeshName: !Ref MeshName
 
-  ColorGatewayVirtualNode:
-    Type: AWS::AppMesh::VirtualNode
+  ColorGatewayVirtualGateway:
+    Type: AWS::AppMesh::VirtualGateway
     Properties:
       MeshName: !GetAtt Mesh.MeshName
-      VirtualNodeName: ColorGateway
+      VirtualGatewayName: ColorGateway
       Spec:
         BackendDefaults:
           ClientPolicy:
@@ -40,16 +40,28 @@ Resources:
                   ACM:
                     CertificateAuthorityArns:
                       - !Ref CertificateAuthorityArn
-        Backends:
-          - VirtualService:
-              VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
         Listeners:
           - PortMapping:
               Port: 80
               Protocol: http
-        ServiceDiscovery:
-          DNS:
-            Hostname: !Sub "colorgateway.${ServicesDomain}"
+
+  ColorGatewayRoute:
+    DependsOn:
+      - ColorGatewayVirtualGateway
+      - ColorTellerVirtualService
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: ColorGatewayRoute
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute:
+          Action: 
+            Target:
+              VirtualService:
+                VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+          Match: 
+            Prefix: /
+      VirtualGatewayName: ColorGateway
 
   ColorTellerVirtualNode:
     Type: AWS::AppMesh::VirtualNode
