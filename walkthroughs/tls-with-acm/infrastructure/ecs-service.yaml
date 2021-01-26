@@ -237,7 +237,7 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorGatewayTaskDefinition }
-      HealthCheckGracePeriodSeconds: 3000
+      HealthCheckGracePeriodSeconds: 300
       LoadBalancers:
         - ContainerName: envoy
           ContainerPort: 80
