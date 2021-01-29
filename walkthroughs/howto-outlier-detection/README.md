@@ -398,3 +398,96 @@ All resources created in this walkthrough can be deleted via:
 ```bash
 ./deploy.sh delete && ./mesh.sh down
 ```
+
+## Part 2: Using Virtual Gateway
+
+Note: This part lists the changes to Service Mesh, ECS Service and the commands (which are different) from the above steps when using a Virtual Gateway.
+
+With the Ingress Gateway we no longer need a frontend application. VirtualGateway resource would act as the ColorGateway instead of a VirtualNode. The Virtual Gateway allows resources outside your mesh to communicate to resources that are inside your mesh.
+## Setting up Service Mesh with Virtual Gateway.
+
+Our mesh contains one virtual gateway, `front-vg` and  a virtual node `color-node`. The virtual gatewayb`front-vg` routes to a virtual service `color.howto-outlier-detection.local` that is provided by the `color-node`.
+The actual services mirror this setup with a frontend service calling a color service backend. There is a single frontend service task and four color service tasks. We will send requests through an ALB pointing to the frontend service.
+
+```bash
+./mesh.sh up-vg-setup
+```
+
+## Deploy Service
+
+  We'll build the color applications under `src` into Docker images, create and push to the ECR repo under the account `AWS_ACCOUNT_ID`, then deploy CloudFormation stacks for network infrastructure, the bastion host, and the ECS services.
+  
+  The frontend service has an Envoy Proxy running in ECS.(Since we are using a Virtual Gateway) 
+```bash
+./deploy.sh
+```
+
+The output of the application CloudFormation stack should print two values-
+
+```bash
+...
+Successfully created/updated stack - howto-outlier-detection-app
+Public ALB endpoint:
+http://howto-Publi-6M2UI5BLY4UO-1032081974.us-west-2.elb.amazonaws.com
+Public bastion endpoint:
+54.190.143.11
+```
+The ALB endpoint is used to reach our application, whereas the bastion endpoint is the public ip address of the bastion Ec2 instance that we will use to SSH into to inspect Envoy stats.
+Export these two variables.
+
+```bash
+export ALB_ENDPOINT=<>
+export BASTION_IP=<>
+```
+
+*Note*: The applications use go modules. If you have trouble accessing <https://proxy.golang.org> during the deployment you can override the `GOPROXY` by setting `GO_PROXY=direct`, i.e. run
+
+```bash
+GO_PROXY=direct ./deploy-vg-setup.sh
+```
+
+instead.
+
+A simple request now would look like:
+
+Note: The color service is available at `/get`, to get the response we need to curl `$ALB_ENDPOINT/get` instead of `$ALB_ENDPOINT/color/get`
+
+```bash
+$ curl -i $ALB_ENDPOINT/get
+HTTP/1.1 200 OK
+Date: Fri, 25 Sep 2020 22:13:44 GMT
+Content-Type: text/plain; charset=utf-8
+Content-Length: 7
+Connection: keep-alive
+x-envoy-upstream-service-time: 43
+server: envoy
+
+purple
+```
+
+Similary, to inject a fault to one of the color service hosts.
+
+```bash
+$ curl $ALB_ENDPOINT/fault
+host: e0d83188-d74c-4408-8fa0-04164faf5978 will now respond with 500 on /get.
+```
+
+The stats can be obtained from Envoy. (In part 1, the stats were available through frontend application's endpoint)
+
+SSH into the bastion instance (use your own pem file if you specified your own keypair earlier):
+
+```bash
+ssh -i ~/.ssh/od-bastion.pem ec2-user@$BASTION_IP
+```
+
+To view the 500s after we inject a fault and sending request to the endpoint in Envoy.
+
+```bash
+curl http://front.howto-outlier-detection.local:9901/stats | grep downstream_rq_5xx
+```
+
+All resources created in this walkthrough can be deleted via:
+
+```bash
+./deploy-vg-setup.sh delete && ./mesh.sh down-vg-setup
+```
