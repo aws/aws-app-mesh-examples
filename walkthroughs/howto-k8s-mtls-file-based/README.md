@@ -11,7 +11,7 @@ This feature is currently only available in [App Mesh preview](https://docs.aws.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.3.0-mtls-preview
+v1.3.0-rc1
 ```
 3. [Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
 ```
