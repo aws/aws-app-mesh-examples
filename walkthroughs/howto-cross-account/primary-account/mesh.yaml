@@ -21,9 +21,6 @@ Resources:
       VirtualGatewayName: gateway-vg
 
   GatewayRoute:
-    DependsOn:
-      - VirtualGateway
-      - VirtualService
     Type: AWS::AppMesh::GatewayRoute
     Properties: 
       GatewayRouteName: gateway-gr
@@ -33,10 +30,10 @@ Resources:
           Action:
             Target:
               VirtualService:
-                VirtualServiceName: !Sub 'backend.${ProjectName}.local'
+                VirtualServiceName: !GetAtt VirtualService.VirtualServiceName
           Match:
             Prefix: /
-      VirtualGatewayName: gateway-vg
+      VirtualGatewayName: !GetAtt VirtualGateway.VirtualGatewayName
 
   BackendNode:
     Type: AWS::AppMesh::VirtualNode

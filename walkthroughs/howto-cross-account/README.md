@@ -6,7 +6,7 @@ This example shows how to enable App Mesh between multiple accounts for cross ac
 
 ### Gateway
 
-Virtual gateway allows resources that are outside of your mesh to communicate to resources that are inside of your mesh. Gateway Routes specify the routing rules for inbound traffic to virtual services within your mesh
+Virtual gateways allows resources that are outside of your mesh to communicate to resources that are inside of your mesh. Gateway Routes specify the routing rules for inbound traffic to virtual services within your mesh
 
 ### Backend
 
