@@ -92,7 +92,7 @@ Resources:
           Action:
             Target:
               VirtualService:
-                VirtualServiceName: !Sub "colorteller.${AWS::StackName}.local"
+                VirtualServiceName: !GetAtt ColorTellerService.VirtualNodeName
           Match:
             Prefix: /
       VirtualGatewayName: colorgateway
