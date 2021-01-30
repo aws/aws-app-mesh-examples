@@ -36,7 +36,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 Add a curler to the namespace howto-k8s-http-headers on your cluster -
 ```
-kubectl -n howto-k8s-http-headers run -it curler --image=tutum/curl /bin/bash
+kubectl run -it curler --image=tutum/curl /bin/bash
 ```
 
 Run the commands on curler to test.
