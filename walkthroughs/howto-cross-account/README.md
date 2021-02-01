@@ -6,7 +6,7 @@ This example shows how to enable App Mesh between multiple accounts for cross ac
 
 ### Gateway
 
-The gateway image is an NGINX proxy which listens on a given port and forwards requests to the backend service on a given port. It also responds to NLB HealthChecks.
+Virtual gateways allows resources that are outside of your mesh to communicate to resources that are inside of your mesh. Gateway Routes specify the routing rules for inbound traffic to virtual services within your mesh
 
 ### Backend
 
