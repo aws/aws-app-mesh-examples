@@ -64,6 +64,18 @@ deploy_app() {
                               "BastionKeyName=${KEY_PAIR_NAME}"
 }
 
+deploy_app_with_vg() {
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --stack-name "${PROJECT_NAME}-app" \
+        --template-file "${DIR}/application-vg-setup.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides "ProjectName=${PROJECT_NAME}" "EnvoyImage=${ENVOY_IMAGE}" \
+                              "ColorAppImage=${ECR_IMAGE_PREFIX}/color-app" \
+                              "ColorNodeName=mesh/${PROJECT_NAME}/virtualNode/color-node" "FrontNodeName=mesh/${PROJECT_NAME}/virtualGateway/front-vg" \
+                              "BastionKeyName=${KEY_PAIR_NAME}"
+}
+
 delete_cfn_stack() {
     stack_name=$1
     aws cloudformation delete-stack --stack-name $stack_name
@@ -121,6 +133,16 @@ deploy_stacks() {
     print_bastion_endpoint
 }
 
+deploy_stacks_with_vg() {
+
+    echo "deploy app..."
+    deploy_app_with_vg
+
+    #confirm_service_linked_role
+    print_alb_endpoint
+    print_bastion_endpoint
+}
+
 delete_stacks() {
     echo "delete app..."
     delete_cfn_stack "${PROJECT_NAME}-app"
@@ -134,9 +156,26 @@ delete_stacks() {
     echo "all resources from this tutorial have been removed"
 }
 
+delete_stacks_except_vpc_and_image() {
+    echo "delete app..."
+    delete_cfn_stack "${PROJECT_NAME}-app"
+
+    echo "the ecs services, cluster amd mesh from this tutorial have been removed"
+}
+
 action=${1}
-if [ "$action" == "delete" ]; then
+if [ "$action" == "delete-all" ]; then
     delete_stacks
+    exit 0
+fi
+
+if [ "$action" == "delete" ]; then
+    delete_stacks_except_vpc_and_image
+    exit 0
+fi
+
+if [ "$action" == "with-virtual-gateway" ]; then
+    deploy_stacks_with_vg
     exit 0
 fi
 

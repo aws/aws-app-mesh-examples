@@ -396,30 +396,32 @@ The [lb_healthy_panic](https://www.envoyproxy.io/docs/envoy/latest/configuration
 All resources created in this walkthrough can be deleted via:
 
 ```bash
+./deploy.sh delete-all && ./mesh.sh down
+```
+Note: If you want to run the outlier detection with Virtual Gateway (Part 2 of the walkthrough), you need not delete all the resources. This `delete` would leave out the infrastructure stack and the Docker images of the color application.
+
+```bash
 ./deploy.sh delete && ./mesh.sh down
 ```
-
 ## Part 2: Using Virtual Gateway
 
-Note: This part lists the changes to Service Mesh, ECS Service and the commands (which are different) from the above steps when using a Virtual Gateway.
+With the Ingress Gateway we no longer need a frontend application. Virtual Gateway resource would act as the ColorGateway instead of a Virtual Node. The Virtual Gateway allows resources outside your mesh to communicate to resources that are inside your mesh.
+## Step 1: Setting up Service Mesh with Virtual Gateway.
 
-With the Ingress Gateway we no longer need a frontend application. VirtualGateway resource would act as the ColorGateway instead of a VirtualNode. The Virtual Gateway allows resources outside your mesh to communicate to resources that are inside your mesh.
-## Setting up Service Mesh with Virtual Gateway.
-
-Our mesh contains one virtual gateway, `front-vg` and  a virtual node `color-node`. The virtual gatewayb`front-vg` routes to a virtual service `color.howto-outlier-detection.local` that is provided by the `color-node`.
+Our mesh contains one virtual gateway, `front-vg` and a virtual node `color-node`. The virtual gateway `front-vg` routes to a virtual service `color.howto-outlier-detection.local` that is provided by the `color-node`.
 The actual services mirror this setup with a frontend service calling a color service backend. There is a single frontend service task and four color service tasks. We will send requests through an ALB pointing to the frontend service.
 
 ```bash
 ./mesh.sh up-vg-setup
 ```
 
-## Deploy Service
+## Step 2: Deploy Service
 
-  We'll build the color applications under `src` into Docker images, create and push to the ECR repo under the account `AWS_ACCOUNT_ID`, then deploy CloudFormation stacks for network infrastructure, the bastion host, and the ECS services.
-  
-  The frontend service has an Envoy Proxy running in ECS.(Since we are using a Virtual Gateway) 
+We'll deploy CloudFormation stacks for the ECS services.
+
+The frontend service has an Envoy Proxy running in ECS.(Since we are using a Virtual Gateway) 
 ```bash
-./deploy.sh
+./deploy.sh with-virtual-gateway
 ```
 
 The output of the application CloudFormation stack should print two values-
@@ -443,10 +445,18 @@ export BASTION_IP=<>
 *Note*: The applications use go modules. If you have trouble accessing <https://proxy.golang.org> during the deployment you can override the `GOPROXY` by setting `GO_PROXY=direct`, i.e. run
 
 ```bash
-GO_PROXY=direct ./deploy-vg-setup.sh
+GO_PROXY=direct ./deploy.sh with-virtual-gateway
 ```
 
 instead.
+
+## Step 5: Before Enabling Outlier Detection
+
+In this walkthrough, the Virtual Gateway calls the color service to get a color via `/get`. Under normal circumstances, the color service always responds with the color purple.
+
+In addition, we inject faults to the color service by making a request to `/fault`. When a color service server receives this request, it will start returning 500 Internal Service Error on `/get`. The fault can be recovered via `/recover` .
+
+The stats per host is not available here as we dont have a frontend application recording them. 
 
 A simple request now would look like:
 
@@ -464,30 +474,156 @@ server: envoy
 
 purple
 ```
+Now, let's generate more traffic using vegeta. By default the request rate is 50/sec, so with duration=4s we'd be sending 200 requests.
 
-Similary, to inject a fault to one of the color service hosts.
+```bash
+$ echo "GET $ALB_ENDPOINT/get" | vegeta attack -duration=4s | tee results.bin | vegeta report
+Requests      [total, rate, throughput]         200, 50.32, 49.59
+Duration      [total, attack, wait]             4.033s, 3.975s, 58.337ms
+Latencies     [min, mean, 50, 90, 95, 99, max]  54.263ms, 74.595ms, 60.179ms, 120.026ms, 136.811ms, 169.38ms, 194.739ms
+Bytes In      [total, mean]                     1400, 7.00
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           100.00%
+Status Codes  [code:count]                      200:200
+Error Set:
+```
+In this walk through we are particularly interested in the `Status Codes` row. We can see that we received 200 http status codes out of 200 requests.
+
+Now, let us inject a fault to one of the color service hosts. We want one of the four to be returning 500.
+
+To inject a fault to one of the color service hosts.
 
 ```bash
 $ curl $ALB_ENDPOINT/fault
 host: e0d83188-d74c-4408-8fa0-04164faf5978 will now respond with 500 on /get.
 ```
+Now let us issue 200 requests to the frontend service again:
 
-The stats can be obtained from Envoy. (In part 1, the stats were available through frontend application's endpoint)
+```bash
+echo "GET $ALB_ENDPOINT/get" | vegeta attack -duration=4s | tee results.bin | vegeta report
+```
+The status code distribution should now look something like `200:150 500:50`.
 
+## Step 6: Outlier Detection in Action
+
+Let's see how Outlier Detection can help us reduce the number of server errors given that one of the color hosts is degraded. Update the `color-node` virtual node with the spec `mesh/color-vn-with-outlier-detection.json`:
+
+```bash
+./mesh.sh add-outlier-detection
+```
+
+Once this update is propagated all the way down to the front-node's Envoy (give it a minute or so), let's try to issue 200 requests again:
+
+```bash
+$ echo "GET $ALB_ENDPOINT/get" | vegeta attack -duration=4s | tee results.bin | vegeta report | grep "Status Codes"
+Status Codes  [code:count]                      200:195  500:5
+```
+
+The Status Codes row should now look something like `200:195  500:5` (500 responses could be more than that but definitely less than 50, depending on when the outlier detection configuration is taken into affect).
+
+Compare this to when we didn't have Outlier Detection: a fourth of the requests were routed to the degraded host, whereas in this instance after five server errors were returned by the degraded host, Outlier Detection ejected the host from the load balancing set and traffic is no longer routed to that host. 
+
+The `baseEjectionDuration` is configured as 10 seconds for the `color-node`, which is a relatively short amount of time. Try sending another 200 requests. If that yielded another `Status Codes  [code:count]                      200:195  500:5`, then it's likely the degraded host has already been un-ejected. Immediately send another 200 requests and you should see all requests returning 200.
+If this degraded host continues to behave like how it is, the ejection time will continue to multiply and it becomes less likely that the host would be available in the load balancing set.
+
+The basic walkthrough ends here and albeit the example somewhat contrived (having a host *always* return 500), should have demonstrated how Outlier Detection can help mitigate intermittent server errors caused by degraded hosts and improve service availability.
+
+The following section is optional and serves to demonstrate a default Envoy behavior that may affect Outlier Detection.
+
+### Panic and Ignore Outlier Detection
+
+So what happens if all of the hosts were ejected? There wouldn't be any valid endpoints to route traffic to and the service would be 0% available. This is where Envoy's [panic threshold](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/panic_threshold#arch-overview-load-balancing-panic-threshold) configuration comes to play- this value defines when to place a service into **panic mode** where requests will be routed to all of the hosts regardless of their health or outlier detection statuses. This value is set to 50 by default; in other words if more than 50 percent of the hosts were to be ejected as an outlier, then outlier detection loses its affects. In most cases this behavior is more preferable over not trying to route requests to the service at all. Let's walk through this situation.
+
+Remember that we currently have one host that continues to return 500 on `/get`. Let's fault another host:
+
+```bash
+$ curl $ALB_ENDPOINT/fault
+host: dfb847e5-3134-45a4-bfef-94559ae0dc61 will now respond with 500 on /get. # this is a different host than the existing one ea1edc5b-a830-43c9-b91a-916406bcb6bc
+```
+
+Since we can't target this request to a specific host, observe the response that includes the HostUID to ensure the request reached a different host than the existing one. You can also check the host stats through the frontend service and compare if the returned HostUID doesn't already have non-zero `StatusErrors`. If it's the same host just send the request again.
+
+<!-- Before we generate more traffic, it might be helpful to reset the frontend stats:
+
+```bash
+$ curl $ALB_ENDPOINT/reset_stats
+stats cleared.
+``` -->
+
+Now let's generate traffic:
+
+```bash
+$ echo "GET $ALB_ENDPOINT/get" | vegeta attack -duration=4s | tee results.bin | vegeta report | grep "Status Codes"
+Status Codes  [code:count]                      200:172  500:28
+```
+
+We expect the newly degraded host to trigger Outlier Detection, while the existing one should also be ejected again if it has been un-ejected. Because ejections take place on intervals and each degraded host has a different ejection time, we see that 28 requests still made it to the two degraded hosts. Liberately send subsequent batches of 200 requests and we should expect only 200 responses:
+
+```bash
+$ echo "GET $ALB_ENDPOINT/color/get" | vegeta attack -duration=4s | tee results.bin | vegeta report | grep "Status Codes"
+Status Codes  [code:count]                      200:200
+```
+
+Finally, let's breach the panic threshold by faulting a third host using the same approach above:
+
+```bash
+$ curl $ALB_ENDPOINT/fault
+host: dfb847e5-3134-45a4-bfef-94559ae0dc61 will now respond with 500 on /get. #this host is already faulted, so sending the fault request again
+$ curl $ALB_ENDPOINT/fault
+host: c624a8ac-ff80-44db-8560-7930c05974ee will now respond with 500 on /get. #now we have 3 degraded hsots
+```
+
+Observe that when we now send 200 requests to the service, which has 75% of its hosts returning 500 errors, panic mode should kick in:
+
+```bash
+$ echo "GET $ALB_ENDPOINT/color/get" | vegeta attack -duration=4s | tee results.bin | vegeta report
+Requests      [total, rate, throughput]         200, 50.25, 13.07
+Duration      [total, attack, wait]             4.208s, 3.98s, 228.435ms
+Latencies     [min, mean, 50, 90, 95, 99, max]  52.543ms, 77.82ms, 57.887ms, 136.119ms, 178.732ms, 274.415ms, 461.284ms
+Bytes In      [total, mean]                     2415, 12.07
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           27.50%
+Status Codes  [code:count]                      200:52  500:148
+Error Set:
+500 Internal Server Error
+```
+
+As expected, the distribution is roughly `200:50 500:150` since all four hosts are now serving traffic again regardless of their outlier status.
+
+We can optionally examine some of the Envoy stats to observe the behaviors between outlier detection and panic threshold.
 SSH into the bastion instance (use your own pem file if you specified your own keypair earlier):
 
 ```bash
-ssh -i ~/.ssh/od-bastion.pem ec2-user@$BASTION_IP
+ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
 ```
 
-To view the 500s after we inject a fault and sending request to the endpoint in Envoy.
+Access the admin endpoint of the frontend service's Envoy via port 9901 (the default Envoy admin port) and check out the outlier detection-relate stats. In particular we will examine `outlier_detection.ejections_active`:
 
 ```bash
-curl http://front.howto-outlier-detection.local:9901/stats | grep downstream_rq_5xx
+$ curl http://front.howto-outlier-detection.local:9901/stats | grep outlier_detection.ejections_active
+cluster.cds_egress_howto-outlier-detection_color-node_http_8080.outlier_detection.ejections_active: 0
 ```
+
+This statistic represents the count of [currently ejected outlier hosts](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats#outlier-detection-statistics). You may get a different number between 0-3 depending on whether your hosts are currently ejected or not. If you got 0, simply send another 200 requests to trigger outlier detection and check again:
+
+```bash
+cluster.cds_egress_howto-outlier-detection_color-node_http_8080.outlier_detection.ejections_active: 3
+```
+
+Furthermore, we can check out the statistics around the panic mode behavior:
+
+```bash
+$ curl http://front.howto-outlier-detection.local:9901/stats | grep lb_healthy_panic
+cluster.cds_egress_howto-outlier-detection_amazonaws.lb_healthy_panic: 0
+cluster.cds_egress_howto-outlier-detection_color-node_http_8080.lb_healthy_panic: 771
+cluster.cds_ingress_howto-outlier-detection_front-node_http_8080.lb_healthy_panic: 0
+```
+
+The [lb_healthy_panic](https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats#load-balancer-statistics) represents the total number of requests the frontend service's Envoy has had to load balance while the given cluster is in panic mode. The cluster `cluster.cds_egress_howto-outlier-detection_color-node_http_8080` represents the color service.
+## Step 8: Clean Up
 
 All resources created in this walkthrough can be deleted via:
 
 ```bash
-./deploy-vg-setup.sh delete && ./mesh.sh down-vg-setup
+./deploy.sh delete-all && ./mesh.sh down-vg-setup
 ```
