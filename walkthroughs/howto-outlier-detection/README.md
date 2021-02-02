@@ -434,6 +434,7 @@ http://howto-Publi-6M2UI5BLY4UO-1032081974.us-west-2.elb.amazonaws.com
 Public bastion endpoint:
 54.190.143.11
 ```
+
 The ALB endpoint is used to reach our application, whereas the bastion endpoint is the public ip address of the bastion Ec2 instance that we will use to SSH into to inspect Envoy stats.
 Export these two variables.
 
@@ -487,6 +488,7 @@ Success       [ratio]                           100.00%
 Status Codes  [code:count]                      200:200
 Error Set:
 ```
+
 In this walk through we are particularly interested in the `Status Codes` row. We can see that we received 200 http status codes out of 200 requests.
 
 Now, let us inject a fault to one of the color service hosts. We want one of the four to be returning 500.
@@ -497,11 +499,13 @@ To inject a fault to one of the color service hosts.
 $ curl $ALB_ENDPOINT/fault
 host: e0d83188-d74c-4408-8fa0-04164faf5978 will now respond with 500 on /get.
 ```
+
 Now let us issue 200 requests to the frontend service again:
 
 ```bash
 echo "GET $ALB_ENDPOINT/get" | vegeta attack -duration=4s | tee results.bin | vegeta report
 ```
+
 The status code distribution should now look something like `200:150 500:50`.
 
 ## Step 6: Outlier Detection in Action
@@ -542,13 +546,6 @@ host: dfb847e5-3134-45a4-bfef-94559ae0dc61 will now respond with 500 on /get. # 
 ```
 
 Since we can't target this request to a specific host, observe the response that includes the HostUID to ensure the request reached a different host than the existing one. You can also check the host stats through the frontend service and compare if the returned HostUID doesn't already have non-zero `StatusErrors`. If it's the same host just send the request again.
-
-<!-- Before we generate more traffic, it might be helpful to reset the frontend stats:
-
-```bash
-$ curl $ALB_ENDPOINT/reset_stats
-stats cleared.
-``` -->
 
 Now let's generate traffic:
 
