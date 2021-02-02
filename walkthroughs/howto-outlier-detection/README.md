@@ -420,8 +420,15 @@ The actual services mirror this setup with a frontend service calling a color se
 We'll deploy CloudFormation stacks for the ECS services.
 
 The frontend service has an Envoy Proxy running in ECS.(Since we are using a Virtual Gateway) 
+
 ```bash
 ./deploy.sh with-virtual-gateway
+```
+
+*Note*: The applications use go modules. If you have trouble accessing <https://proxy.golang.org> during the deployment you can override the `GOPROXY` by setting `GO_PROXY=direct`, i.e. run this command instead:
+
+```bash
+GO_PROXY=direct ./deploy.sh with-virtual-gateway
 ```
 
 The output of the application CloudFormation stack should print two values-
@@ -435,21 +442,13 @@ Public bastion endpoint:
 54.190.143.11
 ```
 
-The ALB endpoint is used to reach our application, whereas the bastion endpoint is the public ip address of the bastion Ec2 instance that we will use to SSH into to inspect Envoy stats.
+The ALB endpoint is used to reach our application, whereas the bastion endpoint is the public ip address of the bastion EC2 instance that we will use to SSH into to inspect Envoy stats.
 Export these two variables.
 
 ```bash
 export ALB_ENDPOINT=<>
 export BASTION_IP=<>
 ```
-
-*Note*: The applications use go modules. If you have trouble accessing <https://proxy.golang.org> during the deployment you can override the `GOPROXY` by setting `GO_PROXY=direct`, i.e. run
-
-```bash
-GO_PROXY=direct ./deploy.sh with-virtual-gateway
-```
-
-instead.
 
 ## Step 5: Before Enabling Outlier Detection
 
