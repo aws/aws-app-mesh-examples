@@ -409,7 +409,7 @@ With the Ingress Gateway we no longer need a frontend application. Virtual Gatew
 ## Step 1: Setting up Service Mesh with Virtual Gateway.
 
 Our mesh contains one virtual gateway, `front-vg` and a virtual node `color-node`. The virtual gateway `front-vg` routes to a virtual service `color.howto-outlier-detection.local` that is provided by the `color-node`.
-The actual services mirror this setup with a frontend service calling a color service backend. There is a single frontend service task and four color service tasks. We will send requests through an ALB pointing to the frontend service.
+The actual services mirror this setup with a frontend service calling a color service backend. There is a single frontend service task and four color service tasks. We will send requests through an ALB pointing to the Virtual Gateway.
 
 ```bash
 ./mesh.sh up-vg-setup
