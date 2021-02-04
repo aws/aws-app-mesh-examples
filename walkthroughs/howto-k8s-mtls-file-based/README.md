@@ -4,25 +4,15 @@ In this walkthrough we'll enable mTLS encryption between two applications in App
 In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf. We will be configuring Envoy to use the file based strategy (via Kubernetes Secrets) to setup certificates.
 
 ## Prerequisites
-This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided in the `us-west-2` region.
 
 1. [Walkthrough: App Mesh with EKS](../eks/)
-2. Run the following to check the version of controller you are running.
+2. Run the following to check the version of controller you are running. v1.3.0 is the minimum controller version required for mTLS feature.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.3.0-rc1
+v1.3.0
 ```
-3. [Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
-```
-curl https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json \
-        -o $HOME/appmesh-preview-model.json
-aws configure add-model \
-    --service-name appmesh-preview \
-    --service-model file://$HOME/appmesh-preview-model.json
-```
-
-4. Install Docker. It is needed to build the demo application images.
+3. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Setup environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-mtls-file-based folder, all commands will be ran from this location
