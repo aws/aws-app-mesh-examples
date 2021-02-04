@@ -108,8 +108,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
             - Name: CERTIFICATE_NAME
               Value: 'colorteller'
 
@@ -203,8 +201,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_VIRTUAL_NODE_NAME'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/gateway-vgw'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
             - Name: CERTIFICATE_NAME
               Value: 'gateway'
             - Name: ENVOY_LOG_LEVEL
@@ -212,6 +208,8 @@ Resources:
 
   GatewayService:
     Type: 'AWS::ECS::Service'
+    DependsOn:
+      - WebTargetGroup
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
