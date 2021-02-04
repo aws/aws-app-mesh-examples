@@ -65,7 +65,7 @@ check_k8s_virtualrouter() {
 check_appmesh_k8s() {
     #check aws-app-mesh-controller version
     currentver=$(kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1)
-    requiredver="v1.0.0"
+    requiredver="v1.3.0"
     check_k8s_virtualrouter
 
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
