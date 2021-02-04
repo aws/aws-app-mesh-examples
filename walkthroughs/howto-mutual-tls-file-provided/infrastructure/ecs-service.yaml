@@ -208,8 +208,6 @@ Resources:
 
   GatewayService:
     Type: 'AWS::ECS::Service'
-    DependsOn:
-      - WebTargetGroup
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
