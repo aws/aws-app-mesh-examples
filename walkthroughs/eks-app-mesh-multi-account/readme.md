@@ -72,9 +72,9 @@ aws --profile frontend cloudformation deploy \
 ## Accept the invitation
 
 ```
-aws —profile backend ram get-resource-share-invitations 
+aws --profile backend ram get-resource-share-invitations 
 
-aws —profile backend ram accept-resource-share-invitation \
+aws --profile backend ram accept-resource-share-invitation \
 --resource-share-invitation-arn <value from previous command>
 ```
 
@@ -131,7 +131,7 @@ kubectl apply -f yelb/resources_backend.yaml
 kubectl config use-context <iam_user>@am-multi-account-1.<region>.eksctl.io
 ```
 
-Get the ```yelb-appserver``` VirtualService ARN and change ```mesh/yelb-ui.yaml``` accordingly. 
+**Get the ```yelb-appserver``` VirtualService ARN value using below command and update ```mesh/yelb-ui.yaml``` accordingly**. 
 
 ```
 kubectl --context=<iam_user>@am-multi-account-2.<region>.eksctl.io \
