@@ -17,7 +17,14 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 v1.3.0
 ```
 
-3. Install Docker. It is needed to build the demo application images.
+3. Run the following to check that SDS is enabled.
+```
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.spec.template.spec.containers[].args[] | select(contains("enable-sds"))'
+
+--enable-sds=true
+```
+
+4. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Setup Environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-mtls-sds-based folder, all commands will be ran from this location
