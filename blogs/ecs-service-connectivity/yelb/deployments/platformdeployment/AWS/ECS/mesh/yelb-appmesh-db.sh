@@ -1,3 +1,5 @@
+#Gets the yelb redis endpoint from yelb-fargate cloudformation stack
+export YELB_DB_ENDPOINT=$(aws cloudformation describe-stacks --stack-name yelb-fargate --query "Stacks[0].Outputs[?OutputKey=='YelbDBEndpointUrl'].OutputValue" --output text)
 
 #Pass the DB endpoint to DNS_HostName
 cli_input=$( jq -n \
