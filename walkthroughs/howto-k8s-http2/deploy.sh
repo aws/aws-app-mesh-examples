@@ -12,6 +12,11 @@ if [ -z $AWS_DEFAULT_REGION ]; then
     exit 1
 fi
 
+if [ -z $VPC_ID ]; then
+    echo "VPC_ID environment variable is not set."
+    exit 1
+fi
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="howto-k8s-http2"
 APP_NAMESPACE=${PROJECT_NAME}
