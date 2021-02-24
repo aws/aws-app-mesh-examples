@@ -371,7 +371,8 @@ Resources:
   ColorECSService:
     Type: AWS::ECS::Service
     DependsOn:
-      - ColorLoadBalancer
+      - ColorLoadBalancerListener
+      - ColorLoadBalancerRule
     Properties:
       Cluster: !Ref ECSCluster
       DeploymentConfiguration:
@@ -472,7 +473,8 @@ Resources:
   FrontECSService:
     Type: AWS::ECS::Service
     DependsOn:
-      - PublicLoadBalancer
+      - PublicLoadBalancerListener
+      - FrontListenerRule
     Properties:
       Cluster: !Ref ECSCluster
       DeploymentConfiguration:
