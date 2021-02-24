@@ -47,8 +47,6 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 
 You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
-Note that this walkthrough assumes throughout to operate in the us-east-1 region.
-
 ### Cluster provisioning
 
 Setup region
@@ -62,7 +60,7 @@ eksctl create cluster --name=eksc2 --nodes=3 --alb-ingress-access \
 --region=$AWS_DEFAULT_REGION --ssh-access --asg-access  --full-ecr-access \
 --external-dns-access --appmesh-access --vpc-cidr 172.16.0.0/16 \
 --auto-kubeconfig
-#[✔]  EKS cluster "eksc2-useast1" is ready
+#[✔]  EKS cluster "eksc2" is ready
 ```
 
 Once cluster creation is complete open an other tab and create an other EKS cluster with eksctl using the following command:
