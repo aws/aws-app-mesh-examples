@@ -158,38 +158,6 @@ blue
 
 Great! You have successfully tested the service communication across clusters using the App Mesh and Cloud Map.
 
-Lets make a few requests and check that our x-ray side car is indeed capturing traces.
-
-Run the following command from a curler pod within Cluster1
-```
-$ for ((n=0;n<200;n++)); do echo "$n: $(curl front/color)"; done
-1: red
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     4  100     4    0     0    205      0 --:--:-- --:--:-- --:--:--   210
-2: blue
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     3  100     3    0     0    136      0 --:--:-- --:--:-- --:--:--   142
-......
-......
-196: blue
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     4  100     4    0     0    236      0 --:--:-- --:--:-- --:--:--   250
-197: blue
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     3  100     3    0     0    180      0 --:--:-- --:--:-- --:--:--   187
-198: red
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     4  100     4    0     0    212      0 --:--:-- --:--:-- --:--:--   222
-199: blue
-```
-
-You may now look at our X-Ray console to see the service map and traces.
-
 ## FAQ
 ### 1. My front app is unable to talk to colorapp on the seond cluster?
 You need to open the port 8080 on second cluster's nodegroup SG, so the front app can talk to it.
