@@ -1,0 +1,255 @@
+Description: >
+  This template deploys Prometheus based Monitoring resources for ECS Cluster.
+Parameters:
+  ECSClusterName:
+    Type: String
+    Description: Enter the name of your ECS cluster from which you want to collect Prometheus metrics
+
+  CreateIAMRoles:
+    Type: String
+    AllowedValues:
+      - 'True'
+      - 'False'
+    Description: Whether to create new IAM roles or using existing IAM roles for the ECS tasks
+    ConstraintDescription: must specifid, either True or False
+
+  ECSLaunchType:
+    Type: String
+    AllowedValues:
+      - 'EC2'
+      - 'FARGATE'
+    Default: 'FARGATE'
+    Description: ECS Launch Type for the ECS cluster
+    ConstraintDescription: must specifid, either EC2 or FARGATE
+
+Resources:
+  MonitoringLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/ecs/containerinsights/${ECSClusterName}/prometheus"
+      RetentionInDays: 5
+
+  PrometheusConfigSSMParameter:
+    DependsOn: MonitoringLogGroup
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub 'AmazonCloudWatch-PrometheusConfigName-${ECSClusterName}-${ECSLaunchType}-awsvpc'
+      Type: String
+      Tier: Standard
+      Description: !Sub 'Prometheus Scraping SSM Parameter for ECS Cluster: ${ECSClusterName}'
+      Value: |-
+        global:
+          scrape_interval: 1m
+          scrape_timeout: 10s
+        scrape_configs:
+          - job_name: cwagent-ecs-file-sd-config
+            sample_limit: 10000
+            file_sd_configs:
+              - files: [ "/tmp/cwagent_ecs_auto_sd.yaml" ]
+  
+  CWAgentConfigSSMParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub 'AmazonCloudWatch-CWAgentConfig-${ECSClusterName}-${ECSLaunchType}-awsvpc'
+      Type: String
+      Tier: Intelligent-Tiering
+      Description: !Sub 'CWAgent SSM Parameter with App Mesh and Java EMF Definition for ECS Cluster: ${ECSClusterName}'
+      Value: !Sub |-
+        {
+          "logs": {
+            "metrics_collected": {
+              "prometheus": {
+                "log_group_name": "/aws/ecs/containerinsights/${ECSClusterName}/prometheus",
+                "prometheus_config_path": "env:PROMETHEUS_CONFIG_CONTENT",
+                "ecs_service_discovery": {
+                  "sd_frequency": "1m",
+                  "sd_result_file": "/tmp/cwagent_ecs_auto_sd.yaml",
+                  "docker_label": {
+                  },
+                  "task_definition_list": [
+                    {
+                      "sd_job_name": "ecs-appmesh",
+                      "sd_metrics_ports": "9901",
+                      "sd_task_definition_arn_pattern": ".*:task-definition/.*",
+                      "sd_metrics_path": "/stats/prometheus"
+                    }
+                  ]
+                },
+                "emf_processor": {
+                  "metric_declaration": [
+                    {
+                      "source_labels": ["container_name"],
+                      "label_matcher": "^envoy$",
+                      "dimensions": [["ClusterName","TaskDefinitionFamily"]],
+                      "metric_selectors": [
+                        "^envoy_http_downstream_rq_(total|xx)$",
+                        "^envoy_cluster_upstream_cx_(r|t)x_bytes_total$",
+                        "^envoy_cluster_membership_(healthy|total)$",
+                        "^envoy_server_memory_(allocated|heap_size)$",
+                        "^envoy_cluster_upstream_cx_(connect_timeout|destroy_local_with_active_rq)$",
+                        "^envoy_cluster_upstream_rq_(pending_failure_eject|pending_overflow|timeout|per_try_timeout|rx_reset|maintenance_mode)$",
+                        "^envoy_http_downstream_cx_destroy_remote_active_rq$",
+                        "^envoy_cluster_upstream_flow_control_(paused_reading_total|resumed_reading_total|backed_up_total|drained_total)$",
+                        "^envoy_cluster_upstream_rq_retry$",
+                        "^envoy_cluster_upstream_rq_retry_(success|overflow)$",
+                        "^envoy_server_(version|uptime|live)$"
+                      ]
+                    },
+                    {
+                      "source_labels": ["container_name"],
+                      "label_matcher": "^envoy$",
+                      "dimensions": [["ClusterName","TaskDefinitionFamily", "appmesh_virtual_node", "envoy_http_conn_manager_prefix","envoy_response_code_class"]],
+                      "metric_selectors": [
+                        "^envoy_http_downstream_rq_xx$"
+                      ]
+                    },
+                    {
+                      "source_labels": ["Java_EMF_Metrics"],
+                      "label_matcher": "^true$",
+                      "dimensions": [["ClusterName","TaskDefinitionFamily"]],
+                      "metric_selectors": [
+                        "^jvm_threads_(current|daemon)$",
+                        "^jvm_classes_loaded$",
+                        "^java_lang_operatingsystem_(freephysicalmemorysize|totalphysicalmemorysize|freeswapspacesize|totalswapspacesize|systemcpuload|processcpuload|availableprocessors|openfiledescriptorcount)$",
+                        "^catalina_manager_(rejectedsessions|activesessions)$",
+                        "^jvm_gc_collection_seconds_(count|sum)$",
+                        "^catalina_globalrequestprocessor_(bytesreceived|bytessent|requestcount|errorcount|processingtime)$"
+                      ]
+                    },
+                    {
+                      "source_labels": ["Java_EMF_Metrics"],
+                      "label_matcher": "^true$",
+                      "dimensions": [["ClusterName","TaskDefinitionFamily","area"]],
+                      "metric_selectors": [
+                        "^jvm_memory_bytes_used$"
+                      ]
+                    },
+                    {
+                      "source_labels": ["Java_EMF_Metrics"],
+                      "label_matcher": "^true$",
+                      "dimensions": [["ClusterName","TaskDefinitionFamily","pool"]],
+                      "metric_selectors": [
+                        "^jvm_memory_pool_bytes_used$"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "force_flush_interval": 5
+          }
+        }
+  
+  CWAgentECSExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Allows ECS container agent makes calls to the Amazon ECS API on your behalf.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: ECSSSMInlinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                Resource: arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*
+  
+  CWAgentECSTaskRole:
+    Type: AWS::IAM::Role
+    DependsOn: CWAgentECSExecutionRole
+    Properties:
+      Description: Allows ECS tasks to call AWS services on your behalf.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: ECSServiceDiscoveryInlinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:DescribeTasks
+                  - ecs:ListTasks
+                  - ecs:DescribeContainerInstances
+                Resource: "*"
+                Condition:
+                  ArnEquals:
+                    ecs:cluster:
+                      !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSClusterName}'
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ecs:DescribeTaskDefinition
+                Resource: "*"
+  
+  ECSCWAgentTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    DependsOn:
+      - PrometheusConfigSSMParameter
+      - CWAgentConfigSSMParameter
+    Properties:
+      Family: !Sub 'cwagent-prometheus-${ECSClusterName}-${ECSLaunchType}-awsvpc'
+      TaskRoleArn: !Ref CWAgentECSTaskRole
+      ExecutionRoleArn: !Ref CWAgentECSExecutionRole
+      NetworkMode: awsvpc
+      ContainerDefinitions:
+        - Name: cloudwatch-agent-prometheus
+          Image: amazon/cloudwatch-agent:1.247346.0b249609
+          Essential: true
+          MountPoints: []
+          PortMappings: []
+          Environment: []
+          Secrets:
+            - Name: PROMETHEUS_CONFIG_CONTENT
+              ValueFrom: !Sub 'AmazonCloudWatch-PrometheusConfigName-${ECSClusterName}-${ECSLaunchType}-awsvpc'
+            - Name: CW_CONFIG_CONTENT
+              ValueFrom: !Sub 'AmazonCloudWatch-CWAgentConfig-${ECSClusterName}-${ECSLaunchType}-awsvpc'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-create-group: 'True'
+              awslogs-group: "/ecs/ecs-cwagent-prometheus"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub 'ecs-${ECSLaunchType}-awsvpc'
+      RequiresCompatibilities:
+        - !Ref ECSLaunchType
+      Cpu: '512'
+      Memory: '1024'
+  ECSCWAgentService:
+    Type: AWS::ECS::Service
+    DependsOn: ECSCWAgentTaskDefinition
+    Properties:
+      Cluster: !Ref ECSClusterName
+      DesiredCount: 1
+      LaunchType: 'FARGATE'
+      SchedulingStrategy: REPLICA
+      ServiceName: !Sub 'cwagent-prometheus-replica-service-${ECSLaunchType}-awsvpc'
+      TaskDefinition: !Ref ECSCWAgentTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Sub "${ECSClusterName}:ContainerSecurityGroup"
+          Subnets: 
+            - Fn::ImportValue:
+                !Sub "${ECSClusterName}:PrivateSubnet1"
+            - Fn::ImportValue:
+                !Sub "${ECSClusterName}:PrivateSubnet2"

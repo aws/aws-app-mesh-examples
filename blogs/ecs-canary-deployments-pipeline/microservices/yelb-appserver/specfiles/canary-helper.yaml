@@ -1,0 +1,201 @@
+---
+Parameters:
+
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  MicroserviceName:
+    Description: Provide the name of the Microservice
+    Type: String
+
+  Namespace:
+    Description: Provide the details of CloudMap Namespace
+    Type: String
+  
+  Sha:
+    Description: Provide the head of the GitHub Sha 
+    Type: String
+
+  ContainerImage:
+    Description: Provide the details of ContainerImage URI
+    Type: String
+
+  Port:
+    Description: The port on which the Microservice listens on
+    Type: Number
+
+  Protocol:
+    Description: The protocol supported by the port on which the Microservice listens on
+    Type: String
+
+Resources:
+
+  ServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: !Sub ${MicroserviceName}-${Sha}
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:CloudMapNamespaceId"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !Ref EnvironmentName
+      ServiceName: !Sub ${MicroserviceName}-${Sha}
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: 'FARGATE'
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': ServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Sub "${EnvironmentName}:ContainerSecurityGroup"
+          Subnets: 
+            - Fn::ImportValue:
+                !Sub "${EnvironmentName}:PrivateSubnet1"
+            - Fn::ImportValue:
+                !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: TaskDef }
+
+  TaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - 'FARGATE'
+      Family: !Ref MicroserviceName
+      NetworkMode: 'awsvpc'
+      Cpu: 256
+      Memory: 512
+      TaskRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskRole"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ExecutionRole"
+      ProxyConfiguration:
+        Type: 'APPMESH'
+        ContainerName: 'envoy'
+        ProxyConfigurationProperties:
+          - Name: 'IgnoredUID'
+            Value: '1337'
+          - Name: 'ProxyIngressPort'
+            Value: '15000'
+          - Name: 'ProxyEgressPort'
+            Value: '15001'
+          - Name: 'AppPorts'
+            Value: !Ref Port
+          - Name: 'EgressIgnoredIPs'
+            Value: '169.254.170.2,169.254.169.254'
+      ContainerDefinitions:
+        - Name: 'app'
+          Image: !Ref ContainerImage
+          Essential: true
+          DependsOn:
+            - ContainerName: 'envoy'
+              Condition: 'HEALTHY'
+            - ContainerName: 'xray'
+              Condition: 'START'
+          Environment:
+            - Name: SEARCH_DOMAIN
+              Value: !Ref Namespace
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub '${MicroserviceName}-log-group'
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub '${MicroserviceName}-app'
+          PortMappings:
+            - ContainerPort: !Ref Port
+              Protocol: 'tcp'
+        - Name: xray
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: '1337'
+          LogConfiguration:
+              LogDriver: awslogs
+              Options:
+                  awslogs-group: !Sub '${MicroserviceName}-log-group'
+                  awslogs-region: !Ref AWS::Region
+                  awslogs-stream-prefix: !Sub '${MicroserviceName}-xray'
+        - Name: envoy
+          Image: !Sub '840364872350.dkr.ecr.${AWS::Region}.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod'
+          Essential: true
+          User: '1337'
+          Ulimits:
+            - Name: "nofile"
+              HardLimit: 15000
+              SoftLimit: 15000
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: 'tcp'
+            - ContainerPort: 15000
+              Protocol: 'tcp'
+            - ContainerPort: 15001
+              Protocol: 'tcp'
+          HealthCheck:
+            Command:
+              - 'CMD-SHELL'
+              - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub '${MicroserviceName}-log-group'
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub '${MicroserviceName}-envoy'
+          Environment:
+            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+              Value: !Sub 'mesh/${EnvironmentName}/virtualNode/${MicroserviceName}-${Sha}'
+            - Name: ENVOY_LOG_LEVEL
+              Value: debug
+            - Name: ENABLE_ENVOY_XRAY_TRACING
+              Value: '1'
+            - Name: ENABLE_ENVOY_STATS_TAGS
+              Value: '1'
+            - Name: ENABLE_ENVOY_DOG_STATSD
+              Value: '1'
+
+  VirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref EnvironmentName
+      VirtualNodeName: !Sub ${MicroserviceName}-${Sha}
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: !Ref Port
+              Protocol: !Ref Protocol
+            HealthCheck:
+              Protocol: !Ref Protocol
+              Path: "/api/hostname"
+              Port: !Ref Port
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        Logging:
+            AccessLog:
+              File:
+                Path: '/dev/stdout'
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Ref Namespace
+            ServiceName: !Sub ${MicroserviceName}-${Sha}
+        Backends:
+          - VirtualService:
+              VirtualServiceName: yelb-db
+          - VirtualService:
+              VirtualServiceName: yelb-redisserver

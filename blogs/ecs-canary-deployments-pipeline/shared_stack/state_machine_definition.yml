@@ -1,0 +1,164 @@
+{
+  "StartAt": "Check Deployment Version",
+  "States": {
+    "Check Deployment Version": {
+      "Type": "Task",
+      "ResultPath": "$.deployment",
+      "OutputPath": "$",
+      "Resource": "${CheckDeploymentVersionFunctionArn}",
+      "Next": "Deploy New Version/CFN"
+    },
+    "Deploy New Version/CFN": {
+      "Type": "Task",
+      "ResultPath": null,
+      "OutputPath": "$",
+      "Catch": [ 
+        {
+            "ErrorEquals": ["States.Timeout"],
+            "Next": "Deployment Failed & Rolled-back"
+        }
+      ],
+      "Resource": "${DeployCanaryInfrastructureArn}",
+      "Next": "Canary & Switch traffic"
+    },
+    "Canary & Switch traffic": {
+      "Type": "Task",
+      "ResultPath": "$.canary_results",
+      "OutputPath": "$",
+      "Resource": "${StartCanaryArn}",
+      "Catch": [ 
+        {
+            "ErrorEquals": ["Lambda.Unknown"],
+            "Next": "Rollback"
+        }
+      ],
+      "Next": "Traffic Totally Switched?"
+    },
+    "Traffic Totally Switched?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.canary_results.new_vn_weight",
+              "NumericEquals": 100
+            },
+            {
+              "Variable": "$.deployment.new_version",
+              "NumericEquals": 1
+            }
+          ],
+          "Next": "Gather Healthcheck Status"
+        },
+        {
+          "Variable": "$.canary_results.new_vn_weight",
+          "NumericGreaterThanEquals": 100,
+          "Next": "Deployment Succeeded?"
+        }
+      ],
+      "Default": "Wait"
+    },
+    "Wait": {
+      "Type": "Wait",
+      "SecondsPath": "$.WaitTime",
+      "Next": "Gather Healthcheck Status"
+    },
+    "Gather Healthcheck Status": {
+      "Type": "Task",
+      "Resource": "${GatherHealthcheckStatusArn}",
+      "ResultPath": "$.deployment.is_healthy",
+      "OutputPath": "$",
+      "Next": "Is Healthy?"
+    },
+    "Is Healthy?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.deployment.is_healthy",
+              "BooleanEquals": true
+            },
+            {
+              "Variable": "$.deployment.new_version",
+              "NumericEquals": 1
+            }
+            ],
+            "Next": "Was first Deployment?"
+        },
+        {
+          "Variable": "$.deployment.is_healthy",
+          "BooleanEquals": true,
+          "Next": "Canary & Switch traffic"
+        }
+      ],
+      "Default": "Rollback"
+    },
+    "Deployment Succeeded?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.canary_results.new_vn_weight",
+              "NumericEquals": 100
+            },
+            {
+              "Variable": "$.deployment.is_healthy",
+              "BooleanEquals": true
+            }
+          ],
+          "Next": "Was first Deployment?"
+        }
+      ],
+      "Default": "Remove Old Version"
+    },
+    "Was first Deployment?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.deployment.new_version",
+          "NumericEquals": 1,
+          "Next": "Update Deployment Version"
+        }
+      ],
+      "Default": "Remove Old Version"
+    },
+    "Remove Old Version": {
+      "Type": "Task",
+      "ResultPath": "$.deployment.removed_oldversion",
+      "OutputPath": "$",
+      "Catch": [ 
+        {
+            "ErrorEquals": ["Lambda.Unknown"],
+            "Next": "Cleanup of Previous Deployment components Failed"
+        }
+      ],
+      "Resource": "${RemovePreviousCanaryFunctionArn}",
+      "Next": "Update Deployment Version"
+    },
+    "Update Deployment Version": {
+      "Type": "Task",
+      "Resource": "${UpdateDeploymentVersionFunctionArn}",
+      "Next": "Deployment Succeeded"
+    },
+    "Rollback": {
+      "Type": "Task",
+      "ResultPath": "$.deployment.rollback_succeeded",
+      "OutputPath": "$",
+      "Resource": "${RollbackToPreviousCanaryInfrastructureFunctionArn}",
+      "Next": "Deployment Failed & Rolled-back"
+    },
+    "Deployment Failed & Rolled-back": {
+      "Type": "Fail",
+      "Cause": "The Canary deployment workflow failed and rolled back to the previous stable state."
+    },
+    "Cleanup of Previous Deployment components Failed": {
+      "Type": "Fail",
+      "Cause": "Please fix the error caused due to cleanup of Previous Deployment components Failed"
+    },
+    "Deployment Succeeded": {
+      "Type": "Succeed"
+    }
+  }
+}

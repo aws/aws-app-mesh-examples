@@ -1,0 +1,11 @@
+{ 
+  "EnvironmentName": "ecs-blogpost",
+  "MicroserviceName": "yelb-redisserver",
+  "Protocol": "tcp",
+  "Port": 6379,
+  "Namespace": "yelb.local",
+  "PercentageStep": 25,
+  "WaitTime": 60,
+  "FailureThresholdValue": 5,
+  "FailureThresholdTime": 300
+}

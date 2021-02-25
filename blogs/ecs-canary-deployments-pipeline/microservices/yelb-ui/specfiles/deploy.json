@@ -1,0 +1,11 @@
+{ 
+  "EnvironmentName": "ecs-blogpost",
+  "MicroserviceName": "yelb-ui",
+  "Protocol": "http",
+  "Port": 80,
+  "Namespace": "yelb.local",
+  "PercentageStep": 25,
+  "WaitTime": 60,
+  "FailureThresholdValue": 1,
+  "FailureThresholdTime": 600
+}
