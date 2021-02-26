@@ -6,24 +6,16 @@ In this walkthrough, we'll demonstrate the use of outlier detection in AWS App M
 Outlier detection is a form of passive health check that temporarily ejects an endpoint/host of a given service (represented by a Virtual Node) from the load balancing set when it meets failure threshold (hence considered an *outlier*). Outlier detection is supported as configuration in Virtual Nodes listeners.
 
 ## Prerequisites
-This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided in the `us-west-2` region.
 
 1. [Walkthrough: App Mesh with EKS](../eks/)
 2. Run the following to check the version of controller you are running.
 ```
 kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.2.0-preview
+v1.2.0
 ```
 
-3. [Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
-```
-aws configure add-model \
-    --service-name appmesh-preview \
-    --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-```
-
-4. Install Docker. `deploy.sh` script builds the demo application images using Docker CLI.
+3. Install Docker. It is needed to build the demo application images.
 
 
 ## Step 1: Setup environment
@@ -51,8 +43,8 @@ Let's deploy the sample applications and mesh with outlier detection. This will 
 ```
 kubectl get virtualnodes,pod -n howto-k8s-outlier-detection
 NAME                                   ARN                                                                                                                                AGE
-virtualnode.appmesh.k8s.aws/colorapp   arn:aws:appmesh-preview:us-west-2:1234567890:mesh/howto-k8s-outlier-detection/virtualNode/colorapp_howto-k8s-outlier-detection   55s
-virtualnode.appmesh.k8s.aws/front      arn:aws:appmesh-preview:us-west-2:1234567890:mesh/howto-k8s-outlier-detection/virtualNode/front_howto-k8s-outlier-detection      55s
+virtualnode.appmesh.k8s.aws/colorapp   arn:aws:appmesh:us-west-2:1234567890:mesh/howto-k8s-outlier-detection/virtualNode/colorapp_howto-k8s-outlier-detection   55s
+virtualnode.appmesh.k8s.aws/front      arn:aws:appmesh:us-west-2:1234567890:mesh/howto-k8s-outlier-detection/virtualNode/front_howto-k8s-outlier-detection      55s
 
 NAME                           READY   STATUS    RESTARTS   AGE
 pod/colorapp-cbfb668dc-6v5sm   2/2     Running   0          55s
@@ -89,13 +81,13 @@ Spec:
 
 Let's check the outlier detection configuration in AWS App Mesh
 ```
-aws appmesh-preview describe-virtual-node --virtual-node-name colorapp_howto-k8s-outlier-detection --mesh-name howto-k8s-outlier-detection
+aws appmesh describe-virtual-node --virtual-node-name colorapp_howto-k8s-outlier-detection --mesh-name howto-k8s-outlier-detection
 
 {
     "virtualNode": {
         "meshName": "howto-k8s-outlier-detection",
         "metadata": {
-            "arn": "arn:aws:appmesh-preview:us-west-2:1234567890:mesh/howto-k8s-outlier-detection/virtualNode/colorapp_howto-k8s-outlier-detection",
+            "arn": "arn:aws:appmesh:us-west-2:1234567890:mesh/howto-k8s-outlier-detection/virtualNode/colorapp_howto-k8s-outlier-detection",
             "createdAt": 1603467992.872,
             "lastUpdatedAt": 1603468186.926,
             "meshOwner": "1234567890",

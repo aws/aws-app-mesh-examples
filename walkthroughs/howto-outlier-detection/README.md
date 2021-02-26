@@ -21,31 +21,9 @@ Here are the necessary fields to configure Outlier Detection:
 
 ## Step 1: Prerequisites
 
-We will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
+1. You have version 1.18.172 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.0.62 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
 
-If you are using AWS CLI version 1:
-
-```bash
-
-aws configure add-model \
-
---service-name appmesh-preview \
-
---service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-
-```
-
-If you are using AWS CLI version 2:
-
-```bash
-
-curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-
-aws configure add-model --service-name appmesh-preview --service-model file://service-model.json
-
-```
-
-To take a closer look at the related Envoy statistics for outlier detection, we will launch and SSH into a bastion host within the same VPC as the mesh to access the Envoy admin endpoint. Therefore we need an EC2 keypair for the bastion instance.
+2. To take a closer look at the related Envoy statistics for outlier detection, we will launch and SSH into a bastion host within the same VPC as the mesh to access the Envoy admin endpoint. Therefore we need an EC2 keypair for the bastion instance.
 You can create a keypair using the command below if you don't already have one. Otherwise follow export the key pair name instruction with the name of your key pair.
 
 ```bash
@@ -55,9 +33,11 @@ chmod 400 ~/.ssh/od-bastion.pem
 
 export the key pair name: ```bash export KEY_PAIR_NAME=od-bastion```
 
-In addition, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+3. In addition, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
-Finally, to generate traffic and observe the server responses, we will leverage the open source Http load testing tool [vegeta](https://github.com/tsenart/vegeta). You can choose to install it locally or run the commands we will use later in a Docker container using this [image](https://hub.docker.com/r/peterevans/vegeta/).
+4. Install Docker. It is needed to build the demo application images.
+
+5. Finally, to generate traffic and observe the server responses, we will leverage the open source Http load testing tool [vegeta](https://github.com/tsenart/vegeta). You can choose to install it locally or run the commands we will use later in a Docker container using this [image](https://hub.docker.com/r/peterevans/vegeta/).
 
 ## Step 2: Set Environment Variables
 

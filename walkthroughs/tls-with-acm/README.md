@@ -4,11 +4,15 @@ In this walkthrough we'll enable TLS encryption between two services in App Mesh
 
 ## Introduction
 
-In App Mesh, traffic encryption works between Virtual Nodes, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
+In App Mesh, traffic encryption works between Virtual Nodes and Virtual Gateways, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
 
-With ACM, you can host some or all of your Public Key Infrastructure (PKI) in AWS, and App Mesh will automatically distribute the certificates to the Envoys configured by your Virtual Nodes. App Mesh also automatically distributes the appropriate TLS validation context to other Virtual Nodes which depend on your service by way of a Virtual Service.
+With ACM, you can host some or all of your Public Key Infrastructure (PKI) in AWS, and App Mesh will automatically distribute the certificates to the Envoys configured by your Virtual Nodes and Virtual Gateways. App Mesh also automatically distributes the appropriate TLS validation context to other Virtual Nodes and Virtual Gateways which depend on your service by way of a Virtual Service.
 
 Let's jump into a brief example of App Mesh TLS in action.
+
+## Prerequisites
+
+1. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Create Color App Infrastructure
 
@@ -35,7 +39,6 @@ export ENVIRONMENT_NAME=AppMeshTLSExample
 export MESH_NAME=ColorApp-TLS
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
-export GATEWAY_IMAGE_NAME="gateway"
 export COLOR_TELLER_IMAGE_NAME="colorteller"
 ```
 
@@ -56,14 +59,12 @@ Finally, build and deploy the color app images.
 
 ```bash
 ./src/colorteller/deploy.sh
-./src/gateway/deploy.sh
 ```
 
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
-GO_PROXY=direct ./src/gateway/deploy.sh
 ```
 
 ## Step 2: Create a Certificate
@@ -164,7 +165,7 @@ With managed certificates, ACM will automatically renew certificates that are ne
 
 This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white).
 
-We'll be encrypting traffic from the gateway to the color teller node. Our color teller white Virtual Node will be terminating TLS with a certificate provided by ACM. The spec looks like this:
+We'll be encrypting traffic from the Virtual Gateway to the color teller node. Our color teller white Virtual Node will be terminating TLS with a certificate provided by ACM. The spec looks like this:
 
 ```yaml
 ColorTellerVirtualNode:
@@ -202,39 +203,42 @@ ColorTellerVirtualNode:
 Additionally, the gateway service will be configured to validate the certificate of the color teller node by specifying the CA that issued it. The spec for the gateway looks like this:
 
 ```yaml
-ColorGatewayVirtualNode:
-  Type: AWS::AppMesh::VirtualNode
+ColorGatewayVirtualGateway:
+  Type: AWS::AppMesh::VirtualGateway
   Properties:
     MeshName: !GetAtt Mesh.MeshName
-    VirtualNodeName: ColorGateway
+    VirtualGatewayName: ColorGateway
     Spec:
-      # BackendDefaults settings are applied to all backends.
       BackendDefaults:
-        # ClientPolicy is a policy for how to handle traffic with backends (i.e. from the client
-        # perspective)
         ClientPolicy:
-          # TLS determines whether or not TLS is negotiated, and how.
           TLS:
-            # Validation determines how to validate a certificate offered by a backend.
             Validation:
-              # Trust is the trust bundle (i.e. set of root certificate authorities) used to validate
-              # the certificate offered by a backend. Certificates signed by one of these certificate
-              # authorities are considered valid.
               Trust:
-                # Use a certificate authority from ACM
                 ACM:
                   CertificateAuthorityArns:
                     - !Ref CertificateAuthorityArn
-      Backends:
-        - VirtualService:
-            VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
       Listeners:
         - PortMapping:
             Port: 80
             Protocol: http
-      ServiceDiscovery:
-        DNS:
-          Hostname: !Sub "colorgateway.${ServicesDomain}"
+
+ColorGatewayRoute:
+  DependsOn:
+    - ColorGatewayVirtualGateway
+    - ColorTellerVirtualService
+  Type: AWS::AppMesh::GatewayRoute
+  Properties: 
+    GatewayRouteName: ColorGatewayRoute
+    MeshName: !GetAtt Mesh.MeshName
+    Spec: 
+      HttpRoute:
+        Action: 
+          Target:
+            VirtualService:
+              VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+        Match: 
+          Prefix: /
+    VirtualGatewayName: ColorGateway
 ```
 
 For more information on what TLS settings you can provide for a Virtual Node, see the [TLS Encryption](https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual-node-tls.html) documentation.

@@ -6,7 +6,7 @@ This example shows how to enable App Mesh between multiple accounts for cross ac
 
 ### Gateway
 
-The gateway image is an NGINX proxy which listens on a given port and forwards requests to the backend service on a given port. It also responds to NLB HealthChecks.
+Virtual gateways allows resources that are outside of your mesh to communicate to resources that are inside of your mesh. Gateway Routes specify the routing rules for inbound traffic to virtual services within your mesh
 
 ### Backend
 
@@ -16,6 +16,9 @@ The two backends are "Hello World!" applications that each listen on port 80.
 * The secondary backend is karthequian/helloworld
 
 These backends will be configured in distinct accounts and made accessible through the gateway. We will manipulate routes that show that we are able to migrate traffic from one destination to another using the App Mesh APIs.
+
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images.
 
 ## Setup
 
@@ -82,7 +85,7 @@ These backends will be configured in distinct accounts and made accessible throu
         ```
         export KEY_PAIR=...
         ```
-3. Source the `env.vars` file using `source env.vars`
+3. Source the `vars.env` file using `source vars.env`
 4. Setup base cloudformation stack by running
     ```
     ./deploy.sh

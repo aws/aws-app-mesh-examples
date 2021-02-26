@@ -9,20 +9,7 @@ We go through the exercise of setting up connection pool settings at the Virtual
 
 1. Clone this repository and navigate to the `walkthroughs/howto-circuit-breakers` folder, all the commands henceforth are assumed to be run from the same directory as this README.
 
-2. This example uses features in the [App Mesh Preview Channel](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html). You'll need to install the latest `appmesh-preview`      model.
-
-    Add the Preview Channel service model to the AWS CLI version 1 with the following command:
-    ```bash
-    aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-    ```
-
-    If you're using the AWS CLI version 2, add the service model with the following commands:
-    ```bash
-    curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-    aws configure add-model --service-name appmesh-preview --service-model file://service-model.json
-    ```
+2. Make sure you have version 1.18.172 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.0.62 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
 
 3. You'll need a keypair stored in AWS to access a bastion host.
    If you do not already have one, you can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
@@ -34,7 +21,8 @@ We go through the exercise of setting up connection pool settings at the Virtual
 
     This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at `~/.ssh/color-app.pem`.
 
-4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/). 
+4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+5. Install Docker. It is needed to build the demo application images.
 
 ## Step 2: Set Environment Variables
 We need to set a few environment variables before provisioning the infrastructure.

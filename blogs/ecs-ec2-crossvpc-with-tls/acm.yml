@@ -1,0 +1,62 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cloudformation template to setup CA.
+Resources:
+  RootCA:
+    Type: AWS::ACMPCA::CertificateAuthority
+    Properties:
+      Type: ROOT
+      KeyAlgorithm: RSA_2048
+      SigningAlgorithm: SHA256WITHRSA
+      Subject:
+        Country: US
+        Organization: App Mesh Examples
+        OrganizationalUnit: TLS Example
+        State: VA
+        CommonName: appmeshworkshop.hosted.local
+        Locality: Herndon
+      RevocationConfiguration:
+        CrlConfiguration:
+          Enabled: false
+  RootCACertificate:
+    Type: AWS::ACMPCA::Certificate
+    Properties:
+      CertificateAuthorityArn:
+        Ref: RootCA
+      CertificateSigningRequest:
+        Fn::GetAtt:
+        - RootCA
+        - CertificateSigningRequest
+      SigningAlgorithm: SHA256WITHRSA
+      TemplateArn: arn:aws:acm-pca:::template/RootCACertificate/V1
+      Validity:
+        Type: YEARS
+        Value: 10
+  RootCAActivation:
+    Type: AWS::ACMPCA::CertificateAuthorityActivation
+    Properties:
+      CertificateAuthorityArn:
+        Ref: RootCA
+      Certificate:
+        Fn::GetAtt:
+        - RootCACertificate
+        - Certificate
+      Status: ACTIVE
+  AppMeshCert:
+    Type: AWS::CertificateManager::Certificate
+    DependsOn: RootCAActivation
+    Properties:
+      DomainName: "*.appmeshworkshop.hosted.local"
+      CertificateAuthorityArn:
+        Ref: RootCA
+Outputs:
+  RootCA:
+    Value:
+      Ref: RootCA
+    Export:
+      Name: RootCA
+  AppMeshCert:
+    Value:
+      Ref: AppMeshCert
+    Export:
+      Name: AppMeshCert

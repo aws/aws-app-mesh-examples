@@ -2,6 +2,9 @@
 
 This example shows how we can set retry duration and attempts within route configurations. In this mesh we have a frontend service and a color service. When a request is made, the frontend service will create a header to denote the current time and send that request to the color service. The color service will respond with a 503 if the time of the original request (passed through the header) and the current time is less than 1 second. Initially without retry in place this error will be thrown consistently. After we introduce retries, we will begin to see the time of the original request and the current time will eventually be greater than 1 second (depending on the retry policy configuration you want to set but the example configuration will work once the route is updated during the walkthrough). At this point the color service will return a 200 and send back the color. 
 
+## Prerequisites
+1. Install Docker. It is needed to build the demo application images.
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/http-retry-policy folder, all commands will be ran from this location

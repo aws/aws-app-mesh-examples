@@ -15,7 +15,7 @@ However to increase the timeout (>15secs), it needs to be set at the route and a
 
 ## Step 1: Prerequisites
 
-We will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
+1. We will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
 
 ```bash
 aws configure add-model \
@@ -23,7 +23,7 @@ aws configure add-model \
         --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
 ```
 
-We'll also need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+2. We'll also need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
@@ -33,7 +33,8 @@ chmod go-r ~/.ssh/color-app.pem
 This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
 `~/.ssh/color-app.pem`.
 
-Additionally, this walkthrough makes use of the unix command line utility jq. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+3. Additionally, this walkthrough makes use of the unix command line utility jq. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
+4. Install Docker. It is needed to build the demo application images.
 
 ## Step 2: Set Environment Variables
 

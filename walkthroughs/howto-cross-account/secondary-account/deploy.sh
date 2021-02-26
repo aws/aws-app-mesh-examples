@@ -86,6 +86,8 @@ delete_cfn_stack() {
 }
 
 delete_stacks() {
+    echo "Deleting route to cleanly delete ${PROJECT_NAME}-mesh"
+    aws --profile ${AWS_PRIMARY_PROFILE} appmesh delete-route --mesh-name ${PROJECT_NAME}-mesh --virtual-router-name backend-vr --route-name backend-route
     delete_cfn_stack "${PROJECT_NAME}-app"
     delete_cfn_stack "${PROJECT_NAME}-infra"
     delete_cfn_stack "${PROJECT_NAME}-mesh"

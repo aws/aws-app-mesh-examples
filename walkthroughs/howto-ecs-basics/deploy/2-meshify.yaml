@@ -690,7 +690,8 @@ Resources:
   FrontECSService:
     Type: AWS::ECS::Service
     DependsOn:
-      - PublicLoadBalancer
+      - PublicLoadBalancerListener
+      - FrontListenerRule
     Properties:
       Cluster: !Ref ECSCluster
       DeploymentConfiguration:

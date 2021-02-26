@@ -12,11 +12,6 @@ if [ -z $AWS_DEFAULT_REGION ]; then
     exit 1
 fi
 
-if [ -z $ENVOY_IMAGE ]; then
-    echo "ENVOY_IMAGE environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html"
-    exit 1
-fi
-
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="howto-k8s-retry-policy"
