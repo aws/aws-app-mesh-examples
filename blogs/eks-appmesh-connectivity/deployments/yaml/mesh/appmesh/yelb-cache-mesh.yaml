@@ -1,0 +1,49 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: redis-server
+spec:
+  podSelector:
+    matchLabels:
+      app: redis-server
+      tier: cache
+  listeners:
+    - portMapping:
+        port: 6379
+        protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: redis-server
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: yelb-cache-router
+spec:
+  listeners:
+    - portMapping:
+        port: 6379
+        protocol: tcp
+  routes:
+    - name: cache-route
+      tcpRoute:
+        action:
+          weightedTargets:
+            - weight: 100
+              virtualNodeRef:
+                name: redis-server
+            - weight: 0
+              virtualNodeRef:
+                name: yelb-es-node             
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: redis-server
+spec:
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: yelb-cache-router

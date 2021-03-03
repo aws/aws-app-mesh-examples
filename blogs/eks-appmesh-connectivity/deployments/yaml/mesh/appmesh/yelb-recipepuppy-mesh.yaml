@@ -1,0 +1,22 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: recipepuppy-node
+spec:
+  listeners:
+    - portMapping:
+        port: 80
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: "www.recipepuppy.com"
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: "www.recipepuppy.com"
+spec:
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: recipepuppy-node
