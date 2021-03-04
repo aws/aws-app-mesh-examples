@@ -6,5 +6,5 @@ Ideally they should / could be broken into independent configurations for any gi
 
 The picture below shows the layout of the Kubernetes deployment (with a load balancer) on top of EKS:
 
-![yelb-eks-load-balancer](../../../../images/yelb-eks-load-balancer.png) 
+![yelb-eks-load-balancer](../../images/yelb-eks-load-balancer.png) 
 
