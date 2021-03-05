@@ -1,25 +1,19 @@
 set-env:
-	@chmod +x ./setup/scripts/export_environment_variables.sh
 	./setup/scripts/export_environment_variables.sh
 
 create-vpc:
-	@chmod +x ./setup/scripts/create_vpc.sh
 	./setup/scripts/create_vpc.sh
 
 create-ecs-mesh:
-	@chmod +x ./setup/scripts/create_ecs_mesh.sh
 	./setup/scripts/create_ecs_mesh.sh
 
 create-monitoring-resources:
-	@chmod +x ./setup/scripts/create_prometheus_env.sh
 	./setup/scripts/create_prometheus_env.sh
 
 create-shared-cloudformation-stack: 
-	@chmod +x ./setup/scripts/create_shared_cloudformation_stack.sh
 	./setup/scripts/create_shared_cloudformation_stack.sh
 
 create-sample-microservice-pipeline-stack: 
-	@chmod +x ./setup/scripts/create_sample_microservice_pipeline_stack.sh
 	./setup/scripts/create_sample_microservice_pipeline_stack.sh
 
 venv:

@@ -168,6 +168,7 @@ def main():
             print(f'{bucket["Name"]} is about to be deleted')
             bucket = S3_RESOURCE.Bucket(bucket["Name"])
             bucket.objects.all().delete()
+            bucket.delete()
 
     #5. Delete the Monitoring Stack.
     for stack in stacks_tobe_deleted:
