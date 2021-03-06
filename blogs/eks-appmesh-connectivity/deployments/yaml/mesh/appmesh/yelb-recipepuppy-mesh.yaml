@@ -3,6 +3,7 @@ kind: VirtualNode
 metadata:
   name: recipepuppy-node
 spec:
+  awsName: recipepuppy-node
   listeners:
     - portMapping:
         port: 80
@@ -16,6 +17,7 @@ kind: VirtualService
 metadata:
   name: "www.recipepuppy.com"
 spec:
+  awsName: "www.recipepuppy.com"
   provider:
     virtualNode:
       virtualNodeRef:

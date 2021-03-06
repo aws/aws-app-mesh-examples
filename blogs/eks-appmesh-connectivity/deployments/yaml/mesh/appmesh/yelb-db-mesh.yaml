@@ -1,9 +1,9 @@
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: yelb-db
+  name: yelb-db-node
 spec:
-  awsName: yelb-db-virtual-node
+  awsName: yelb-db-node
   podSelector:
     matchLabels:
       app: yelb-db
@@ -22,6 +22,7 @@ kind: VirtualRouter
 metadata:
   name: yelb-db-router
 spec:
+  awsName: yelb-db-router
   listeners:
     - portMapping:
         port: 5432
@@ -33,7 +34,7 @@ spec:
           weightedTargets:
             - weight: 100
               virtualNodeRef:
-                name: yelb-db
+                name: yelb-db-node
             - weight: 0
               virtualNodeRef:
                 name: yelb-rds-node             

@@ -3,6 +3,9 @@ kind: Mesh
 metadata:
   name: yelb-mesh
 spec:
+  awsName: yelb-mesh
+  egressFilter:
+    type: ALLOW_ALL  
   namespaceSelector:
     matchLabels:
       mesh: yelb-mesh

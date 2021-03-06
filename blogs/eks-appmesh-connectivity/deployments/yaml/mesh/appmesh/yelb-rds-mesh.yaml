@@ -3,6 +3,7 @@ kind: VirtualNode
 metadata:
   name: yelb-rds-node
 spec:
+  awsName: yelb-rds-node
   listeners:
     - portMapping:
         port: 5432

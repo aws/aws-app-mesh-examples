@@ -1,8 +1,9 @@
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: redis-server
+  name: redis-server-node
 spec:
+  awsName: redis-server-node
   podSelector:
     matchLabels:
       app: redis-server
@@ -21,6 +22,7 @@ kind: VirtualRouter
 metadata:
   name: yelb-cache-router
 spec:
+  awsName: yelb-cache-router
   listeners:
     - portMapping:
         port: 6379
@@ -32,7 +34,7 @@ spec:
           weightedTargets:
             - weight: 100
               virtualNodeRef:
-                name: redis-server
+                name: redis-server-node
             - weight: 0
               virtualNodeRef:
                 name: yelb-es-node             
@@ -43,6 +45,7 @@ kind: VirtualService
 metadata:
   name: redis-server
 spec:
+  awsName: redis-server
   provider:
     virtualRouter:
       virtualRouterRef:

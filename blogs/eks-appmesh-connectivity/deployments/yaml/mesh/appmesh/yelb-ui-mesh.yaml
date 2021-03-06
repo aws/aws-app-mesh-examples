@@ -1,9 +1,9 @@
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: yelb-ui
+  name: yelb-ui-node
 spec:
-  awsName: yelb-ui-virtual-node
+  awsName: yelb-ui-node
   podSelector:
     matchLabels:
       app: yelb-ui
@@ -23,10 +23,10 @@ spec:
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
 metadata:
-  name: yelb-ui
+  name: yelb-ui-service
 spec:
-  awsName: yelb-ui
+  awsName: yelb-ui-service
   provider:
     virtualNode:
       virtualNodeRef:
-        name: yelb-ui
+        name: yelb-ui-node
