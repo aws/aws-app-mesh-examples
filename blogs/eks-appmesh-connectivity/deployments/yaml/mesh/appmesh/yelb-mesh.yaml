@@ -5,7 +5,7 @@ metadata:
 spec:
   awsName: yelb-mesh
   egressFilter:
-    type: ALLOW_ALL  
+    type: DROP_ALL  
   namespaceSelector:
     matchLabels:
       mesh: yelb-mesh
