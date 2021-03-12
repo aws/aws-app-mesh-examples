@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export AWS_DEFAULT_OUTPUT="json"
+
 VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true | jq -r '.Vpcs[0].VpcId')
 
 aws ec2 create-security-group --group-name yelb-db-security-group --description "Security Group for Yelb-db" --vpc-id ${VPC_ID}
@@ -28,6 +30,8 @@ aws rds create-db-instance \
         --db-instance-class db.t3.micro \
         --engine aurora-postgresql
 
+echo "Creating database..."
+sleep 30s
 
 CLUSTER_END_POINT=$(aws rds describe-db-clusters \
         --db-cluster-identifier yelb-db-cluster | jq -r '.DBClusters[0].Endpoint')
