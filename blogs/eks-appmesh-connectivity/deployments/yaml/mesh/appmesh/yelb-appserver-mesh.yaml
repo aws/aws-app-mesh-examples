@@ -1,0 +1,38 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-appserver-node
+spec:
+  awsName: yelb-appserver-node
+  podSelector:
+    matchLabels:
+      app: yelb-appserver
+      tier: middletier
+  listeners:
+    - portMapping:
+        port: 4567
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: yelb-appserver
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: yelb-db
+    - virtualService:
+        virtualServiceRef:
+          name: redis-server
+    - virtualService:
+        virtualServiceRef:
+          name: "www.recipepuppy.com"          
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: yelb-appserver
+spec:
+  awsName: yelb-appserver
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: yelb-appserver-node

@@ -1,0 +1,13 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-es-node
+spec:
+  listeners:
+    - portMapping:
+        port: 5432
+        protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: redis-server-invalid
+

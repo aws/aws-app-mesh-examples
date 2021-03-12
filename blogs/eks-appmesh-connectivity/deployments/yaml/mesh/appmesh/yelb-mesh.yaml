@@ -1,0 +1,11 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: yelb-mesh
+spec:
+  awsName: yelb-mesh
+  egressFilter:
+    type: DROP_ALL  
+  namespaceSelector:
+    matchLabels:
+      mesh: yelb-mesh
