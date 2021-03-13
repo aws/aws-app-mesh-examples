@@ -32,7 +32,7 @@ aws elasticache create-cache-cluster \
     --engine redis \
     --cache-node-type cache.t2.medium \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --num-cache-nodes 1 > /dev/null >2&1
+    --num-cache-nodes 1 &> /dev/null
 
 aws elasticache wait cache-cluster-available \
     --cache-cluster-id "yelb-cache-cluster"
