@@ -6,6 +6,7 @@ This example shows how to use [ALB Ingress Controller](https://github.com/kubern
 ## Prerequisites
 - [Walkthrough: App Mesh with EKS](../eks/)
 - [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/)
+- Install Docker. It is needed to build the demo application images.
 
 Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
 
@@ -20,10 +21,7 @@ Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io
     ```
     export AWS_DEFAULT_REGION=us-west-2
     ```
-4. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-    ```
-    export ENVOY_IMAGE=...
-    ```
+4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
 5. Deploy
     ```.
     ./deploy.sh

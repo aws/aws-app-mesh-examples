@@ -1,0 +1,61 @@
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: yelb-cert-ui
+  namespace: yelb
+spec:
+  dnsNames:
+    - "yelb-ui.yelb.svc.cluster.local"
+  secretName: yelb-tls-ui
+  issuerRef:
+    name: ca-issuer  
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: yelb-cert-app
+  namespace: yelb
+spec:
+  dnsNames:
+    - "yelb-appserver.yelb.svc.cluster.local"
+  secretName: yelb-tls-app
+  issuerRef:
+    name: ca-issuer
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: yelb-cert-db
+  namespace: yelb
+spec:
+  dnsNames:
+    - "yelb-db.yelb.svc.cluster.local"
+  secretName: yelb-tls-db
+  issuerRef:
+    name: ca-issuer
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: yelb-cert-redis
+  namespace: yelb
+spec:
+  dnsNames:
+    - "redis-server.yelb.svc.cluster.local"
+  secretName: yelb-tls-redis
+  issuerRef:
+    name: ca-issuer
+---      
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: yelb-cert-gw
+  namespace: yelb
+spec:
+  dnsNames:
+    - "yelb-gw.yelb.svc.cluster.local"
+  secretName: yelb-tls-gw
+  issuerRef:
+    name: ca-issuer
+---      

@@ -1,12 +1,15 @@
 ## Prerequisites
 
-v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+1. v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
 
 You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
+2. Install Docker. It is needed to build the demo application images.
+
+## Setup environment
 - Setup following environment variables
   - **Your** account id:
     ```
@@ -16,15 +19,15 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     ```
     export AWS_DEFAULT_REGION=us-east-2
     ```
-  - **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-    ```
-    export ENVOY_IMAGE=...
-    ```
+
 - Setup EKS cluster with Fargate support.
-  - You can use [clusterconfig.yaml](./clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION. 
+  - You can use [clusterconfig.yaml](./v1beta2/clusterconfig.yaml) with [eksctl](https://eksctl.io). Update `metadata.region` to AWS_DEFAULT_REGION.
     ```
     eksctl create cluster -f v1beta2/clusterconfig.yaml
     ```
+
+- (Optional) Override the default Helm chart App Mesh Envoy Image version.
+  - If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
 
 ## Deploy
 1. Clone this repository and navigate to the walkthrough/howto-k8s-fargate folder, all commands will be run from this location

@@ -1,0 +1,21 @@
+---
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - REPOSITORY="$DOCKER_REGISTRY_URI:$(date +%Y-%m-%d_%H.%M.%S).$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+      - $(aws ecr get-login --no-include-email)
+  build:
+    commands:
+      - docker build --tag $REPOSITORY .
+  post_build:
+    commands:
+      - docker push $REPOSITORY
+      - # Update deploy.json with container_image and base64 encoded kubernetes_template.yml
+      - cat specfiles/deploy.json | jq --arg REPOSITORY "$REPOSITORY" '. + {"container_image":$REPOSITORY}' > tmp.json && mv tmp.json specfiles/deploy.json
+      - cat specfiles/deploy.json | jq --arg CONFIG_FILE "$(base64 specfiles/kubernetes_template.yml)" '. + {"config_file":$CONFIG_FILE}' > tmp.json && mv tmp.json specfiles/deploy.json
+      - cat specfiles/deploy.json
+artifacts:
+  files:
+    - specfiles/deploy.json
+  discard-paths: yes

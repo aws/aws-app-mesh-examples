@@ -12,11 +12,6 @@ if [ -z $AWS_DEFAULT_REGION ]; then
     exit 1
 fi
 
-if [ -z $ENVOY_IMAGE ]; then
-    echo "ENVOY_IMAGE environment variable is not set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html"
-    exit 1
-fi
-
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJECT_NAME="howto-k8s-http2"
 APP_NAMESPACE=${PROJECT_NAME}
@@ -94,7 +89,7 @@ deploy_images() {
 }
 
 deploy_cloudmap_ns() {
-    nsId=($(aws servicediscovery list-namespaces |
+    nsId=($(aws servicediscovery list-namespaces --output json |
         jq -r ".Namespaces[] | select(.Name | contains(\"${CLOUDMAP_NAMESPACE}\")) | .Id"))
 
     if [ -z "${nsId}" ]; then

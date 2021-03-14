@@ -10,7 +10,7 @@ spec:
       app: yelb-ui
   listeners:
     - portMapping:
-        port: 4567
+        port: 80
         protocol: http  
   serviceDiscovery:
     dns:

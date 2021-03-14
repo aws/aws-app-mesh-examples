@@ -1,0 +1,88 @@
+Parameters:
+
+    ProjectName:
+      Type: String
+      Description: Project name to link stacks
+  
+Resources:
+  
+    Mesh:
+      Type: AWS::AppMesh::Mesh
+      Properties:
+        MeshName: !Ref ProjectName
+  
+    ColorVirtualService:
+      Type: AWS::AppMesh::VirtualService
+      DependsOn:
+        - ColorNode
+      Properties:
+        MeshName: !Ref ProjectName
+        VirtualServiceName: !Sub 'color.${ProjectName}.local'
+        Spec:
+          Provider:
+            VirtualNode:
+              VirtualNodeName: 'color-node'
+  
+    FrontNode:
+      Type: AWS::AppMesh::VirtualNode
+      DependsOn:
+        - Mesh
+      Properties:
+        MeshName: !Ref ProjectName
+        VirtualNodeName: 'front-node'
+        Spec:
+          Backends:
+            - VirtualService:
+                VirtualServiceName: !Sub 'color.${ProjectName}.local'
+          Listeners:
+            - PortMapping:
+                Port: 8080
+                Protocol: http
+              HealthCheck:
+                Protocol: http
+                Path: '/ping'
+                HealthyThreshold: 2
+                UnhealthyThreshold: 2
+                TimeoutMillis: 2000
+                IntervalMillis: 5000
+          ServiceDiscovery:
+            AWSCloudMap:
+              NamespaceName: !Sub '${ProjectName}.local'
+              ServiceName: 'front'
+  
+    ColorNode:
+      Type: AWS::AppMesh::VirtualNode
+      DependsOn:
+        - Mesh
+      Properties:
+        MeshName: !Ref ProjectName
+        VirtualNodeName: 'color-node'
+        Spec:
+          Listeners:
+            - PortMapping:
+                Port: 8080
+                Protocol: http
+              HealthCheck:
+                Protocol: http
+                Path: '/ping'
+                HealthyThreshold: 2
+                UnhealthyThreshold: 2
+                TimeoutMillis: 2000
+                IntervalMillis: 5000
+              OutlierDetection:
+                maxServerErrors: 5
+                maxEjectionPercent: 100
+                interval:
+                    value: 30
+                    unit: 's'
+                baseEjectionDuration:
+                    value: 5
+                    unit: 's'
+                
+          ServiceDiscovery:
+            AWSCloudMap:
+              NamespaceName: !Sub '${ProjectName}.local'
+              ServiceName: 'color'
+              Attributes:
+                - Key: 'ECS_TASK_DEFINITION_FAMILY'
+                  Value: 'color'

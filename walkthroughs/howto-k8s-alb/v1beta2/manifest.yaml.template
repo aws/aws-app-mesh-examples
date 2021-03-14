@@ -289,6 +289,6 @@ spec:
   - http:
       paths:
       - backend:
-          serviceName: color
+          serviceName: front
           servicePort: 8080
         path: /color

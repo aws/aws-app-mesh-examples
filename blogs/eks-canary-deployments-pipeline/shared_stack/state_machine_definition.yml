@@ -1,0 +1,108 @@
+{
+  "StartAt": "Check Deployment Version",
+  "States": {
+    "Check Deployment Version": {
+      "Type": "Task",
+      "ResultPath": "$.deployment",
+      "OutputPath": "$",
+      "Resource": "${CheckDeploymentVersionFunctionArn}",
+      "Next": "Deploy New Version & Switch Traffic"
+    },
+    "Deploy New Version & Switch Traffic": {
+      "Type": "Task",
+      "ResultPath": "$.deployment.current_percentage",
+      "OutputPath": "$",
+      "Resource": "${DeploySwitchTrafficFunctionArn}",
+      "Next": "Traffic Totally Switched?"
+    },
+    "Traffic Totally Switched?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.deployment.current_percentage",
+          "NumericGreaterThanEquals": 100,
+          "Next": "Deployment Succeeded?"
+        }
+      ],
+      "Default": "Wait"
+    },
+    "Wait": {
+      "Type": "Wait",
+      "SecondsPath": "$.wait_time",
+      "Next": "Gather Healthcheck Status"
+    },
+    "Gather Healthcheck Status": {
+      "Type": "Task",
+      "Resource": "${GatherHealthcheckStatusArn}",
+      "ResultPath": "$.deployment.is_healthy",
+      "OutputPath": "$",
+      "Next": "Is Healthy?"
+    },
+    "Is Healthy?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.deployment.is_healthy",
+          "BooleanEquals": true,
+          "Next": "Deploy New Version & Switch Traffic"
+        }
+      ],
+      "Default": "Rollback"
+    },
+    "Deployment Succeeded?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.deployment.current_percentage",
+              "NumericEquals": 100
+            },
+            {
+              "Variable": "$.deployment.is_healthy",
+              "BooleanEquals": true
+            }
+          ],
+          "Next": "Was first Deployment?"
+        }
+      ],
+      "Default": "Rollback"
+    },
+    "Was first Deployment?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.deployment.new_version",
+          "NumericEquals": 1,
+          "Next": "Update Deployment Version"
+        }
+      ],
+      "Default": "Remove Old Version"
+    },
+    "Remove Old Version": {
+      "Type": "Task",
+      "ResultPath": "$.deployment.removed_oldversion",
+      "OutputPath": "$",
+      "Resource": "${RollbackOrFinishUpgradeArn}",
+      "Next": "Update Deployment Version"
+    },
+    "Update Deployment Version": {
+      "Type": "Task",
+      "Resource": "${UpdateDeploymentVersionFunctionArn}",
+      "Next": "Deployment Succeeded"
+    },
+    "Rollback": {
+      "Type": "Task",
+      "ResultPath": "$.deployment.rollback_succeeded",
+      "OutputPath": "$",
+      "Resource": "${RollbackOrFinishUpgradeArn}",
+      "Next": "Deployment Failed & Rolled-back"
+    },
+    "Deployment Failed & Rolled-back": {
+      "Type": "Fail"
+    },
+    "Deployment Succeeded": {
+      "Type": "Succeed"
+    }
+  }
+}

@@ -127,4 +127,12 @@ if [ "$action" == "delete" ]; then
     exit 0
 fi
 
+if [ "$action" == "update-blue-service" ]; then
+    echo "updating app image..."
+    deploy_images
+    echo "updating blue service..."
+    aws ecs update-service --force-new-deployment --cluster ${PROJECT_NAME} --service BlueService
+    exit 0
+fi
+
 deploy_stacks

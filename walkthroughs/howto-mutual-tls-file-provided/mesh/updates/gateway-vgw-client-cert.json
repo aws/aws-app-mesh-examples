@@ -1,0 +1,38 @@
+{
+    "spec": {
+        "listeners": [
+            {
+                "portMapping": {
+                    "port": 9080,
+                    "protocol": "http"
+                }
+            }
+        ],
+        "backendDefaults": {
+            "clientPolicy": {
+                "tls": {
+                    "validation": {
+                        "trust": {
+                            "file": {
+                                "certificateChain": "/keys/ca_cert.pem"
+                            }
+                        },
+                        "subjectAlternativeNames": {
+                            "match": {
+                                "exact": [
+                                    $COLOR_TELLER_SAN
+                                ]
+                            }
+                        }
+                    },
+                    "certificate": {
+                        "file": {
+                            "certificateChain": "/keys/gateway_cert_chain.pem",
+                            "privateKey": "/keys/gateway_key.pem"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

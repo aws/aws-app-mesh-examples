@@ -16,10 +16,6 @@ Parameters:
     Type: String
     Description: The image to use for the Envoy container
 
-  GatewayImageName:
-    Description: The name for the gateway image
-    Type: String
-
   ColorTellerImageName:
     Description: The name for the color teller image
     Type: String
@@ -180,48 +176,10 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       ExecutionRoleArn:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      ProxyConfiguration:
-        Type: 'APPMESH'
-        ContainerName: 'envoy'
-        ProxyConfigurationProperties:
-          - Name: 'IgnoredUID'
-            Value: '1337'
-          - Name: 'ProxyIngressPort'
-            Value: '15000'
-          - Name: 'ProxyEgressPort'
-            Value: '15001'
-          - Name: 'AppPorts'
-            Value: '80'
-          - Name: 'EgressIgnoredIPs'
-            Value: '169.254.170.2,169.254.169.254'
       ContainerDefinitions:
-        - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GatewayImageName}'
-          Essential: true
-          DependsOn:
-            - ContainerName: 'envoy'
-              Condition: 'HEALTHY'
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group:
-                Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'gateway'
-          PortMappings:
-            - ContainerPort: 80
-              Protocol: 'http'
-          Environment:
-            - Name: SERVER_PORT
-              Value: 80
-            - Name: COLOR_TELLER_ENDPOINT
-              Value: !Sub 'colorteller.${ECSServicesDomain}'
-            - Name: TCP_ECHO_ENDPOINT
-              Value: unused
         - Name: envoy
           Image: !Ref EnvoyImage
           Essential: true
-          User: '1337'
           Ulimits:
             - Name: "nofile"
               HardLimit: 15000
@@ -232,6 +190,8 @@ Resources:
             - ContainerPort: 15000
               Protocol: 'tcp'
             - ContainerPort: 15001
+              Protocol: 'tcp'
+            - ContainerPort: 80
               Protocol: 'tcp'
           HealthCheck:
             Command:
@@ -248,8 +208,10 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'gateway-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorGateway'
+            - Name: 'APPMESH_RESOURCE_ARN'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/ColorGateway'
+            - Name: 'ENVOY_LOG_LEVEL'
+              Value: 'debug'
 
   ColorGatewayService:
     Type: 'AWS::ECS::Service'
@@ -275,8 +237,9 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorGatewayTaskDefinition }
+      HealthCheckGracePeriodSeconds: 300
       LoadBalancers:
-        - ContainerName: app
+        - ContainerName: envoy
           ContainerPort: 80
           TargetGroupArn: !Ref WebTargetGroup
 
@@ -307,7 +270,8 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 6
-      HealthCheckPath: /ping
+      HealthCheckPath: /ready
+      HealthCheckPort: 9901
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2

@@ -1,0 +1,45 @@
+{
+   "virtualNodeName": "color-node",
+   "spec": {
+      "listeners": [
+         {
+            "portMapping": {
+               "port": 8080,
+               "protocol": "http"
+            },
+            "healthCheck": {
+               "protocol": "http",
+               "path": "/ping",
+               "healthyThreshold": 2,
+               "unhealthyThreshold": 2,
+               "timeoutMillis": 2000,
+               "intervalMillis": 5000
+            },
+            "outlierDetection": {
+               "maxServerErrors": 5,
+               "maxEjectionPercent": 100,
+               "interval": {
+                  "value": 30,
+                  "unit": "s"
+               },
+               "baseEjectionDuration": {
+                  "value": 10,
+                  "unit": "s"
+               }
+            }
+         }
+      ],
+      "serviceDiscovery": {
+         "awsCloudMap": {
+            "namespaceName": $NAMESPACE_NAME,
+            "serviceName": "color",
+            "attributes": [
+               {
+                  "key": "ECS_TASK_DEFINITION_FAMILY",
+                  "value": "color"
+               }
+            ]
+         }
+      }
+   }
+}
