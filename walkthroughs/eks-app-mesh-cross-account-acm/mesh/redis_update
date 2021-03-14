@@ -1,0 +1,47 @@
+{
+    "meshName": "am-multi-account-mesh",
+    "virtualNodeName": "redis-server_yelb",
+    "spec": {
+      "backendDefaults": {
+        "clientPolicy": {
+          "tls": {
+            "enforce": true,
+            "ports": [],
+            "validation": {
+              "trust": {
+                "acm": {
+                  "certificateAuthorityArns": [
+                    "CA_ARN"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "backends": [],
+      "listeners": [
+        {
+          "portMapping": {
+            "port": 6379,
+            "protocol": "tcp"
+          },
+          "tls": {
+            "certificate": {
+              "acm": {
+                "certificateArn": "CERTIFICATE_ARN"
+              }
+            },
+            "mode": "STRICT"
+          }
+        }
+      ],
+      "logging": {},
+      "serviceDiscovery": {
+        "dns": {
+          "hostname": "redis-server.yelb.svc.cluster.local"
+        }
+      }
+    },
+    "meshOwner": "FRONTEND_ACCOUNT"
+  }

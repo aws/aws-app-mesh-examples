@@ -1,0 +1,60 @@
+{
+  "meshName": "am-multi-account-mesh",
+  "virtualNodeName": "yelb-appserver_yelb",
+  "spec": {
+    "backendDefaults": {
+      "clientPolicy": {
+        "tls": {
+          "enforce": true,
+          "ports": [],
+          "validation": {
+            "trust": {
+              "acm": {
+                "certificateAuthorityArns": [
+                  "CA_ARN"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "backends": [
+      {
+        "virtualService": {
+          "virtualServiceName": "yelb-db"
+        }
+      },
+      {
+        "virtualService": {
+          "virtualServiceName": "redis-server"
+        }
+      }
+    ],
+    "listeners": [
+      {
+        "portMapping": {
+          "port": 4567,
+          "protocol": "http"
+        },
+        "tls": {
+          "certificate": {
+            "acm": {
+              "certificateArn": "CERTIFICATE_ARN"
+            }
+          },
+          "mode": "STRICT"
+        }
+      }
+    ],
+    "logging": {},
+    "serviceDiscovery": {
+      "awsCloudMap": {
+        "attributes": [],
+        "namespaceName": "am-multi-account.local",
+        "serviceName": "yelb-appserver"
+      }
+    }
+  },
+  "meshOwner": "FRONTEND_ACCOUNT"
+}
