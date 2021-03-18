@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CLUSTER_NAME="${CLUSTER_NAME:=eks-appmesh}"
+
 kubectl label ns default \
 appmesh.k8s.aws/sidecarInjectorWebhook- gateway- mesh- --overwrite
 
