@@ -1,0 +1,94 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: redis-server
+spec:
+  hosts:
+    - redis-server
+  tcp:
+    - route:
+        - destination:
+            host: redis-server
+            port:
+              number: 6379
+          weight: 100
+        - destination:
+            host: redis-server-invalid
+            port:
+              number: 6379
+          weight: 0
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: redis-server
+spec:
+  host: redis-server
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: yelb-db
+spec:
+  hosts:
+    - yelb-db
+  tcp:
+    - route:
+        - destination:
+            host: yelb-db
+            port:
+              number: 5432
+          weight: 100
+        - destination:
+            host: rds-server-invalid
+            port:
+              number: 5432
+          weight: 0
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: yelb-appserver
+spec:
+  hosts:
+    - yelb-appserver
+  http:
+    - route:
+        - destination:
+            host: yelb-appserver
+            subset: v1
+            port:
+              number: 4567
+          weight: 50
+        - destination:
+            host: yelb-appserver
+            subset: v2
+            port:
+              number: 4567
+          weight: 50
+      match:
+        - uri:
+            prefix: /api
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: yelb-appserver
+spec:
+  host: yelb-appserver
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
