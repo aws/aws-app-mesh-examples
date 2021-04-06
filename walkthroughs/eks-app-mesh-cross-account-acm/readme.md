@@ -18,10 +18,10 @@ region = us-west-2
 region = us-west-2
 ```
 
-## Deploy the Infrastructure
+## Deploy the 
 
 ```
-./infrasctucture/setup.sh
+./infrastructure/setup.sh
 ```
 
 ## Deploy EKS
