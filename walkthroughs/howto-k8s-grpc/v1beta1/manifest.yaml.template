@@ -44,7 +44,6 @@ spec:
       healthCheck:
         port: 8080
         protocol: grpc
-        path: '/ping'
         healthyThreshold: 2
         unhealthyThreshold: 3
         timeoutMillis: 2000
