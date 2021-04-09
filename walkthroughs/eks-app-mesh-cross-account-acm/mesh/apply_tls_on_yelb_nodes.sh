@@ -63,13 +63,9 @@ sed -e  "s%CERTIFICATE_ARN%"$backend_certificate_arn"%g" -e "s%CA_ARN%"$certific
 sed -e  "s%FRONTEND_CERTIFICATE_ARN%"$frontend_certificate_arn"%g" -e "s%CA_ARN%"$certificateAuthorityArn"%g" -e "s%FRONTEND_ACCOUNT%"$frontendaccount"%g" yelb_ui_update > yelb_ui_update.json
 
 
-aws appmesh update-virtual-node --cli-input-json file://redis_update.json --profile backend
-aws appmesh update-virtual-node --cli-input-json file://appserver_update.json --profile backend
-aws appmesh update-virtual-node --cli-input-json file://yelb_db_update.json --profile backend
-aws appmesh update-virtual-node --cli-input-json file://yelb_ui_update.json --profile frontend
-
-
-
-
+kubectl apply -f mesh/redis_update.yaml
+kubectl apply -f mesh/appserver_update.yaml
+kubectl apply -f mesh/yelb_db_update.yaml
+kubectl apply -f mesh/yelb_ui_update.yaml
 
 
