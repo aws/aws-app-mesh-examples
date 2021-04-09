@@ -285,24 +285,6 @@ Resources:
     Properties: 
       Name: !Sub '${ProjectName}.local'
 
-  # AppServerServiceDiscoveryNamespace:
-  #   Type: AWS::ServiceDiscovery::PrivateDnsNamespace
-  #   Properties:
-  #     Name: !Sub '${ProjectName}.local'
-  #     Vpc: !Ref VPC
-
-  # BackendRegistry:
-  #   Type: AWS::ServiceDiscovery::Service
-  #   Properties:
-  #     Name: 'yelb-appserver'
-  #     DnsConfig:
-  #       NamespaceId: !Ref AppServerServiceDiscoveryNamespace
-  #       DnsRecords:
-  #       - Type: A
-  #         TTL: 300
-  #     HealthCheckCustomConfig:
-  #       FailureThreshold: 1
-
 Outputs:
 
   VPC:
