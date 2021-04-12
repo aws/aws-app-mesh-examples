@@ -3,9 +3,10 @@ kind: VirtualNode
 metadata:
   name: yelb-es-node
 spec:
+  awsName: yelb-es-node
   listeners:
     - portMapping:
-        port: 5432
+        port: 6379
         protocol: tcp
   serviceDiscovery:
     dns:
