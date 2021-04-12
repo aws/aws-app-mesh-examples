@@ -1,0 +1,12 @@
+{
+   "KeyAlgorithm":"RSA_2048",
+   "SigningAlgorithm":"SHA256WITHRSA",
+   "Subject":{
+      "Country":"US",
+      "Organization":"Example Corp",
+      "OrganizationalUnit":"Sales",
+      "State":"WA",
+      "Locality":"Seattle",
+      "CommonName":"www.example.com"
+   }
+}
