@@ -1,0 +1,56 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: price-write-node
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: price-write
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/health"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+      connectionPool:
+        http:
+          maxConnections: 20
+          maxPendingRequests: 5
+  serviceDiscovery:
+    dns:
+      hostname: price-write.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: price-read-node
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: price-read
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/health"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+      connectionPool:
+        http:
+          maxConnections: 100
+          maxPendingRequests: 100
+  serviceDiscovery:
+    dns:
+      hostname: price-read.${APP_NAMESPACE}.svc.cluster.local
