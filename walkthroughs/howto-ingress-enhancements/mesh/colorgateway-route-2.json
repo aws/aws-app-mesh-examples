@@ -1,0 +1,32 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/yellow",
+                "headers" : [{
+                    "name" : "Connection",
+                    "match" : {
+                        "exact" : "keep-alive"
+                    }
+                }],
+                "queryParameters" : [{
+                    "name" : "colors",
+                    "match" : {
+                        "exact" : "yellow"
+
+                    }
+                }],
+                "hostname" : {
+                    "exact" : "www.example.com"
+                }
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/red",
+                "headers" : [{
+                    "name" : "Cache-Control",
+                    "match" : {
+                        "exact" : "no-cache"
+                    }
+                }],
+                "queryParameters" : [{
+                    "name" : "colors",
+                    "match" : {
+                        "exact" : "red"
+                    }
+                }],
+                "hostname" : {
+                    "exact" : "www.badexample.com"
+                }
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                },
+                "rewrite" : {
+                }
+            }
+        }
+    }
+}
