@@ -118,6 +118,10 @@ export ENVIRONMENT_NAME=AppMeshIngressV2Example
 export MESH_NAME=ColorApp-Ingress-V2
 export SERVICES_DOMAIN="default.svc.cluster.local"
 export COLOR_TELLER_IMAGE_NAME="howto-ingress-v2/colorteller"
+export APPMESH_FRONTEND="https://frontend.us-west-2.gamma.lattice.aws.a2z.com"
+export APPMESH_XDS_ENDPOINT="envoy-management.us-west-2.gamma.lattice.aws.a2z.com:443"
+export APPMESH_SERVICE_MODEL=appmesh-ingress-v2
+export ISENGARD_PROFILE=primary
 ```
 
 ## Step 3: Create Color App Infrastructure

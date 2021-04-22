@@ -22,7 +22,7 @@ sanity_check() {
     fi
 }
 
-appmesh_cmd="aws appmesh"
+appmesh_cmd="aws ${APPMESH_SERVICE_MODEL} --profile ${ISENGARD_PROFILE} --endpoint-url ${APPMESH_FRONTEND}"
 
 create_mesh() {
     spec_file=$1
@@ -46,7 +46,7 @@ delete_mesh() {
 create_vgateway() {
     spec_file=$1
     vgateway_name=$2
-    cli_input=$( jq -n \
+    cli_input=$( ~/Downloads/jq-osx-amd64 -n \
     --arg CERTIFICATE_ARN "${CERTIFICATE_ARN}" \
     -f "$spec_file" )
     cmd=( $appmesh_cmd create-virtual-gateway \
@@ -62,7 +62,7 @@ create_vgateway() {
 update_vgateway() {
     spec_file=$1
     vgateway_name=$2
-    cli_input=$( jq -n \
+    cli_input=$( ~/Downloads/jq-osx-amd64 -n \
     --arg CERTIFICATE_ARN "${CERTIFICATE_ARN}" \
     --arg ROOT_CA_ARN "${ROOT_CA_ARN}" \
     -f "$spec_file" )
@@ -91,7 +91,7 @@ create_gateway_route() {
     spec_file=$1
     vgateway_name=$2
     gatewayroute_name=$3
-    cli_input=$( jq -n \
+    cli_input=$( ~/Downloads/jq-osx-amd64 -n \
         --arg VIRTUALSERVICE_NAME "$4" \
         -f "$spec_file" )
     cmd=( $appmesh_cmd create-gateway-route \
@@ -122,7 +122,7 @@ create_vnode() {
     spec_file=$1
     vnode_name=$2
     dns_hostname="$3.${SERVICES_DOMAIN}"
-    cli_input=$( jq -n \
+    cli_input=$( ~/Downloads/jq-osx-amd64 -n \
         --arg DNS_HOSTNAME "$3.${SERVICES_DOMAIN}" \
         -f "$spec_file" )
     cmd=( $appmesh_cmd create-virtual-node \
@@ -139,7 +139,7 @@ update_vnode() {
     spec_file=$1
     vnode_name=$2
     dns_hostname="$3.${SERVICES_DOMAIN}"
-    cli_input=$( jq -n \
+    cli_input=$( ~/Downloads/jq-osx-amd64 -n \
         --arg DNS_HOSTNAME "$3.${SERVICES_DOMAIN}" \
         --arg CERTIFICATE_ARN "${CERTIFICATE_ARN}" \
         -f "$spec_file" )
