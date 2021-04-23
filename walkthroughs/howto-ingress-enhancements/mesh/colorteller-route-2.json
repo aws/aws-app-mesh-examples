@@ -10,14 +10,7 @@
                 ]
             },
             "match": {
-                "prefix": "/tell",
-                "queryParameters" : [{
-                    "name" : "colors",
-                    "match" : {
-                        "exact" : "rednode"
-
-                    }
-                }]
+                "prefix": "/tell"
             }
         }
     }

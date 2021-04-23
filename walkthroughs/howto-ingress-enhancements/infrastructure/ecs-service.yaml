@@ -54,8 +54,8 @@ Resources:
         - 'FARGATE'
       Family: !Sub '${EnvironmentName}-colorteller-yellow'
       NetworkMode: 'awsvpc'
-      Cpu: 256
-      Memory: 512
+      Cpu: 4096
+      Memory: 8192
       TaskRoleArn:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       ExecutionRoleArn:
@@ -78,6 +78,10 @@ Resources:
         - Name: 'app'
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorTellerImageName}'
           Essential: true
+          Ulimits:
+            - Name: "nofile"
+              HardLimit: 15000
+              SoftLimit: 15000
           DependsOn:
             - ContainerName: 'envoy'
               Condition: 'HEALTHY'
@@ -130,6 +134,8 @@ Resources:
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-yellow-vn'
             - Name: 'APPMESH_XDS_ENDPOINT'
               Value: !Sub '${AppMeshXdsEndpoint}'
+            - Name: 'ENVOY_LOG_LEVEL'
+              Value: 'debug'
 
   ColorTellerYellowService:
     Type: 'AWS::ECS::Service'
@@ -251,6 +257,8 @@ Resources:
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn'
             - Name: 'APPMESH_XDS_ENDPOINT'
               Value: !Sub '${AppMeshXdsEndpoint}'
+            - Name: 'ENVOY_LOG_LEVEL'
+              Value: 'debug'
 
   ColorTellerRedService:
     Type: 'AWS::ECS::Service'
@@ -341,6 +349,8 @@ Resources:
               Value: '8125'
             - Name: 'APPMESH_XDS_ENDPOINT'
               Value: !Sub '${AppMeshXdsEndpoint}'
+            - Name: 'ENVOY_LOG_LEVEL'
+              Value: 'debug'
         - Name: 'cw-agent'
           Image: 'amazon/cloudwatch-agent:latest'
           Essential: true
@@ -414,7 +424,7 @@ Resources:
       HealthyThresholdCount: 3
       TargetType: ip
       Name: !Sub "${EnvironmentName}-web"
-      Port: 443
+      Port: 80
       Protocol: TCP
       UnhealthyThresholdCount: 3
       TargetGroupAttributes:
