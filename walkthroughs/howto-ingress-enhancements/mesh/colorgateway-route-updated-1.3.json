@@ -1,0 +1,22 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/red",
+                "headers" : [{
+                    "name" : "Accept",
+                    "match" : {
+                        "regex" : "(text)|(html)"
+                    }
+                }]
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

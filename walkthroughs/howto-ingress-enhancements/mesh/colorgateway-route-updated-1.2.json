@@ -1,0 +1,22 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/red",
+                "headers" : [{
+                    "name" : "Host",
+                    "match" : {
+                        "suffix" : "wikipedia.org"
+                    }
+                }]
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

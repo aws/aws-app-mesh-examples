@@ -3,59 +3,92 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
-	"github.com/aws/aws-xray-sdk-go/xray"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
-const defaultPort = "8080"
-const defaultColor = "black"
-const defaultStage = "default"
-
-func getServerPort() string {
-	port := os.Getenv("SERVER_PORT")
-	if port != "" {
-		return port
-	}
-
-	return defaultPort
-}
-
-func getColor() string {
-	color := os.Getenv("COLOR")
-	if color != "" {
-		return color
-	}
-
-	return defaultColor
-}
-
-func getStage() string {
-	stage := os.Getenv("STAGE")
-	if stage != "" {
-		return stage
-	}
-
-	return defaultStage
-}
-
-type colorHandler struct{}
-func (h *colorHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	log.Println("color requested, responding with", getColor())
-	fmt.Fprint(writer, getColor())
-}
-
-type pingHandler struct{}
-func (h *pingHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	log.Println("ping requested, reponding with HTTP 200")
-	writer.WriteHeader(http.StatusOK)
-}
-
+// This is a simple HTTP server that supports cleartext HTTP1.1 and HTTP2
+// requests as well as upgrading to HTTP2 via h2c
+// Example:
+// $ COLOR=red PORT=8080 go run main.go
+// $ curl --http2-prior-knowledge -i localhost:8080
 func main() {
-	log.Println("starting server, listening on port " + getServerPort())
-	xraySegmentNamer := xray.NewFixedSegmentNamer(fmt.Sprintf("%s-colorteller-%s", getStage(), getColor()))
-	http.Handle("/", xray.Handler(xraySegmentNamer, &colorHandler{}))
-	http.Handle("/ping", xray.Handler(xraySegmentNamer, &pingHandler{}))
-	http.ListenAndServe(":"+getServerPort(), nil)
+	color := os.Getenv("COLOR")
+	if color == "" {
+		log.Fatalf("no COLOR defined")
+	}
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatalf("no PORT defined")
+	}
+	log.Printf("COLOR is: %v", color)
+	log.Printf("PORT is: %v", port)
+	flakeRate := float32(0.0)
+	flakeCode := 200
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {})
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Received request: %v", r)
+		if rand.Float32() < flakeRate {
+			http.Error(w, "flaky server", flakeCode)
+			return
+		}
+		fmt.Fprintf(w, "%s", color)
+	})
+
+	mux.HandleFunc("/setFlake", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Received request: %v", r)
+		query := r.URL.Query()
+		rates, ok := query["rate"]
+		if !ok {
+			http.Error(w, "rate must be specified", 400)
+			log.Printf("Could not read rate parameter")
+			return
+		}
+		rate, err := strconv.ParseFloat(rates[0], 32)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			log.Printf("Could not parse rate parameter: %v", err)
+			return
+		}
+		if rate < 0.0 || rate > 1.0 {
+			http.Error(w, "rate must be between 0.0 and 1.0", 400)
+			log.Printf("Invalid rate parameter: %v", rate)
+			return
+		}
+
+		codes, ok := query["code"]
+		if !ok {
+			http.Error(w, "code must be specified", 400)
+			log.Printf("Could not read code parameter: %v", err)
+			return
+		}
+
+		code, err := strconv.ParseInt(codes[0], 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			log.Printf("Could not parse code parameter: %v", err)
+			return
+		}
+
+		fmt.Fprintf(w, "rate: %g, code: %d", flakeRate, flakeCode)
+		flakeRate = float32(rate)
+		flakeCode = int(code)
+	})
+	h2s := &http2.Server{}
+	h1s := &http.Server{
+		Addr:         "0.0.0.0:" + port,
+		Handler:      h2c.NewHandler(mux, h2s),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
+	log.Fatal(h1s.ListenAndServe())
 }

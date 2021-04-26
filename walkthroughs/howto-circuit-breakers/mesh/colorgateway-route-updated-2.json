@@ -1,0 +1,22 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/color1",
+                "headers" : [{
+                    "name" : "Cache-Control",
+                    "match" : {
+                        "exact" : "no-cache"
+                    }
+                }]
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

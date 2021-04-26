@@ -1,0 +1,19 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/red",
+                "hostname" : {
+                    "exact" : "colorteller-1.default.svc.cluster.local"
+                }
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

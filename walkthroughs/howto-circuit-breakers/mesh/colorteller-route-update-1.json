@@ -4,7 +4,7 @@
             "action": {
                 "weightedTargets": [
                     {
-                        "virtualNode": "colorteller-red-vn",
+                        "virtualNode": "colorteller-white-vn",
                         "weight": 1
                     }
                 ]

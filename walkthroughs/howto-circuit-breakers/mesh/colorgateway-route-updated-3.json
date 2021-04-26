@@ -1,0 +1,22 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/color1",
+                "queryParameters" : [{
+                    "name" : "fishes",
+                    "match" : {
+                        "exact" : "nemo"
+                    }
+                }]
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

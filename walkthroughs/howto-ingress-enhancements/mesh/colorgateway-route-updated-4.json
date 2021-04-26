@@ -1,0 +1,18 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "path" : {
+                    "exact" : "/red/tell"
+                }
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                }
+            }
+        }
+    }
+}

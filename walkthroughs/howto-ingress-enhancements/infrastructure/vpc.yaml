@@ -238,4 +238,3 @@ Outputs:
     Value: !Ref VpcCIDR
     Export:
       Name: !Sub "${EnvironmentName}:VpcCIDR"
-

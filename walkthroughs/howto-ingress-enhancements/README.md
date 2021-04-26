@@ -124,6 +124,8 @@ export APPMESH_SERVICE_MODEL=appmesh-ingress-v2
 export ISENGARD_PROFILE=primary
 ```
 
+These variables are also stored in `vars.env` and you can easily set them by setting the appropriate values in `vars.env` and then running `source ./vars.env`!
+
 ## Step 3: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
@@ -179,13 +181,7 @@ There are two HTTP GatewayRoutes attached to this VirtualGateway one for each Vi
 "spec": {
     "httpRoute" : {
         "match" : {
-            "prefix" : "red",
-             "headers" : [{
-                "name" : "Cache-Control",
-                "match" : {
-                    "exact" : "no-cache"
-                 }
-             }]
+            "prefix" : "/red"
         },
         "action" : {
             "target" : {
@@ -198,7 +194,7 @@ There are two HTTP GatewayRoutes attached to this VirtualGateway one for each Vi
 }
 }
 ```
-Both the VirtualServices are provided by a VirtualRouter which routes the traffic matching on prefix `/tell` to equal weight target VirtualNodes. The spec for one of the service route is as follows:
+Both the VirtualServices are provided by a VirtualRouter each which has a route each that routes the traffic matching on prefix `/tell` to target VirtualNodes. The spec for one of the service route is as follows:
 
 ```json
 {
@@ -208,10 +204,6 @@ Both the VirtualServices are provided by a VirtualRouter which routes the traffi
                 "weightedTargets": [
                     {
                         "virtualNode": "colorteller-red-vn",
-                        "weight": 1
-                    },
-                    {
-                        "virtualNode": "colorteller-yellow-vn",
                         "weight": 1
                     }
                 ]
@@ -223,6 +215,7 @@ Both the VirtualServices are provided by a VirtualRouter which routes the traffi
     }
 }
 ```
+This route routes 100% of the traffic to `colorteller-red-vn` when it is matched on `/tell` prefix.
 
 Let's create the mesh.
 
@@ -230,7 +223,7 @@ Let's create the mesh.
 ./mesh/mesh.sh up
 ```
 
-## Step 5: Deploy and Verify (WIP FROM HERE)
+## Step 5: Deploy the ECS Service
 
 ###TODO from here
 Our next step is to deploy the service in ECS and test it out.
@@ -248,12 +241,9 @@ Our next step is to deploy the service in ECS and test it out.
 	ColorApp endpoint:
 	http://howto-Publi-55555555.us-west-2.elb.amazonaws.com
 	```
-	> **Note:** Since, we have enabled TLS termination at the NLB, we'll use `https` in our curl requests and use `-k` option to accept the cert without validation.
-
-	Export the public endpoint to access the gateway replacing `http` with `https` (e.g., above returned url will be changed to `https://howto-Publi-55555555.us-west-2.elb.amazonaws.com`).
-
+ 
 	```bash
-	export COLORAPP_ENDPOINT=<your_https_colorApp_endpoint e.g. https://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
+	export COLORAPP_ENDPOINT=<your_http_colorApp_endpoint e.g. http://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
 	```
 	And export the bastion endpoint for use later.
 
@@ -261,35 +251,16 @@ Our next step is to deploy the service in ECS and test it out.
 	export BASTION_IP=<your_bastion_endpoint e.g. 12.245.6.189>
 	```
 
-2. Let's issue a request to the color gateway with gatewayRoute prefix as `/color1` and backend service route prefix as `/tell`.
+Your demo application is now set up and ready to use. 
 
+Try 
 	```bash
-	curl -k "${COLORAPP_ENDPOINT}/color1/tell"
+	curl -k "${COLORAPP_ENDPOINT}/red/tell"
 	```
-	If you run above command several time you should see successful `white` and `blue` responses back from `colorteller-white-vn` and `colorteller-blue-vn` virtualNodes respectively. These are both the targets for `colorteller-2.${SERVICES_DOMAIN}` VirtualService.
-
-	Similarly, let's issue a request to the gateway with gatewayRoute prefix as `/color2` and backend service route prefix as `/tell`.
-
-	```bash
-	curl -k "${COLORAPP_ENDPOINT}/color2/tell"
-	```
-	In this case, you should receive `black` and `red` responses back from targets of `colorteller-2.${SERVICES_DOMAIN}` VirtualService.
-
-3. Now let's log in to the bastion host and see ssl handshake stats for the gateway envoy.
-
-	```bash
-	ssh -i <key_pair_location> ec2-user@$BASTION_IP
-	```
-	We'll curl Envoy's stats endpoint to verify ssl handshake (replace default.svc.cluster.local in the below command with the value of $SERVICES_DOMAIN environment variable)
-
-	```bash
-	curl -s http://colorgateway.default.svc.cluster.local:9901/stats | grep ssl.handshake
-	```
-You should see output similar to: `listener.0.0.0.0_9080.ssl.handshake: 1`, indicating a successful SSL handshake was achieved between the NLB and the gateway. At this point the traffic from NLB to the VirtualGateway is encrypted while the traffic from VirtualGateway to VirtualNodes is not.
+ and see if the service correctly gives you a color back. 
 
 ## Step 6: Clean Up
 
-If you want to keep the application running, you can do so, but this is the end of this walkthrough.
 Run the following commands to clean up and tear down the resources that we’ve created.
 
 Delete the CloudFormation stacks:

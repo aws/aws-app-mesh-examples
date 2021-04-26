@@ -16,7 +16,7 @@ Parameters:
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instances
     Type: AWS::EC2::KeyPair::KeyName
-  
+
   ECSServiceLogGroupRetentionInDays:
     Type: Number
     Default: 30
@@ -39,7 +39,7 @@ Resources:
 
   ECSInstancesSecurityGroup:
     Type: AWS::EC2::SecurityGroup
-    Properties: 
+    Properties:
       GroupDescription: "Security group for the instances"
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
@@ -50,7 +50,7 @@ Resources:
 
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
-    Properties: 
+    Properties:
       GroupDescription: "Security group for the service"
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
@@ -74,8 +74,8 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
-        - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
         - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+        - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
@@ -126,9 +126,9 @@ Resources:
       InstanceType: t2.micro
       SecurityGroupIds:
       - !Ref BastionSecurityGroup
-      SubnetId: 
+      SubnetId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1"
-      Tags: 
+      Tags:
         - Key: Name
           Value: bastion-host
 

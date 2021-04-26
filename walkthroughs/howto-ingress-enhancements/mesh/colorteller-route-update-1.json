@@ -10,7 +10,7 @@
                 ]
             },
             "match": {
-                "prefix": "/tell"
+                "prefix": "/red/tell"
             }
         }
     }

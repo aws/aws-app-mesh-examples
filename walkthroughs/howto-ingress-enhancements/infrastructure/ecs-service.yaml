@@ -21,8 +21,9 @@ Parameters:
     Type: String
 
   AppMeshXdsEndpoint:
-    Description: Beta endpoint
     Type: String
+    Description: App Mesh XDS Endpoint Override
+    Default: ""
 
   LoadBalancerPath:
     Type: String
@@ -32,6 +33,156 @@ Parameters:
                  traffic to this service.
 
 Resources:
+
+  ### colorteller-red.default.svc.cluster.local
+  ColorTellerRedServiceDiscoveryRecord:
+    Type: 'AWS::ServiceDiscovery::Service'
+    Properties:
+      Name: "colorteller-red"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
+        DnsRecords:
+          - Type: A
+            TTL: 300
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  ColorTellerRedTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - 'FARGATE'
+      Family: !Sub '${EnvironmentName}-colorteller-red'
+      NetworkMode: 'awsvpc'
+      Cpu: 4096
+      Memory: 8192
+      TaskRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
+      ProxyConfiguration:
+        Type: 'APPMESH'
+        ContainerName: 'envoy'
+        ProxyConfigurationProperties:
+          - Name: 'IgnoredUID'
+            Value: '1337'
+          - Name: 'ProxyIngressPort'
+            Value: '15000'
+          - Name: 'ProxyEgressPort'
+            Value: '15001'
+          - Name: 'AppPorts'
+            Value: '9080'
+          - Name: 'EgressIgnoredIPs'
+            Value: '169.254.170.2,169.254.169.254'
+      ContainerDefinitions:
+        - Name: 'app'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorTellerImageName}'
+          Essential: true
+          Ulimits:
+            - Name: "nofile"
+              HardLimit: 15000
+              SoftLimit: 15000
+          DependsOn:
+            - ContainerName: 'envoy'
+              Condition: 'HEALTHY'
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group:
+                Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: 'red'
+          PortMappings:
+            - ContainerPort: 9080
+              Protocol: 'tcp'
+          Environment:
+            - Name: 'PORT'
+              Value: 9080
+            - Name: 'COLOR'
+              Value: 'red'
+        - Name: envoy
+          Image: !Ref EnvoyImage
+          Essential: true
+          User: '1337'
+          Ulimits:
+            - Name: "nofile"
+              HardLimit: 15000
+              SoftLimit: 15000
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: 'tcp'
+            - ContainerPort: 15000
+              Protocol: 'tcp'
+            - ContainerPort: 15001
+              Protocol: 'tcp'
+          HealthCheck:
+            Command:
+              - 'CMD-SHELL'
+              - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group:
+                Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: 'red-envoy'
+          Environment:
+            - Name: 'APPMESH_RESOURCE_ARN'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn'
+            - Name: 'ENABLE_ENVOY_STATS_TAGS'
+              Value: '1'
+            - Name: 'ENABLE_ENVOY_DOG_STATSD'
+              Value: '1'
+            - Name: 'STATSD_PORT'
+              Value: '8125'
+            - Name: 'APPMESH_XDS_ENDPOINT'
+              Value: !Sub '${AppMeshXdsEndpoint}'
+            - Name: 'APPMESH_LOG_LEVEL'
+              Value: 'debug'
+        - Name: 'cw-agent'
+          Image: 'amazon/cloudwatch-agent:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8125
+              Protocol: 'udp'
+          Environment:
+            - Name: CW_CONFIG_CONTENT
+              Value:
+                Fn::Sub:
+                  - "{ \"metrics\": { \"namespace\":\"${MetricNamespace}\", \"metrics_collected\": { \"statsd\": { \"metrics_aggregation_interval\": 0}}}}"
+                  - MetricNamespace:
+                      Fn::Join:
+                      - '/'
+                      - - !Ref EnvironmentName
+                        - colorteller-red
+                        - StatsD              
+
+  ColorTellerRedService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: FARGATE
+      ServiceRegistries:
+        - RegistryArn:
+            'Fn::GetAtt': ColorTellerRedServiceDiscoveryRecord.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
+          Subnets:
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+      TaskDefinition: { Ref: ColorTellerRedTaskDefinition }
 
   ### colorteller-yellow.default.svc.cluster.local
   ColorTellerYellowServiceDiscoveryRecord:
@@ -81,7 +232,7 @@ Resources:
           Ulimits:
             - Name: "nofile"
               HardLimit: 15000
-              SoftLimit: 15000
+              SoftLimit: 15000          
           DependsOn:
             - ContainerName: 'envoy'
               Condition: 'HEALTHY'
@@ -94,9 +245,9 @@ Resources:
               awslogs-stream-prefix: 'yellow'
           PortMappings:
             - ContainerPort: 9080
-              Protocol: 'http'
+              Protocol: 'tcp'
           Environment:
-            - Name: 'SERVER_PORT'
+            - Name: 'PORT'
               Value: 9080
             - Name: 'COLOR'
               Value: 'yellow'
@@ -130,12 +281,35 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'yellow-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-yellow-vn'
+            - Name: 'ENABLE_ENVOY_STATS_TAGS'
+              Value: '1'
+            - Name: 'ENABLE_ENVOY_DOG_STATSD'
+              Value: '1'
+            - Name: 'STATSD_PORT'
+              Value: '8125'
             - Name: 'APPMESH_XDS_ENDPOINT'
               Value: !Sub '${AppMeshXdsEndpoint}'
-            - Name: 'ENVOY_LOG_LEVEL'
+            - Name: 'APPMESH_LOG_LEVEL'
               Value: 'debug'
+        - Name: 'cw-agent'
+          Image: 'amazon/cloudwatch-agent:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8125
+              Protocol: 'udp'
+          Environment:
+            - Name: CW_CONFIG_CONTENT
+              Value:
+                Fn::Sub:
+                  - "{ \"metrics\": { \"namespace\":\"${MetricNamespace}\", \"metrics_collected\": { \"statsd\": { \"metrics_aggregation_interval\": 0}}}}"
+                  - MetricNamespace:
+                      Fn::Join:
+                      - '/'
+                      - - !Ref EnvironmentName
+                        - colorteller-yellow
+                        - StatsD                       
 
   ColorTellerYellowService:
     Type: 'AWS::ECS::Service'
@@ -160,129 +334,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerYellowTaskDefinition }
 
-  ### colorteller-red.default.svc.cluster.local
-  ColorTellerRedServiceDiscoveryRecord:
-    Type: 'AWS::ServiceDiscovery::Service'
-    Properties:
-      Name: "colorteller-red"
-      DnsConfig:
-        NamespaceId:
-          'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceDiscoveryNamespace"
-        DnsRecords:
-          - Type: A
-            TTL: 300
-      HealthCheckCustomConfig:
-        FailureThreshold: 1
-
-  ColorTellerRedTaskDefinition:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      RequiresCompatibilities:
-        - 'FARGATE'
-      Family: !Sub '${EnvironmentName}-colorteller-red'
-      NetworkMode: 'awsvpc'
-      Cpu: 256
-      Memory: 512
-      TaskRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      ExecutionRoleArn:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
-      ProxyConfiguration:
-        Type: 'APPMESH'
-        ContainerName: 'envoy'
-        ProxyConfigurationProperties:
-          - Name: 'IgnoredUID'
-            Value: '1337'
-          - Name: 'ProxyIngressPort'
-            Value: '15000'
-          - Name: 'ProxyEgressPort'
-            Value: '15001'
-          - Name: 'AppPorts'
-            Value: '9080'
-          - Name: 'EgressIgnoredIPs'
-            Value: '169.254.170.2,169.254.169.254'
-      ContainerDefinitions:
-        - Name: 'app'
-          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ColorTellerImageName}'
-          Essential: true
-          DependsOn:
-            - ContainerName: 'envoy'
-              Condition: 'HEALTHY'
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group:
-                Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'red'
-          PortMappings:
-            - ContainerPort: 9080
-              Protocol: 'http'
-          Environment:
-            - Name: 'SERVER_PORT'
-              Value: 9080
-            - Name: 'COLOR'
-              Value: 'red'
-        - Name: envoy
-          Image: !Ref EnvoyImage
-          Essential: true
-          User: '1337'
-          Ulimits:
-            - Name: "nofile"
-              HardLimit: 15000
-              SoftLimit: 15000
-          PortMappings:
-            - ContainerPort: 9901
-              Protocol: 'tcp'
-            - ContainerPort: 15000
-              Protocol: 'tcp'
-            - ContainerPort: 15001
-              Protocol: 'tcp'
-          HealthCheck:
-            Command:
-              - 'CMD-SHELL'
-              - 'curl -s http://localhost:9901/server_info | grep state | grep -q LIVE'
-            Interval: 5
-            Timeout: 2
-            Retries: 3
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group:
-                Fn::ImportValue: !Sub "${EnvironmentName}:ECSServiceLogGroup"
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'red-envoy'
-          Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
-              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn'
-            - Name: 'APPMESH_XDS_ENDPOINT'
-              Value: !Sub '${AppMeshXdsEndpoint}'
-            - Name: 'ENVOY_LOG_LEVEL'
-              Value: 'debug'
-
-  ColorTellerRedService:
-    Type: 'AWS::ECS::Service'
-    Properties:
-      Cluster:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
-      DeploymentConfiguration:
-        MaximumPercent: 200
-        MinimumHealthyPercent: 100
-      DesiredCount: 1
-      LaunchType: FARGATE
-      ServiceRegistries:
-        - RegistryArn:
-            'Fn::GetAtt': ColorTellerRedServiceDiscoveryRecord.Arn
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
-          SecurityGroups:
-            - 'Fn::ImportValue': !Sub "${EnvironmentName}:ECSServiceSecurityGroup"
-          Subnets:
-            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
-            - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      TaskDefinition: { Ref: ColorTellerRedTaskDefinition }
-
   ### colorgateway.default.svc.cluster.local
   ColorGatewayServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
@@ -304,8 +355,8 @@ Resources:
         - 'FARGATE'
       Family: !Sub '${EnvironmentName}-colorgateway'
       NetworkMode: 'awsvpc'
-      Cpu: 256
-      Memory: 512
+      Cpu: 4096
+      Memory: 8192
       TaskRoleArn:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
       ExecutionRoleArn:
@@ -339,7 +390,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'gateway-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/colorgateway-vg'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
@@ -349,7 +400,7 @@ Resources:
               Value: '8125'
             - Name: 'APPMESH_XDS_ENDPOINT'
               Value: !Sub '${AppMeshXdsEndpoint}'
-            - Name: 'ENVOY_LOG_LEVEL'
+            - Name: 'APPMESH_LOG_LEVEL'
               Value: 'debug'
         - Name: 'cw-agent'
           Image: 'amazon/cloudwatch-agent:latest'
@@ -441,11 +492,12 @@ Resources:
       DefaultActions:
         - TargetGroupArn: !Ref WebTargetGroup
           Type: 'forward'
-      LoadBalancerArn: !Ref 'PublicLoadBalancer'
+      LoadBalancerArn: !Ref PublicLoadBalancer
       Port: 80
       Protocol: TCP
 
 Outputs:
+
   ColorAppEndpoint:
     Description: Public endpoint for Color App service
-    Value: !Join ['', ['https://', !GetAtt 'PublicLoadBalancer.DNSName']]
+    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]

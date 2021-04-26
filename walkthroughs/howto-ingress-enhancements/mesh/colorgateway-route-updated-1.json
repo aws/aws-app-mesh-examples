@@ -8,24 +8,13 @@
                     "match" : {
                         "exact" : "no-cache"
                     }
-                }],
-                "queryParameters" : [{
-                    "name" : "colors",
-                    "match" : {
-                        "exact" : "red"
-                    }
-                }],
-                "hostname" : {
-                    "exact" : "www.badexample.com"
-                }
+                }]
             },
             "action" : {
                 "target" : {
                     "virtualService": {
                         "virtualServiceName": $VIRTUALSERVICE_NAME
                     }
-                },
-                "rewrite" : {
                 }
             }
         }
