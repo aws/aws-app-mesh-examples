@@ -240,6 +240,7 @@ Resources:
                   - CodeRepository
                   - Name
                 BranchName: main
+                PollForSourceChanges: false
               OutputArtifacts:
                 - Name: SourceOutput
         - Name: Build
