@@ -18,7 +18,7 @@ create-sample-microservice-pipeline-stack:
 
 venv:
 	: # Create venv if it doesn't exist
-		test -d venv || python -m venv venv && . venv/bin/activate
+		test -d venv || python3 -m venv venv && . venv/bin/activate
 
 delete-blog-contents: venv
-	pip install -r requirements.txt && python ./setup/scripts/delete_blog_contents.py
+	sudo pip3 install -r requirements.txt && python3 ./setup/scripts/delete_blog_contents.py
