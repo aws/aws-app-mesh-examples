@@ -44,7 +44,7 @@ aws s3 cp ./ s3://$S3_BUCKET_NAME --recursive --exclude "^\." --region $AWS_REGI
 
 # Deploy AWS CloudFormation Stack
 aws cloudformation create-stack --stack-name $SHARED_STACK_NAME \
---template-url "https://$S3_BUCKET_NAME.s3.amazonaws.com/shared_stack/stepfuntions_cloudformation.yml" \
+--template-url "https://$S3_BUCKET_NAME.s3.amazonaws.com/shared_stack/stepfunctions_cloudformation.yml" \
 --parameters ParameterKey=SourceCodeBucket,ParameterValue="$S3_BUCKET_NAME" ParameterKey=EnvironmentName,ParameterValue="${ENVIRONMENT_NAME}" \
 --capabilities CAPABILITY_IAM \
 --region $AWS_REGION
