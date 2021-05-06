@@ -92,6 +92,6 @@ Resources:
   EcrCleanupCustomResource:
     Type: Custom::EcrCleanup
     Properties:
-      ServiceToken: !GetAtt DuoCleanupFunction.Arn
+      ServiceToken: !GetAtt EcrCleanupFunction.Arn
       ColorTeller: !Ref ColorTellerEnvoyRepository
       ColorTellerEnvoy: !Ref ColorTellerRepository
