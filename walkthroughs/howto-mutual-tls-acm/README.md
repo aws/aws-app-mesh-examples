@@ -28,7 +28,7 @@ Next, we need to set a few environment variables before provisioning the infrast
 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
-export AWS_DEFAULT_REGION=us-west-2
+export AWS_DEFAULT_REGION=us-east-1
 export ENVIRONMENT_NAME=mtls-appmesh-example
 export MESH_NAME=mtls-appmesh
 export SERVICES_DOMAIN="mtls.svc.cluster.local"
