@@ -130,11 +130,6 @@ GATEWAY_SERVICE=$(aws cloudformation describe-stack-resource \
  --logical-resource-id GatewayService --query StackResourceDetail.PhysicalResourceId --output text)
 ```
 
-Wait for the target group to stabilize. Please note that this might take a few minutes.
-```bash
-aws ecs wait services-stable --cluster $ECS_CLUSTER --service $COLORTELLER_SERVICE
-aws ecs wait services-stable --cluster $ECS_CLUSTER --service $GATEWAY_SERVICE
-```
 
 Now, let's issue a request to the color gateway.
 
