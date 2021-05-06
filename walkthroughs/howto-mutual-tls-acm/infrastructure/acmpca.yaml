@@ -107,7 +107,6 @@ Resources:
 
   # ---------------------------------------------------------------------------
   # Create endpoint cert for Color Gateway app mesh node
-  # TODO
   # ---------------------------------------------------------------------------
   AcmPcaColorGatewayEndpointCert:
     Type: AWS::CertificateManager::Certificate
