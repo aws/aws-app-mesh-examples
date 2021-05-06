@@ -1,4 +1,4 @@
-# Configuring Mutual TLS with ACM PCA TLS Certificates
+# Configuring Mutual TLS with File Provided TLS Certificates from ACM
 
 In this walkthrough, like the [basic file-based TLS example](../howto-tls-file-provided), we'll enable TLS encryption with mutual (two-way) authentication between two endpoints in App Mesh using X.509 certificates.
 
@@ -8,7 +8,7 @@ In App Mesh, traffic encryption is originated and terminated by the Envoy proxy.
 
 In a basic TLS encryption scenario (for example, when your browser originates an HTTPS connection), the server would present a certificate to any client. In Mutual TLS, both the client and the server present a certificate to each other, and both validate the peer's certificate.
 
-Validation typically involves checking at least that the certificate is signed by a trusted Certificate Authority, and that the certificate is still within its validity period. The application (in our case, Envoy) may also choose to validate other aspects of the certificate, such as the Subject Alternative Name identity signed into the certificate.
+Validation typically involves checking at least that the certificate is signed by a trusted Certificate Authority, and that the certificate is still within its validity period. 
 
 In this guide, we will be configuring Envoy proxies using certificates hosted in AWS Secrets Manager, which a modified Envoy image will retrieve during startup. We will have a virtual gateway connected to a single backend service. Both the gateway and backend proxies will present certificates signed by the same Certificate Authority (CA), though you could choose to use separate CAs.
 
@@ -42,7 +42,12 @@ Now let's create the VPC.
 ```bash
 ./infrastructure/vpc.sh
 ```
-Next, build and deploy the color app image.
+
+Next, create the ECR repositories.
+```bash
+./infrastructure/ecr-repositories.sh
+```
+Now, we can build and deploy the color app image.
 
 ```bash
 GO_PROXY=direct ./src/colorteller/deploy.sh
@@ -50,17 +55,7 @@ GO_PROXY=direct ./src/colorteller/deploy.sh
 
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct` as shown above.
 
-### Step 2: Export our Custom Envoy Image
-
-Finally, we can build and deploy our custom Envoy image. This container has a `/keys` directory and a custom startup script that will pull the necessary certificates from `AWS Secrets Manager` before starting up the Envoy proxy.
-
-```bash
-./src/customEnvoyImage/deploy.sh
-```
-
-> Note: This walkthrough uses this custom Envoy image for illustration purposes; using this method, rotating certificates will require a deployment of your tasks. You may instead choose to mount to your tasks an Elastic Block Storage or Elastic File System volume to store your TLS materials and reference them through the API accordingly.
-
-### Step 3: Deploy
+### Step 2: Generate the CAs, Root Certs and Endpoint Certs in ACM PCA 
 
 Before we can encrypt traffic between services in the mesh, we need a PKI setup and to generate our certificates. For this demo we will generate:
 
@@ -71,6 +66,30 @@ Before we can encrypt traffic between services in the mesh, we need a PKI setup 
    -- ColorTeller virtual node
    -- ColorGateway virtual gateway
 
+Using AWS Lambda a random password is generated in secrets manager which is used as a passphrase to export certificate from AWS ACM and store certifcate material with passphrase in secrets manager by running the command below.
+```bash
+./infrastructure/acmpca.sh
+```
+
+Next, create the ECS cluster. ECS cluster will be created with permissions to retrieve the secret created above.
+
+```bash
+./infrastructure/ecs-cluster.sh
+```
+
+### Step 3: Export our Custom Envoy Image
+
+
+Next, we can build and deploy our custom Envoy image. This container has a `/keys` directory and a custom startup script that will pull the necessary certificates from `AWS Secrets Manager` before starting up the Envoy proxy.
+
+```bash
+./src/customEnvoyImage/deploy.sh
+```
+
+> Note: This walkthrough uses this custom Envoy image for illustration purposes. App Mesh does not support an integration with ACM for mTLS at this time. These instructions are for exporting an ACM certificate and using it as a customer file provided certificate. Your certificates will not be automatically updated after renewal, rotating certificates will require a restart or deployment of your tasks. You may choose to setup an event when your certifactes are expiring to trigger an automation to update the services using the certificates.
+
+### Step 4: Create a Mesh with no TLS
+
 The initial state of the mesh will provision the gateway and colorteller to communicate in plain HTTP. Once we have bootstrapped the application, a follow-up section will progressively add TLS configuration.
 
 The gateway will listen on port 9080, and route all traffic to the virtual node listening on port 9080.
@@ -78,18 +97,25 @@ The gateway will listen on port 9080, and route all traffic to the virtual node 
 Now with the mesh defined, we can deploy our service to ECS and test it out.
 
 ```bash
-./infrastructure/deploy.sh no-tls
+./infrastructure/mesh.sh no-tls
 ```
 
-### Step 3: Verify and setup
+### Step 5: Deploy and Verify
+Now with the mesh defined, we can deploy our service to ECS and test it out.
+```bash
+./infrastructure/ecs-service.sh
+```
+
 Before testing, setup the environment with variables needed for testing
 
 ```bash
 COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
-    --stack-name $ENVIRONMENT_NAME-deploy \
+    --stack-name $ENVIRONMENT_NAME-ecs-service \
     | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="ColorAppEndpoint") | .OutputValue')
 
-TARGET_GROUP_ARN=$(aws cloudformation describe-stack-resource --stack-name $ENVIRONMENT_NAME-deploy --logical-resource-id WebTargetGroup --query StackResourceDetail.PhysicalResourceId --output text)
+TARGET_GROUP_ARN=$(aws cloudformation describe-stack-resource \
+ --stack-name $ENVIRONMENT_NAME-deploy \
+ --logical-resource-id WebTargetGroup --query StackResourceDetail.PhysicalResourceId --output text)
 
 BASTION_HOST=$(aws cloudformation describe-stack-resource --stack-name $ENVIRONMENT_NAME-deploy --logical-resource-id BastionHost --query StackResourceDetail.PhysicalResourceId --output text)
 
