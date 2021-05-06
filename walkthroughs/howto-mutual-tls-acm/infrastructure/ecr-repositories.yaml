@@ -45,7 +45,7 @@ Resources:
                   - !GetAtt ColorTellerEnvoyRepository.Arn
                   - !GetAtt ColorTellerRepository.Arn
   
-  DuoCleanupFunction:
+  EcrCleanupFunction:
     Type: AWS::Lambda::Function
     Properties:
       Description: Cleanup ECR images on delete of stack
