@@ -73,7 +73,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
         - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
-        # - arn:aws:iam::aws:policy/SecretsManagerReadWrite
       Policies:
         - PolicyName: access-to-acm
           PolicyDocument:
@@ -108,6 +107,14 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+      - PolicyName: secretsmanager-access
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+              - Effect: Allow
+                Action: 'secretsmanager:GetSecretValue'
+                Resource: 'Fn::ImportValue': !Sub "${EnvironmentName}:SecretCertArn"
 
   ECSServiceLogGroup:
     Type: 'AWS::Logs::LogGroup'

@@ -18,127 +18,6 @@ Parameters:
 
 Resources:
 
-  SecretCert:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      SecretString: |
-        {
-          "ColorCertificate": "tempcert",
-          "ColorCertificateChain": "tempcertchain",
-          "ColorPrivateKey": "privatekey",
-          "GatewayCertificate": "tempcert",
-          "GatewayCertificateChain": "tempcertchain",
-          "GatewayPrivateKey": "privatekey",
-          "Passphrase": "passphrase"
-        }
-  InitCertRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: [lambda.amazonaws.com]
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-      Policies:
-        - PolicyName: acm-secretsmanager-access
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: acm:ExportCertificate
-                Resource: 
-                  - 
-                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorTellerEndpointCertArn"
-                  - 
-                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
-              - Effect: Allow
-                Action: acm-pca:GetCertificateAuthorityCertificate
-                Resource:
-                  - 'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorTellerRootCAArn"
-                  - 
-                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayRootCAArn"
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetRandomPassword
-                Resource: '*'
-              - Effect: Allow
-                Action: secretsmanager:PutSecretValue
-                Resource: !Ref SecretCert
-  InitCertFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Description: Initial function to populate secrets manager from ACM
-      Handler: index.lambda_handler
-      Role: !GetAtt InitCertRole.Arn
-      Runtime: python3.8
-      Timeout: 900
-      Environment:
-        Variables:
-          COLOR_GATEWAY_ACM_ARN: 
-            'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
-          SECRET: !Ref SecretCert
-      Code:
-        ZipFile: |
-          import json
-          import boto3
-          import base64
-          import os
-          import cfnresponse
-          sm = boto3.client('secretsmanager')
-          cm = boto3.client('acm')
-          gate_cm = os.environ['COLOR_GATEWAY_ACM_ARN']
-          secret = os.environ['SECRET']
-          def lambda_handler(event, context):
-            print (json.dumps(event))
-            if (event['RequestType'] == 'Delete') or (event['RequestType'] == 'Update'):
-              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
-            elif event['RequestType'] == 'Create':
-              try:
-                passphrase = sm.get_random_password(ExcludePunctuation=True)['RandomPassword']
-                passphrase_enc = base64.b64encode(passphrase.encode('utf-8'))
-                gate_rsp = cm.export_certificate(CertificateArn=gate_cm, Passphrase=passphrase_enc)
-                sm_value={}
-                sm_value['GatewayCertificate']=gate_rsp['Certificate']
-                sm_value['GatewayCertificateChain']=gate_rsp['CertificateChain']
-                sm_value['GatewayPrivateKey']=gate_rsp['PrivateKey']
-                sm_value['Passphrase']=passphrase
-                sm.put_secret_value(SecretId=secret, SecretString=json.dumps(sm_value))
-                cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
-              except Exception as e:
-                print(e) 
-                cfnresponse.send(event, context, cfnresponse.FAILED, {}, '')
-  InitCert:
-    Type: Custom::InitCert
-    Properties:
-      ServiceToken: !GetAtt InitCertFunction.Arn
-      Secret: !Ref SecretCert
-
-  TaskExecutionIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: [ecs-tasks.amazonaws.com]
-            Action: sts:AssumeRole  
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-      Policies:
-      - PolicyName: secretsmanager-access
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-              - Effect: Allow
-                Action: 'secretsmanager:GetSecretValue'
-                Resource: !Ref SecretCert
-
   ColorTellerServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
@@ -164,7 +43,8 @@ Resources:
       Memory: 512
       TaskRoleArn:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      ExecutionRoleArn: !GetAtt TaskExecutionIamRole.Arn
+      ExecutionRoleArn: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
       ProxyConfiguration:
         Type: 'APPMESH'
         ContainerName: 'envoy'
@@ -297,7 +177,8 @@ Resources:
       Memory: 512
       TaskRoleArn:
         'Fn::ImportValue': !Sub "${EnvironmentName}:TaskIamRoleArn"
-      ExecutionRoleArn: !GetAtt TaskExecutionIamRole.Arn
+      ExecutionRoleArn:
+        'Fn::ImportValue': !Sub "${EnvironmentName}:TaskExecutionIamRoleArn"
       ContainerDefinitions:
         - Name: envoy
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvoyImageName}'

@@ -33,7 +33,7 @@ Resources:
         - AcmPcaColorTellerRootCA
         - CertificateSigningRequest
       SigningAlgorithm: SHA256WITHRSA
-      TemplateArn: 'arn:aws:acm-pca:::template/RootCACertificate/V1'
+      TemplateArn: !Sub 'arn:${AWS::Partition}:acm-pca:::template/RootCACertificate/V1'
       Validity:
         Type: YEARS
         Value: 10
@@ -87,7 +87,7 @@ Resources:
         - AcmPcaColorGatewayRootCA
         - CertificateSigningRequest
       SigningAlgorithm: SHA256WITHRSA
-      TemplateArn: 'arn:aws:acm-pca:::template/RootCACertificate/V1'
+      TemplateArn: !Sub 'arn:${AWS::Partition}:acm-pca:::template/RootCACertificate/V1'
       Validity:
         Type: YEARS
         Value: 10
@@ -147,16 +147,13 @@ Resources:
               - Effect: Allow
                 Action: acm:ExportCertificate
                 Resource: 
-                  - 
-                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorTellerEndpointCertArn"
-                  - 
-                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
+                  - !Ref AcmPcaColorTellerEndpointCert
+                  - !Ref AcmPcaColorGatewayEndpointCert
               - Effect: Allow
                 Action: acm-pca:GetCertificateAuthorityCertificate
                 Resource:
-                  - 'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorTellerRootCAArn"
-                  - 
-                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayRootCAArn"
+                  - !Ref AcmPcaColorTellerRootCA
+                  - !Ref AcmPcaColorGatewayRootCA
               - Effect: Allow
                 Action:
                   - secretsmanager:GetRandomPassword
@@ -175,8 +172,7 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          COLOR_GATEWAY_ACM_ARN: 
-            'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
+          COLOR_GATEWAY_ACM_ARN: !Ref AcmPcaColorGatewayEndpointCert
           SECRET: !Ref SecretCert
       Code:
         ZipFile: |
@@ -233,3 +229,7 @@ Outputs:
     Value: !Ref AcmPcaColorGatewayRootCA
     Export:
       Name: !Sub "${EnvironmentName}:AcmPcaColorGatewayRootCAArn"
+  SecretCertArn:
+    Value: !Ref SecretCert
+    Export:
+      Name: !Sub "${EnvironmentName}:SecretCertArn"
