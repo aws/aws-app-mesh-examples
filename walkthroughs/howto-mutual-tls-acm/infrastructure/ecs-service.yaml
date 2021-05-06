@@ -132,7 +132,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: 1
-      LaunchType: EC2
+      LaunchType: FARGATE
       ServiceRegistries:
         - RegistryArn:
             'Fn::GetAtt': ColorTellerServiceDiscoveryRecord.Arn
@@ -174,7 +174,6 @@ Resources:
     Properties:
       RequiresCompatibilities:
         - 'FARGATE'
-        - 'EC2'
       Family: 'gateway'
       NetworkMode: 'awsvpc'
       Cpu: 256
@@ -233,7 +232,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: 1
-      LaunchType: EC2
+      LaunchType: FARGATE
       ServiceRegistries:
         - RegistryArn:
             'Fn::GetAtt': GatewayServiceDiscoveryRecord.Arn
