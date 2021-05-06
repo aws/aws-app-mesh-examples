@@ -20,27 +20,27 @@ In this guide, we will be configuring Envoy proxies using certificates hosted in
 
 ## Part 1: Setup
 
-### Step 1: Create Color App Repository
+### Step 1: Create Color App Infrastructure
 
-We'll start by setting up the basic docker images for our services. All commands will be provided as if run from the same directory as this README.
+We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
-First, we need to set a few environment variables before provisioning the infrastructure. Please change the value for `AWS_ACCOUNT_ID` and `ENVOY_IMAGE` below.
+Next, we need to set a few environment variables before provisioning the infrastructure. Please change the value for `AWS_ACCOUNT_ID` and `ENVOY_IMAGE` below.
 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
 export AWS_DEFAULT_REGION=us-west-2
-export ENVIRONMENT_NAME=mtls-ec2-appmesh-example
-export MESH_NAME=mtls-ec2-appmesh
-export SERVICES_DOMAIN="mtls-ec2.svc.cluster.local"
+export ENVIRONMENT_NAME=mtls-appmesh-example
+export MESH_NAME=mtls-appmesh
+export SERVICES_DOMAIN="mtls.svc.cluster.local"
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export COLOR_TELLER_IMAGE_NAME="colorteller"
 export ENVOY_IMAGE_NAME="colorteller-envoy"
 ```
 
-Now let's create the ECR repositories.
+Now let's create the VPC.
 
 ```bash
-./infrastructure/ecr-repositories.sh
+./infrastructure/vpc.sh
 ```
 Next, build and deploy the color app image.
 
@@ -120,7 +120,7 @@ Finally, let's log in to the bastion host and check the SSL handshake statistics
 aws ssm start-session --target $BASTION_HOST
 ```
 ```bash
-curl -s colorteller.mtls-ec2.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
 ```
 
 You won't see any results, as Envoy will not have emitted this stat until a TLS connection occurs.
@@ -187,7 +187,7 @@ yellow
 From the bastion, check the SSL stats on the backend application. You should now see a non-zero number of TLS handshakes.
 
 ```bash
-% curl -s colorteller.mtls-ec2.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+% curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
 listener.0.0.0.0_15000.ssl.handshake: 1
 listener.0.0.0.0_15000.ssl.no_certificate: 1
 ```
@@ -254,7 +254,7 @@ yellow
 From the bastion, take a look at SSL stats:
 
 ```bash
-% curl -s colorteller.mtls-ec2.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+% curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
 listener.0.0.0.0_15000.ssl.handshake: 1
 listener.0.0.0.0_15000.ssl.no_certificate: 0
 ```
