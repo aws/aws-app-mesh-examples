@@ -146,16 +146,6 @@ Resources:
             - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
       TaskDefinition: { Ref: ColorTellerTaskDefinition }
 
-  PublicLoadBalancerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Access to the public facing load balancer
-      VpcId:
-        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
-      SecurityGroupIngress:
-          - CidrIp: 0.0.0.0/0
-            IpProtocol: -1
-
   GatewayServiceDiscoveryRecord:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
