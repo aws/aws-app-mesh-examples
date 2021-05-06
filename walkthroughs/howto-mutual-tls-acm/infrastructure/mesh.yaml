@@ -29,12 +29,19 @@ Conditions:
   setTls: !Or 
     - Condition: mtls
     - Condition: 1wayTls
+
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E3002
+
 Resources:
   Mesh:
     Type: 'AWS::AppMesh::Mesh'
     Properties:
       MeshName: !Ref MeshName
-      
+
   Gateway:
     Type: 'AWS::AppMesh::VirtualGateway'
     Properties:
@@ -82,6 +89,7 @@ Resources:
             - PortMapping:
                 Port: 9080
                 Protocol: http
+
   Service:
     Type: 'AWS::AppMesh::VirtualService'
     Properties:
@@ -91,6 +99,7 @@ Resources:
         Provider:
           VirtualNode:
             VirtualNodeName: !GetAtt Node.VirtualNodeName
+
   Route:
     Type: 'AWS::AppMesh::GatewayRoute'
     Properties:
@@ -105,7 +114,7 @@ Resources:
                 VirtualServiceName: !GetAtt Service.VirtualServiceName
           Match:
             Prefix: /
-      
+
   Node:
     Type: 'AWS::AppMesh::VirtualNode'
     Properties:
@@ -139,4 +148,4 @@ Resources:
           AWSCloudMap:
             NamespaceName: !Ref ServiceDomain
             ServiceName: colorteller
-      
+
