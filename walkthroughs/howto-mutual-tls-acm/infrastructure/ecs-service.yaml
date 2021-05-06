@@ -16,6 +16,12 @@ Parameters:
     Description: The name for the color teller image
     Type: String
 
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E3012
+        - E3002
 Resources:
 
   ColorTellerServiceDiscoveryRecord:
@@ -36,7 +42,6 @@ Resources:
     Properties:
       RequiresCompatibilities:
         - 'FARGATE'
-        - 'EC2'
       Family: 'colorteller'
       NetworkMode: 'awsvpc'
       Cpu: 256
@@ -116,11 +121,10 @@ Resources:
           # Set secret environment variable for the container
           Secrets:
             - Name: CertSecret
-              ValueFrom: !Ref SecretCert
+              ValueFrom: {'Fn::ImportValue': !Sub "${EnvironmentName}:SecretCertArn"}
 
   ColorTellerService:
     Type: 'AWS::ECS::Service'
-    DependsOn: InitCert
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
@@ -218,11 +222,10 @@ Resources:
           # Set secret environment variable for the container
           Secrets:
             - Name: CertSecret
-              ValueFrom: !Ref SecretCert
+              ValueFrom: {'Fn::ImportValue': !Sub "${EnvironmentName}:SecretCertArn"}
 
   GatewayService:
     Type: 'AWS::ECS::Service'
-    DependsOn: InitCert
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
