@@ -113,22 +113,27 @@ COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
     --stack-name $ENVIRONMENT_NAME-ecs-service \
     | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="ColorAppEndpoint") | .OutputValue')
 
-TARGET_GROUP_ARN=$(aws cloudformation describe-stack-resource \
- --stack-name $ENVIRONMENT_NAME-deploy \
- --logical-resource-id WebTargetGroup --query StackResourceDetail.PhysicalResourceId --output text)
+BASTION_HOST=$(aws cloudformation describe-stack-resource \
+ --stack-name $ENVIRONMENT_NAME-ecs-cluster \
+ --logical-resource-id BastionHost --query StackResourceDetail.PhysicalResourceId --output text)
 
-BASTION_HOST=$(aws cloudformation describe-stack-resource --stack-name $ENVIRONMENT_NAME-deploy --logical-resource-id BastionHost --query StackResourceDetail.PhysicalResourceId --output text)
+ECS_CLUSTER=$(aws cloudformation describe-stack-resource \
+ --stack-name $ENVIRONMENT_NAME-ecs-cluster \
+ --logical-resource-id ECSCluster --query StackResourceDetail.PhysicalResourceId --output text)
 
-ECS_CLUSTER=$(aws cloudformation describe-stack-resource --stack-name $ENVIRONMENT_NAME-deploy --logical-resource-id ECSCluster --query StackResourceDetail.PhysicalResourceId --output text)
+COLORTELLER_SERVICE=$(aws cloudformation describe-stack-resource \
+ --stack-name $ENVIRONMENT_NAME-ecs-service \
+ --logical-resource-id ColorTellerService --query StackResourceDetail.PhysicalResourceId --output text)
 
-COLORTELLER_SERVICE=$(aws cloudformation describe-stack-resource --stack-name $ENVIRONMENT_NAME-deploy --logical-resource-id ColorTellerService --query StackResourceDetail.PhysicalResourceId --output text)
-
-GATEWAY_SERVICE=$(aws cloudformation describe-stack-resource --stack-name $ENVIRONMENT_NAME-deploy --logical-resource-id GatewayService --query StackResourceDetail.PhysicalResourceId --output text)
+GATEWAY_SERVICE=$(aws cloudformation describe-stack-resource \
+ --stack-name $ENVIRONMENT_NAME-ecs-service \
+ --logical-resource-id GatewayService --query StackResourceDetail.PhysicalResourceId --output text)
 ```
 
 Wait for the target group to stabilize. Please note that this might take a few minutes.
 ```bash
-aws elbv2 wait target-in-service --target-group-arn $TARGET_GROUP_ARN
+aws ecs wait services-stable --cluster $ECS_CLUSTER --service $COLORTELLER_SERVICE
+aws ecs wait services-stable --cluster $ECS_CLUSTER --service $GATEWAY_SERVICE
 ```
 
 Now, let's issue a request to the color gateway.
@@ -168,42 +173,69 @@ For demonstration purposes, we will progressively add TLS configuration to your 
 Run the following command:
 
 ```bash
-./infrastructure/deploy.sh 1way-tls
+./infrastructure/mesh.sh 1way-tls
 ```
 
 > Note: Updates to a mesh have some amount of propagation delay, usually measured in seconds. If you notice that some of the steps in the rest of this walkthrough don't match the expected outcome, allow some time for the configuration to be distributed to your Envoy proxies and try again. For example, in this step, the TLS configuration may not have propagated to your proxies by the time you curl the app, so the proxies would actually still be communicating over plain HTTP and therefore would not have any SSL statistics emitted.
 
-This updates the virtual node to be configured to provide a certificate.
+This updates the virtual gateway to be configured to use ACM for TLS.
 
-```json
-{
-    "spec": {
-        "listeners": [
-            {
-                "portMapping": {
-                    "port": 9080,
-                    "protocol": "http"
-                },
-                ...
-                "tls": {
-                    "mode": "STRICT",
-                    "certificate": {
-                        "file": {
-                            "certificateChain": "/keys/colorteller_cert_chain.pem",
-                            "privateKey": "/keys/colorteller_key.pem"
-                        }
-                    }
-                }
-            }
-        ],
-        ...
-    }
-}
+```yaml
+meshName: mtls-appmesh
+virtualGatewayName: gateway-vgw
+spec:
+  backendDefaults:
+    clientPolicy:
+      tls:
+        enforce: true
+        validation:
+          trust:
+            acm:
+              certificateAuthorityArns:
+                - >-
+                  arn:aws:acm-pca:us-east-1:012345678912:certificate-authority/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+                # this is the  ACM PCA CA ARN for colorteller.mtls.svc.cluster.local
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
 ```
 
-The `tls` block specifies a filepath to where the Envoy can find the materials it expects. In order to encrypt the traffic, Envoy needs to have both the certificate chain and the private key.
+The `tls` block specifies a validation to acm where the Envoy can find the materials it expects. 
+
+The update also configures virtual node to use ACM for TLS.
+
+```yaml
+meshName: mtls-appmesh
+virtualNodeName: colorteller-vn
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      tls:
+        certificate:
+          acm:
+            certificateArn: >-
+              arn:aws:acm:us-east-1:012345678912:certificate/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+            # this is the ACM ARN for colorteller.mtls.svc.cluster.local
+        mode: STRICT
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: mtls.svc.cluster.local
+      serviceName: colorteller
+```
+So instead of providing client and server certs as a file tls is made possible by referencing ACM.
 
 By default, App Mesh will configure your clients to accept any certificate provided by a backend. So, if you query the endpoint again now, the request will still succeed.
+
+Recycle the containers after the update so that a new connection can take place. Then wait for the deployment to complete.
+```bash
+aws ecs update-service --cluster $ECS_CLUSTER --service $COLORTELLER_SERVICE --force-new-deployment
+aws ecs update-service --cluster $ECS_CLUSTER --service $GATEWAY_SERVICE --force-new-deployment
+aws ecs wait services-stable --cluster $ECS_CLUSTER --service $COLORTELLER_SERVICE
+aws ecs wait services-stable --cluster $ECS_CLUSTER --service $GATEWAY_SERVICE
+```
 
 ```bash
 % curl $COLORAPP_ENDPOINT
@@ -218,57 +250,80 @@ listener.0.0.0.0_15000.ssl.handshake: 1
 listener.0.0.0.0_15000.ssl.no_certificate: 1
 ```
 
-
 Also take a look at the `ssl.no_certificate` metric on the colorteller, which shows the number of successful connections in which no client certificate was provided. Right now, this metric should match the number of handshakes, but it will become interesting later.
 
 ### Step 2: Require a Client Certificate for Mutual TLS
 
 Now, let's update the colorteller node to require clients to present a certificate, by specifying a trusted authority just as we did with the client policy. When you specify a validation context on a listener, App Mesh will configure the Envoy to require a client certificate. This is half of the configuration required for Mutual TLS.
 
-> Note: We do this first to illustrate what happens when TLS validation is unmet. If you are migrating existing App Mesh-enabled services which are already communicating with TLS, you should first configure your clients to provide a client certificate, so that when your servers are updated to request a certificate, connections are maintained.
-
-> Note: This deployment also configures your virtual gateway to require a client certificate.
+> Note: We do this first to illustrate what happens when TLS validation is met. 
 
 ```bash
-./infrastructure/deploy.sh mtls
+./infrastructure/mesh.sh mtls
 ```
 
-This updates the virtual node with a `validation` object, similar to what is available on client policies.
+This updates the virtual gateway with a `certificate` object.
 
-```bash
-{
-    "spec": {
-        "listeners": [
-            {
-                ...
-                "tls": {
-                    "mode": "STRICT",
-                    "certificate": {
-                        "file": {
-                            "certificateChain": "/keys/colorteller_cert_chain.pem",
-                            "privateKey": "/keys/colorteller_key.pem"
-                        }
-                    },
-                    "validation": {
-                        "trust": {
-                            "file": {
-                                "certificateChain": "/keys/ca_cert.pem"
-                            }
-                        }
-                    }
-                }
-            }
-        ],
-        ...
-    }
-}
+```yaml
+meshName: mtls-appmesh
+virtualGatewayName: gateway-vgw
+spec:
+  backendDefaults:
+    clientPolicy:
+      tls:
+        certificate:
+          file:
+            certificateChain: /keys/colorgateway_endpoint_cert_chain.pem
+            # this is the ACM Certificate Chain for colorgateway.mtls.svc.cluster.local
+            privateKey: /keys/colorgateway_endpoint_dec_pri_key.pem
+            # this is the decrypted ACM private key for colorgateway.mtls.svc.cluster.local
+        enforce: true
+        validation:
+          trust:
+            acm:
+              certificateAuthorityArns:
+                - >-
+                  arn:aws:acm:us-east-1:012345678912:certificate/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+              # this is the ACM ARN for colorteller.mtls.svc.cluster.local
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+```
+
+On the virtual node `validation` is added to check for colorgateway certificate chain.
+```yaml
+meshName: mtls-appmesh
+virtualNodeName: colorteller-vn
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      tls:
+        certificate:
+          acm:
+            certificateArn: >-
+              arn:aws:acm:us-east-1:012345678912:certificate/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+            # this is the ACM ARN for colorteller.mtls.svc.cluster.local
+        mode: STRICT
+        validation:
+          trust:
+            file:
+              certificateChain: /keys/colorgateway_endpoint_cert_chain.pem
+              # this is the ACM Certificate Chain for colorgateway.mtls.svc.cluster.local
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: mtls.svc.cluster.local
+      serviceName: colorteller
 ```
 
 Recycle the containers after the update so that a new connection can take place. Then wait for the deployment to complete.
 ```bash
 aws ecs update-service --cluster $ECS_CLUSTER --service $COLORTELLER_SERVICE --force-new-deployment
 aws ecs update-service --cluster $ECS_CLUSTER --service $GATEWAY_SERVICE --force-new-deployment
-aws elbv2 wait target-in-service --target-group-arn $TARGET_GROUP_ARN
+aws ecs wait services-stable --cluster $ECS_CLUSTER --service $COLORTELLER_SERVICE
+aws ecs wait services-stable --cluster $ECS_CLUSTER --service $GATEWAY_SERVICE
 ```
 
 Now query the endpoint again
@@ -284,20 +339,28 @@ From the bastion, take a look at SSL stats:
 listener.0.0.0.0_15000.ssl.handshake: 1
 listener.0.0.0.0_15000.ssl.no_certificate: 0
 ```
-As you can see `ssl.no_certificate` metric on the colorteller, which shows the number of successful connections in which no client certificate was provided isnow set to zero proving Mutual TLS.
+As you can see `ssl.no_certificate` metric on the colorteller, which shows the number of successful connections in which no client certificate was provided is now set to zero proving Mutual TLS.
 
 At this point, you have mutual TLS authentication between the gateway and the application node. Both are providing a certificate, both are validating that certificate against a certificate authority which in this case is ACM.
 
-### Part 3: Clean Up
+## Part 3: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
 Run the following commands to clean up and tear down the resources that we’ve created.
 
 ```bash
-aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-deploy
-aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-deploy
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecs-service
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-mesh
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-mesh
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-acm
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-acm
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecr-repositories
+aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-vpc
 ```
 
-> Note: Deletion of the `ecs-service` stack can sometimes fail on the first attempt, as the ECS instances may not be fully deregistered before CloudFormation attempts to delete the Cloud Map services. A retry of the delete should succeed.
+> Note: Deletion of the `ecs-service` and `mesh` stack can sometimes fail on the first attempt, as the resources may not be fully deregistered before CloudFormation attempts to delete the Cloud Map services. A retry of the delete should succeed.
