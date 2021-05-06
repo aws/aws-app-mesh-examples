@@ -146,13 +146,7 @@ Resources:
               - Effect: Allow
                 Action: acm:ExportCertificate
                 Resource: 
-                  - !Ref AcmPcaColorTellerEndpointCert
                   - !Ref AcmPcaColorGatewayEndpointCert
-              - Effect: Allow
-                Action: acm-pca:GetCertificateAuthorityCertificate
-                Resource:
-                  - !Ref AcmPcaColorTellerRootCA
-                  - !Ref AcmPcaColorGatewayRootCA
               - Effect: Allow
                 Action:
                   - secretsmanager:GetRandomPassword
