@@ -35,6 +35,12 @@ Parameters:
     Type: String
     Default: 10.0.96.0/19
 
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2509
+        
 Resources:
 
   VPC: 
