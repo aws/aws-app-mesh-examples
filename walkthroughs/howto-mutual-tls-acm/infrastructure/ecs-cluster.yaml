@@ -20,10 +20,10 @@ Parameters:
     Type: String
     Description: "Domain name registered under Route-53 that will be used for Service Discovery"
     
-  ECSAmi:
-    Description: ECS AMI ID
+  EC2Ami:
+    Description: EC2 AMI ID
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: "/aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 
 Metadata:
   cfn-lint:
@@ -119,6 +119,39 @@ Resources:
       Vpc:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
       Name: { Ref: ECSServicesDomain }
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: !Ref EC2Ami
+      InstanceType: t3.micro
+      SecurityGroupIds:
+      - !Ref ECSServiceSecurityGroup
+      SubnetId: 
+        'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
+      IamInstanceProfile: !Ref BastionInstanceProfile
+      Tags: 
+        - Key: Name
+          Value: bastion-host
+  
+  BastionInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref BastionInstanceRole
+  
+  BastionInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ec2.amazonaws.com]
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
 
 Outputs:
 
