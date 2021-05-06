@@ -1,0 +1,235 @@
+Parameters:
+  DomainName:
+    Type: String
+    Default: 'appmesh-acm-pca-mtls.svc.cluster.local'
+    Description: The mesh domain name for setup of ACM PCA mTLS
+  
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+Resources:
+
+  # ---------------------------------------------------------------------------
+  # Create Private CA - Color Teller
+  # ---------------------------------------------------------------------------
+  AcmPcaColorTellerRootCA:
+    Type: AWS::ACMPCA::CertificateAuthority
+    Properties:
+      Type: ROOT
+      KeyAlgorithm: RSA_2048
+      SigningAlgorithm: SHA256WITHRSA
+      Subject:
+        CommonName: "AcmPcaColorTeller"
+
+  # ---------------------------------------------------------------------------
+  # Create root cert for Private CA Color Teller
+  # ---------------------------------------------------------------------------
+  AcmPcaColorTellerRootCACert:
+    Type: 'AWS::ACMPCA::Certificate'
+    Properties:
+      CertificateAuthorityArn: !Ref AcmPcaColorTellerRootCA
+      CertificateSigningRequest: !GetAtt
+        - AcmPcaColorTellerRootCA
+        - CertificateSigningRequest
+      SigningAlgorithm: SHA256WITHRSA
+      TemplateArn: 'arn:aws:acm-pca:::template/RootCACertificate/V1'
+      Validity:
+        Type: YEARS
+        Value: 10
+
+  # ---------------------------------------------------------------------------
+  # Activate Private CA Color Teller -
+  # Associates Root CA with Root Cert
+  # ---------------------------------------------------------------------------
+  AcmPcaColorTellerRootCAActivation:
+    Type: 'AWS::ACMPCA::CertificateAuthorityActivation'
+    Properties:
+      CertificateAuthorityArn: !Ref AcmPcaColorTellerRootCA
+      Certificate: !GetAtt
+        - AcmPcaColorTellerRootCACert
+        - Certificate
+      Status: ACTIVE
+
+  # ---------------------------------------------------------------------------
+  # Create endpoint cert for Color Teller app mesh node
+  # TODO
+  # ---------------------------------------------------------------------------
+  AcmPcaColorTellerEndpointCert:
+    Type: AWS::CertificateManager::Certificate
+    DependsOn: AcmPcaColorTellerRootCAActivation
+    Properties:
+      CertificateAuthorityArn: !Ref AcmPcaColorTellerRootCA
+      DomainName: !Sub 'colorteller.${DomainName}'
+
+
+
+  # ---------------------------------------------------------------------------
+  # Create Private CA - Color Gateway
+  # ---------------------------------------------------------------------------
+  AcmPcaColorGatewayRootCA:
+    Type: AWS::ACMPCA::CertificateAuthority
+    Properties:
+      Type: ROOT
+      KeyAlgorithm: RSA_2048
+      SigningAlgorithm: SHA256WITHRSA
+      Subject:
+        CommonName: "AcmPcaColorGateway"
+
+  # ---------------------------------------------------------------------------
+  # Create root cert for Private CA Color Gateway
+  # ---------------------------------------------------------------------------
+  AcmPcaColorGatewayRootCACert:
+    Type: 'AWS::ACMPCA::Certificate'
+    Properties:
+      CertificateAuthorityArn: !Ref AcmPcaColorGatewayRootCA
+      CertificateSigningRequest: !GetAtt
+        - AcmPcaColorGatewayRootCA
+        - CertificateSigningRequest
+      SigningAlgorithm: SHA256WITHRSA
+      TemplateArn: 'arn:aws:acm-pca:::template/RootCACertificate/V1'
+      Validity:
+        Type: YEARS
+        Value: 10
+
+  # ---------------------------------------------------------------------------
+  # Activate Private CA Color Gateway -
+  # Associates Root CA with Root Cert
+  # ---------------------------------------------------------------------------
+  AcmPcaColorGatewayRootCAActivation:
+    Type: 'AWS::ACMPCA::CertificateAuthorityActivation'
+    Properties:
+      CertificateAuthorityArn: !Ref AcmPcaColorGatewayRootCA
+      Certificate: !GetAtt
+        - AcmPcaColorGatewayRootCACert
+        - Certificate
+      Status: ACTIVE
+
+  # ---------------------------------------------------------------------------
+  # Create endpoint cert for Color Gateway app mesh node
+  # TODO
+  # ---------------------------------------------------------------------------
+  AcmPcaColorGatewayEndpointCert:
+    Type: AWS::CertificateManager::Certificate
+    DependsOn: AcmPcaColorGatewayRootCAActivation
+    Properties:
+      CertificateAuthorityArn: !Ref AcmPcaColorGatewayRootCA
+      DomainName: !Sub 'colorgateway.${DomainName}'
+  
+  SecretCert:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      SecretString: |
+        {
+          "GatewayCertificate": "tempcert",
+          "GatewayCertificateChain": "tempcertchain",
+          "GatewayPrivateKey": "privatekey",
+          "Passphrase": "passphrase"
+        }
+
+  InitCertRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: acm-secretsmanager-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: acm:ExportCertificate
+                Resource: 
+                  - 
+                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorTellerEndpointCertArn"
+                  - 
+                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
+              - Effect: Allow
+                Action: acm-pca:GetCertificateAuthorityCertificate
+                Resource:
+                  - 'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorTellerRootCAArn"
+                  - 
+                    'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayRootCAArn"
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetRandomPassword
+                Resource: '*'
+              - Effect: Allow
+                Action: secretsmanager:PutSecretValue
+                Resource: !Ref SecretCert
+
+  InitCertFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Initial function to populate secrets manager from ACM
+      Handler: index.lambda_handler
+      Role: !GetAtt InitCertRole.Arn
+      Runtime: python3.8
+      Timeout: 900
+      Environment:
+        Variables:
+          COLOR_GATEWAY_ACM_ARN: 
+            'Fn::ImportValue': !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
+          SECRET: !Ref SecretCert
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import base64
+          import os
+          import cfnresponse
+          sm = boto3.client('secretsmanager')
+          cm = boto3.client('acm')
+          gate_cm = os.environ['COLOR_GATEWAY_ACM_ARN']
+          secret = os.environ['SECRET']
+          def lambda_handler(event, context):
+            print (json.dumps(event))
+            if (event['RequestType'] == 'Delete') or (event['RequestType'] == 'Update'):
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
+            elif event['RequestType'] == 'Create':
+              try:
+                passphrase = sm.get_random_password(ExcludePunctuation=True)['RandomPassword']
+                passphrase_enc = base64.b64encode(passphrase.encode('utf-8'))
+                gate_rsp = cm.export_certificate(CertificateArn=gate_cm, Passphrase=passphrase_enc)
+                sm_value={}
+                sm_value['GatewayCertificate']=gate_rsp['Certificate']
+                sm_value['GatewayCertificateChain']=gate_rsp['CertificateChain']
+                sm_value['GatewayPrivateKey']=gate_rsp['PrivateKey']
+                sm_value['Passphrase']=passphrase
+                sm.put_secret_value(SecretId=secret, SecretString=json.dumps(sm_value))
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
+              except Exception as e:
+                print(e) 
+                cfnresponse.send(event, context, cfnresponse.FAILED, {}, '')
+
+  InitCert:
+    Type: Custom::InitCert
+    Properties:
+      ServiceToken: !GetAtt InitCertFunction.Arn
+      Secret: !Ref SecretCert
+
+
+Outputs:
+  AcmPcaColorTellerEndpointCertArn:
+    Value: !Ref AcmPcaColorTellerEndpointCert
+    Export:
+      Name: !Sub "${EnvironmentName}:AcmPcaColorTellerEndpointCertArn"
+  AcmPcaColorGatewayEndpointCertArn:
+    Value: !Ref AcmPcaColorGatewayEndpointCert
+    Export:
+      Name: !Sub "${EnvironmentName}:AcmPcaColorGatewayEndpointCertArn"
+  AcmPcaColorTellerRootCAArn:
+    Value: !Ref AcmPcaColorTellerRootCA
+    Export:
+      Name: !Sub "${EnvironmentName}:AcmPcaColorTellerRootCAArn"
+  AcmPcaColorGatewayRootCAArn:
+    Value: !Ref AcmPcaColorGatewayRootCA
+    Export:
+      Name: !Sub "${EnvironmentName}:AcmPcaColorGatewayRootCAArn"
