@@ -8,15 +8,6 @@ Parameters:
     Description: An environment name that will be prefixed to resource names
     Type: String
 
-  InstanceType:
-    Description: Which instance type should we use to build the ECS cluster?
-    Type: String
-    Default: c4.large
-
-  KeyName:
-    Description: The EC2 Key Pair to allow SSH access to the instances
-    Type: AWS::EC2::KeyPair::KeyName
-
   LogGroupName:
     Type: String
     Default: "AppMeshExamples/mtls-acm-appmesh"
@@ -28,17 +19,17 @@ Parameters:
   ECSServicesDomain:
     Type: String
     Description: "Domain name registered under Route-53 that will be used for Service Discovery"
-  
-  ClusterSize:
-    Description: How many ECS hosts do you want to initially deploy?
-    Type: Number
-    Default: 5 
-
     
   ECSAmi:
     Description: ECS AMI ID
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: "/aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id"
+
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E3012
 
 Resources:
 
