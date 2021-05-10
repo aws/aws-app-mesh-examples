@@ -154,6 +154,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:PutSecretValue
                 Resource: !Ref SecretCert
+              - Effect: Allow
+                Action: acm-pca:CreatePermission
+                Resource:
+                  - !Ref AcmPcaColorGatewayRootCA
+                  - !Ref AcmPcaColorTellerRootCA
 
   InitCertFunction:
     Type: AWS::Lambda::Function
@@ -166,6 +171,9 @@ Resources:
       Environment:
         Variables:
           COLOR_GATEWAY_ACM_ARN: !Ref AcmPcaColorGatewayEndpointCert
+          COLOR_TELLER_ACM_PCA_ARN: !Ref AcmPcaColorTellerRootCA
+          COLOR_GATEWAY_ACM_PCA_ARN: !Ref AcmPcaColorGatewayRootCA
+          AWS_ACCOUNT: !Ref 'AWS::AccountId'
           SECRET: !Ref SecretCert
       Code:
         ZipFile: |
@@ -176,7 +184,11 @@ Resources:
           import cfnresponse
           sm = boto3.client('secretsmanager')
           cm = boto3.client('acm')
+          pca = boto3.client('acm-pca')
           gate_cm = os.environ['COLOR_GATEWAY_ACM_ARN']
+          teller_pca_cm = os.environ['COLOR_TELLER_ACM_PCA_ARN']
+          gateway_pca_cm = os.environ['COLOR_GATEWAY_ACM_PCA_ARN']
+          acc_id = os.environ['AWS_ACCOUNT']
           secret = os.environ['SECRET']
           def lambda_handler(event, context):
             print (json.dumps(event))
@@ -184,6 +196,26 @@ Resources:
               cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
             elif event['RequestType'] == 'Create':
               try:
+                pca.create_permission(
+                  CertificateAuthorityArn=teller_pca_cm,
+                  Principal='acm.amazonaws.com',
+                  SourceAccount=acc_id,
+                  Actions=[
+                    'IssueCertificate',
+                    'GetCertificate',
+                    'ListPermissions'
+                  ]
+                )
+                pca.create_permission(
+                  CertificateAuthorityArn=gateway_pca_cm,
+                  Principal='acm.amazonaws.com',
+                  SourceAccount=acc_id,
+                  Actions=[
+                    'IssueCertificate',
+                    'GetCertificate',
+                    'ListPermissions'
+                  ]
+                )
                 passphrase = sm.get_random_password(ExcludePunctuation=True)['RandomPassword']
                 passphrase_enc = base64.b64encode(passphrase.encode('utf-8'))
                 gate_rsp = cm.export_certificate(CertificateArn=gate_cm, Passphrase=passphrase_enc)
@@ -197,6 +229,8 @@ Resources:
               except Exception as e:
                 print(e) 
                 cfnresponse.send(event, context, cfnresponse.FAILED, {}, '')
+
+
 
   InitCert:
     Type: Custom::InitCert
