@@ -86,7 +86,7 @@ Next, we can build and deploy our custom Envoy image. This container has a `/key
 ./src/customEnvoyImage/deploy.sh
 ```
 
-> Note: This walkthrough uses this custom Envoy image for illustration purposes. App Mesh does not support an integration with ACM for mTLS at this time. These instructions are for exporting an ACM certificate and using it as a customer file provided certificate. Your certificates will not be automatically updated after renewal, rotating certificates will require a restart or deployment of your tasks. You may choose to setup an event when your certifactes are expiring to trigger an automation to update the services using the certificates.
+> Note: This walkthrough uses this custom Envoy image for illustration purposes. App Mesh does not support an integration with ACM for mTLS at this time. These instructions are for exporting an ACM certificate and using it as a customer file provided certificate. This walkthrough integrates ACM with ACM-PCA and allows the certificates to be rotated upon expiry using the `RenewCertificate` API from AWS ACM. After the certificate is rotated, the secretsmanager is updates and a new deployment is done to pick up the new certificates. 
 
 ### Step 4: Create a Mesh with no TLS
 
