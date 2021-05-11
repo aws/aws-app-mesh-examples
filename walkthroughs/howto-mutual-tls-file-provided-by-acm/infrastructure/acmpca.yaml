@@ -147,6 +147,7 @@ Resources:
                 Action: acm:ExportCertificate
                 Resource: 
                   - !Ref AcmPcaColorGatewayEndpointCert
+                  - !Ref AcmPcaColorTellerEndpointCert
               - Effect: Allow
                 Action:
                   - secretsmanager:GetRandomPassword
@@ -171,6 +172,7 @@ Resources:
       Environment:
         Variables:
           COLOR_GATEWAY_ACM_ARN: !Ref AcmPcaColorGatewayEndpointCert
+          COLOR_TELLER_ACM_ARN: !Ref AcmPcaColorTellerEndpointCert
           COLOR_TELLER_ACM_PCA_ARN: !Ref AcmPcaColorTellerRootCA
           COLOR_GATEWAY_ACM_PCA_ARN: !Ref AcmPcaColorGatewayRootCA
           AWS_ACCOUNT: !Ref 'AWS::AccountId'
@@ -186,6 +188,7 @@ Resources:
           cm = boto3.client('acm')
           pca = boto3.client('acm-pca')
           gate_cm = os.environ['COLOR_GATEWAY_ACM_ARN']
+          teller_cm = os.environ['COLOR_TELLER_ACM_ARN']
           teller_pca_cm = os.environ['COLOR_TELLER_ACM_PCA_ARN']
           gateway_pca_cm = os.environ['COLOR_GATEWAY_ACM_PCA_ARN']
           acc_id = os.environ['AWS_ACCOUNT']
@@ -218,6 +221,7 @@ Resources:
                 )
                 passphrase = sm.get_random_password(ExcludePunctuation=True)['RandomPassword']
                 passphrase_enc = base64.b64encode(passphrase.encode('utf-8'))
+                cm.export_certificate(CertificateArn=teller_cm, Passphrase=passphrase_enc)
                 gate_rsp = cm.export_certificate(CertificateArn=gate_cm, Passphrase=passphrase_enc)
                 sm_value={}
                 sm_value['GatewayCertificate']=gate_rsp['Certificate']
