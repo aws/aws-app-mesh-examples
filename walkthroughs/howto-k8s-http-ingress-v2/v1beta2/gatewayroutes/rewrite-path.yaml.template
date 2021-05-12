@@ -1,0 +1,18 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: rewrite-path
+  namespace: ${APP_NAMESPACE}
+spec:
+  httpRoute:
+    match:
+      path: 
+        exact: "/rewrite/path/blue"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-paths
+      rewrite:
+        path:
+          exact: "/blue"
