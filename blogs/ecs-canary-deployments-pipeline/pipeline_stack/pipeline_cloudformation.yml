@@ -1,0 +1,311 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template deploys application specific pipeline resources, VirtualService and a VirtualRouter per application.
+Parameters:
+  Port:
+    Type: Number
+    Description: The port on which the VirtualNode should be listening on.
+  Protocol:
+    Type: String
+    Description: The protocol used by Port mapping on the VirtualNode.
+  EnvironmentName:
+    Type: String
+    Description: The name which is prefixed to the infrastructure components.
+  MicroserviceName:
+    Type: String
+    Description: The name of the microservice for which this pipeline is beeing created.
+    MinLength: 1
+  SampleMicroservices:
+    Type: String
+    Description: >-
+      If you want to use example microservices provided with the blogpost,
+      inform True.
+    MinLength: 1
+  SharedStackName:
+    Type: String
+    Description: >-
+      The name of the stack that was created earlier with the resources shared
+      between all pipelines.
+    MinLength: 1
+  SourceCodeBucket:
+    Type: String
+    Description: >-
+      The S3 bucket on which the microservices source code for the blogpost are
+      stored.
+    MinLength: 1
+  BuildComputeType:
+    Type: String
+    Description: The CodeBuild compute type to be used.
+    Default: BUILD_GENERAL1_SMALL
+    AllowedValues:
+      - BUILD_GENERAL1_SMALL
+      - BUILD_GENERAL1_MEDIUM
+      - BUILD_GENERAL1_LARGE
+      - BUILD_GENERAL1_2XLARGE
+Conditions:
+  UseSampleMicroservices: !Equals
+    - !Ref SampleMicroservices
+    - 'True'
+
+Resources:
+
+  #------ App Specific Pipeline components  ------#
+  ContainerRegisty:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: !Ref MicroserviceName
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+  CodeRepository:
+    Type: 'AWS::CodeCommit::Repository'
+    Properties:
+      RepositoryName: !Ref MicroserviceName
+      Code: !If 
+        - UseSampleMicroservices
+        - S3:
+            Bucket: !Ref SourceCodeBucket
+            Key: !Sub 'microservices/${MicroserviceName}/${MicroserviceName}.zip'
+        - !Ref 'AWS::NoValue'
+  CodeBuildProjectRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - !Sub >-
+                    arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${MicroserviceName}-build
+                  - !Sub >-
+                    arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${MicroserviceName}-build:*
+              - Effect: Allow
+                Action:
+                  - 'codecommit:GitPull'
+                Resource:
+                  - !GetAtt 
+                    - CodeRepository
+                    - Arn
+              - Effect: Allow
+                Action:
+                  - 'ecr:PutImage'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:InitiateLayerUpload'
+                  - 'ecr:UploadLayerPart'
+                  - 'ecr:CompleteLayerUpload'
+                Resource:
+                  - !GetAtt 
+                    - ContainerRegisty
+                    - Arn
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject*'
+                  - 's3:GetBucket*'
+                  - 's3:List*'
+                  - 's3:PutObject*'
+                  - 's3:Abort*'
+                Resource: !Sub 
+                  - 'arn:aws:s3:::${BucketName}/*'
+                  - BucketName: !ImportValue 
+                      'Fn::Sub': '${SharedStackName}-Pipeline-Artifacts'
+  CodeBuildProject:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: !Sub '${MicroserviceName}-build'
+      Artifacts:
+        Type: CODEPIPELINE
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Environment:
+        Image: 'aws/codebuild/standard:4.0'
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+        ComputeType: !Ref BuildComputeType
+        EnvironmentVariables:
+          - Name: DOCKER_REGISTRY_URI
+            Type: PLAINTEXT
+            Value: !Sub >-
+              ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${MicroserviceName}
+      ServiceRole: !Ref CodeBuildProjectRole
+      Source:
+        BuildSpec: specfiles/build.yml
+        Type: CODEPIPELINE
+  CodePipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'codecommit:GetBranch'
+                  - 'codecommit:GetCommit'
+                  - 'codecommit:UploadArchive'
+                  - 'codecommit:GetUploadArchiveStatus'
+                  - 'codecommit:CancelUploadArchive'
+                Effect: Allow
+                Resource:
+                  - !GetAtt 
+                    - CodeRepository
+                    - Arn
+              - Action:
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codebuild:StartBuild'
+                Effect: Allow
+                Resource:
+                  - !GetAtt 
+                    - CodeBuildProject
+                    - Arn
+              - Action:
+                  - 'states:DescribeStateMachine'
+                  - 'states:DescribeExecution'
+                  - 'states:StartExecution'
+                Effect: Allow
+                Resource: !Sub 
+                  - >-
+                    arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StateMachineName}
+                  - StateMachineName: !ImportValue 
+                      'Fn::Sub': '${SharedStackName}-StateMachineName'
+              - Action:
+                  - 'states:DescribeExecution'
+                Effect: Allow
+                Resource: !Sub 
+                  - >-
+                    arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${StateMachineName}:*
+                  - StateMachineName: !ImportValue 
+                      'Fn::Sub': '${SharedStackName}-StateMachineName'
+              - Action:
+                  - 's3:GetObject*'
+                  - 's3:GetBucket*'
+                  - 's3:List*'
+                  - 's3:DeleteObject*'
+                  - 's3:PutObject*'
+                  - 's3:Abort*'
+                Effect: Allow
+                Resource: !Sub 
+                  - 'arn:aws:s3:::${BucketName}/*'
+                  - BucketName: !ImportValue 
+                      'Fn::Sub': '${SharedStackName}-Pipeline-Artifacts'
+  CodePipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !ImportValue 
+          'Fn::Sub': '${SharedStackName}-Pipeline-Artifacts'
+      Name: !Sub '${MicroserviceName}-pipeline'
+      RoleArn: !GetAtt 
+        - CodePipelineRole
+        - Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - RunOrder: 1
+              Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: 1
+              Configuration:
+                RepositoryName: !GetAtt 
+                  - CodeRepository
+                  - Name
+                BranchName: main
+                PollForSourceChanges: false
+              OutputArtifacts:
+                - Name: SourceOutput
+        - Name: Build
+          Actions:
+            - RunOrder: 2
+              Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+        - Name: Deploy
+          Actions:
+            - RunOrder: 3
+              Name: Deploy
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: StepFunctions
+                Version: 1
+              Configuration:
+                StateMachineArn: !Sub 
+                  - >-
+                    arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StateMachineName}
+                  - StateMachineName: !ImportValue 
+                      'Fn::Sub': '${SharedStackName}-StateMachineName'
+                InputType: FilePath
+                Input: deploy.json
+              InputArtifacts:
+                - Name: BuildOutput
+              OutputArtifacts:
+                - Name: DeployOutput
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${MicroserviceName}-log-group"
+      RetentionInDays: 5
+
+  #------ App Specific Mesh components  ------#
+  VirtualService:
+    DependsOn:
+      - VirtualRouter
+    Type: 'AWS::AppMesh::VirtualService'
+    Properties:
+      MeshName: !ImportValue 
+        'Fn::Sub': '${EnvironmentName}:Mesh'
+      VirtualServiceName: !Sub '${MicroserviceName}'
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: !Sub '${MicroserviceName}-vr'
+  VirtualRouter:
+    Type: 'AWS::AppMesh::VirtualRouter'
+    Properties:
+      MeshName: !ImportValue 
+        'Fn::Sub': '${EnvironmentName}:Mesh'
+      VirtualRouterName: !Sub '${MicroserviceName}-vr'
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: !Ref Port
+              Protocol: !Ref Protocol
