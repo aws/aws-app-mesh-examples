@@ -1,0 +1,381 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  This template deploys Lambda functions and state machine for orchestrating the workflows to achieve Canary Deployments on ECS leveraging AppMesh.
+#------ Parameters ------#
+Parameters:
+  SourceCodeBucket:
+    Type: String
+    Description: The S3 bucket on which the AWS Lambda source code are stored.
+    MinLength: 1
+  ArtifactBucketRetentionDays:
+    Type: Number
+    Description: The number of days that the artifacts should be kept stored in S3.
+    MinValue: 1
+    Default: 31
+  EnvironmentName:
+    Type: String
+    Description: The EnvironmentName that is used to prefix the infrastructure components.
+
+Resources:
+  #------- S3 Bucket for Artifacts -------#
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays:
+              Ref: ArtifactBucketRetentionDays
+            Status: Enabled
+
+  #------ Check Deployment Version Lambda Function ------#
+  CheckDeploymentVersionFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetParameterPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameter"
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}-canary-*-version'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  CheckDeploymentVersionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ CheckDeploymentVersionFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/check_deployment_version/function.zip"
+      Runtime: "python3.8"
+      Timeout: "20"
+
+  #------ Gather Healthcheck Status Lambda Function ------#
+  GatherHealthcheckStatusFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetMetricData
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "cloudwatch:GetMetricData"
+                Resource: "*"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  GatherHealthcheckStatusFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ GatherHealthcheckStatusFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/gather_healthcheck_status/function.zip"
+      Runtime: "python3.8"
+      Timeout: "20"
+
+  #------ Start Canary Lambda Function ------#
+  StartCanaryFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: AppMeshPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "appmesh:Describe*"
+                  - "appmesh:List*"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "appmesh:CreateRoute"
+                  - "appmesh:UpdateRoute"
+                Resource: !Sub 'arn:aws:appmesh:${AWS::Region}:${AWS::AccountId}:mesh/${EnvironmentName}/*'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  StartCanaryFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ StartCanaryFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/start_canary/function.zip"
+      Runtime: "python3.8"
+      Timeout: "900"
+      MemorySize: 512
+      Environment:
+        Variables:
+          canaryHelperInfraTemplate: !Sub "s3://${SourceCodeBucket}/shared_stack/canary_helper.yaml"
+
+  #------ Remove Old Version Lambda Function with same IAM Role------#
+  RemovePreviousCanaryFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: RollBackWorkflowPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "appmesh:Describe*"
+                  - "appmesh:List*"
+                  - "ecs:DescribeServices"
+                  - "ecs:DeregisterTaskDefinition"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "appmesh:UpdateRoute"
+                  - "appmesh:DeleteVirtualNode"
+                Resource: !Sub 'arn:aws:appmesh:${AWS::Region}:${AWS::AccountId}:mesh/${EnvironmentName}/*'
+              - Effect: Allow
+                Action:
+                  - "cloudformation:DeleteStack"
+                  - "cloudformation:DescribeStacks"
+                Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${EnvironmentName}*'
+              - Effect: Allow
+                Action:
+                  - "servicediscovery:DeleteService"
+                Resource: !Sub 'arn:aws:servicediscovery:${AWS::Region}:${AWS::AccountId}:service/*'
+              - Effect: Allow
+                Action:
+                  - "ecs:DeleteService"
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${EnvironmentName}*'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  RemovePreviousCanaryFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ RemovePreviousCanaryFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/remove_previous_canary_components/function.zip"
+      Runtime: "python3.8"
+      Timeout: "900"
+      MemorySize: 512
+      Environment:
+        Variables:
+          canaryHelperInfraTemplate: !Sub "s3://${SourceCodeBucket}/shared_stack/canary_helper.yaml"
+  
+  #------ Deploy Canary Infrastructure Lambda Function ------#
+  RollbackToPreviousCanaryInfrastructureFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ RemovePreviousCanaryFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/rollbackto_previous_canary/function.zip"
+      Runtime: "python3.8"
+      Timeout: "900"
+      Environment:
+        Variables:
+          canaryHelperInfraTemplate: !Sub "s3://${SourceCodeBucket}/shared_stack/canary_helper.yaml"
+
+  #------ Update Deployment Version Lambda Function ------#
+  UpdateDeploymentVersionFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetParameterPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ssm:PutParameter"
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}-canary-*-version'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  UpdateDeploymentVersionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ UpdateDeploymentVersionFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/update_deployment_version/function.zip"
+      Runtime: "python3.8"
+      Timeout: "120"
+      Environment:
+        Variables:
+          canaryHelperInfraTemplate: !Sub "s3://${SourceCodeBucket}/shared_stack/canary_helper.yaml"
+
+  #------ Deploy Canary Infrastructure Lambda Function ------#
+  DeployCanaryInfrastructureFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: GetParameterPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "cloudformation:ValidateTemplate"
+                  - "servicediscovery:CreatePrivateDnsNamespace"
+                  - "servicediscovery:Get*"
+                  - "appmesh:Describe*"
+                  - "ecs:RegisterTaskDefinition"
+                  - "route53:CreateHostedZone"
+                  - "route53:GetHostedZone"
+                  - "route53:ListHostedZonesByName"
+                  - "route53:ChangeResourceRecordSets"
+                  - "route53:CreateHealthCheck"
+                  - "route53:GetHealthCheck"
+                  - "route53:DeleteHealthCheck"
+                  - "route53:UpdateHealthCheck"
+                  - "ec2:Describe*"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "ssm:PutParameter"
+                  - "cloudformation:CreateStack"
+                  - "appmesh:CreateVirtualNode"
+                  - "iam:PassRole"
+                  - "servicediscovery:CreateService"
+                  - "ecs:Describe*"
+                  - "ecs:CreateService"
+                  - "cloudformation:DescribeStacks"
+                Resource: [
+                  !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentName}-canary-*-version',
+                  !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${EnvironmentName}*',
+                  !Sub 'arn:aws:appmesh:${AWS::Region}:${AWS::AccountId}:mesh/${EnvironmentName}*',
+                  !Sub 'arn:aws:iam::${AWS::AccountId}:role/${EnvironmentName}*',
+                  !Sub 'arn:aws:servicediscovery:${AWS::Region}:${AWS::AccountId}:namespace/*',
+                  !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${EnvironmentName}*'
+                ]
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  DeployCanaryInfrastructureFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "main.lambda_handler"
+      Role: !GetAtt [ DeployCanaryInfrastructureFunctionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: SourceCodeBucket
+        S3Key: "shared_stack/lambda_functions/deploy_canary_infrastructure/function.zip"
+      Runtime: "python3.8"
+      Timeout: "900"
+      Environment:
+        Variables:
+          canaryHelperInfraTemplate: !Sub "s3://${SourceCodeBucket}/shared_stack/canary_helper.yaml"
+
+  #------ StepFunctions Deployment Orchestrator ------#
+  ECSCanaryDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: ExecutetResources
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !GetAtt [ CheckDeploymentVersionFunction, Arn ]
+                  - !GetAtt [ UpdateDeploymentVersionFunction, Arn ]
+                  - !GetAtt [ RollbackToPreviousCanaryInfrastructureFunction, Arn ]
+                  - !GetAtt [ RemovePreviousCanaryFunction, Arn ]
+                  - !GetAtt [ DeployCanaryInfrastructureFunction, Arn ]
+                  - !GetAtt [ GatherHealthcheckStatusFunction, Arn ]
+                  - !GetAtt [ StartCanaryFunction, Arn ]
+  ECSCanaryDeployment:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineType: "STANDARD"
+      DefinitionS3Location:
+        Bucket:
+          Ref: SourceCodeBucket
+        Key: "shared_stack/state_machine_definition.yml"
+      DefinitionSubstitutions: {
+        CheckDeploymentVersionFunctionArn: !GetAtt [ CheckDeploymentVersionFunction, Arn ],
+        UpdateDeploymentVersionFunctionArn: !GetAtt [ UpdateDeploymentVersionFunction, Arn ],
+        RemovePreviousCanaryFunctionArn: !GetAtt [RemovePreviousCanaryFunction, Arn ],
+        RollbackToPreviousCanaryInfrastructureFunctionArn: !GetAtt [RollbackToPreviousCanaryInfrastructureFunction, Arn ],
+        GatherHealthcheckStatusArn: !GetAtt [GatherHealthcheckStatusFunction, Arn ],
+        DeployCanaryInfrastructureArn: !GetAtt [DeployCanaryInfrastructureFunction, Arn],
+        StartCanaryArn: !GetAtt [StartCanaryFunction, Arn]}
+      RoleArn: !GetAtt [ ECSCanaryDeploymentRole, Arn ]
+
+Outputs:
+  StateMachine:
+    Description: State Machine ARN that will be referenced on each CodePipeline CloudFormation
+    Value: !GetAtt [ ECSCanaryDeployment, Name ]
+    Export:
+      Name: !Sub '${AWS::StackName}-StateMachineName'
+  S3ArtifactsBucket:
+    Description: Artifacts S3 bucket name
+    Value:
+      Ref: ArtifactsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-Pipeline-Artifacts'
