@@ -1,6 +1,6 @@
-# Configuring Mutual TLS with File Provided TLS Certificates from ACM
+# Configuring Mutual TLS with File Provided TLS Certificates from ACM Private CA
 
-In this walkthrough, like the [basic file-based TLS example](../howto-tls-file-provided), we'll enable TLS encryption with mutual (two-way) authentication between two endpoints in App Mesh using X.509 certificates.
+In this walkthrough, we'll enable TLS encryption with mutual (two-way) authentication between two endpoints in App Mesh using X.509 certificates derived from ACM Private CA (ACM PCA). We'll extend the Color App example and use ECS Fargate as our service hosting environment.
 
 ## Introduction
 
@@ -10,7 +10,9 @@ In a basic TLS encryption scenario (for example, when your browser originates an
 
 Validation typically involves checking at least that the certificate is signed by a trusted Certificate Authority, and that the certificate is still within its validity period. 
 
-In this guide, we will be configuring Envoy proxies using certificates hosted in AWS Secrets Manager, which a modified Envoy image will retrieve during startup. We will have a virtual gateway connected to a single backend service. Both the gateway and backend proxies will present certificates signed by the same Certificate Authority (CA), though you could choose to use separate CAs.
+In this guide, we will be configuring Envoy proxies using certificates sourced from ACM Private CA. The server-side certificate will be sourced internally between App Mesh and ACM Private CA using the native integration between the two services. 
+
+The client-side certificate will be exported from ACM, stored in AWS Secrets Manager, and will be retrieved by a modified Envoy image during startup. Our Color App example uses a virtual gateway (ColorGateway) and a virtual node (ColorTeller) in App Mesh. The two services will be configured with separate Certificate Authorities (CAs) to demonstrate the full extent of cross-CA certificate validation in mTLS exchange.
 
 ## Prerequisites
 
@@ -60,11 +62,11 @@ Note that the example apps use go modules. If you have trouble accessing https:/
 Before we can encrypt traffic between services in the mesh, we need a PKI setup and to generate our certificates. For this demo we will generate:
 
 - Two Certificate Authorities and their corresponding root certs:
-   -- ColorTeller CA
-   -- ColorGateway CA
+   - ColorTeller CA
+   - ColorGateway CA
 - Two end-point certs: 
-   -- ColorTeller virtual node
-   -- ColorGateway virtual gateway
+   - ColorTeller virtual node
+   - ColorGateway virtual gateway
 
 Using AWS Lambda a random password is generated in secrets manager which is used as a passphrase to export certificate from AWS ACM and store certifcate material with passphrase in secrets manager by running the command below.
 ```bash
