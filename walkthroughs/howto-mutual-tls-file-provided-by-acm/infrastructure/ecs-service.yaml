@@ -215,6 +215,8 @@ Resources:
 
   GatewayService:
     Type: 'AWS::ECS::Service'
+    DependsOn:
+      - PublicLoadBalancer
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub "${EnvironmentName}:ECSCluster"
