@@ -271,7 +271,7 @@ curl "${COLORAPP_ENDPOINT}/red/tell"
 ```
  and see if the service correctly gives you a color back. 
 
-## Step 6: Test out Ingress Enhancements Configuration
+## Step 6: Test out Matching and Rewrite at Ingress Configuration
 
 
 ### Hostname Matching
