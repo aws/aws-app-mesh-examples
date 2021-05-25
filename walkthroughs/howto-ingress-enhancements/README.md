@@ -1,16 +1,16 @@
-# Testing Header/Hostname Matching and Path/Prefix Rewrites
+# Walkthrough of matches and rewrites in Virtual Gateway
 
 ## Concepts
 
-In this walkthrough we'll be using the following set up to test out Header/Hostname Matching and Path/Prefix Rewrites.
+In this walkthrough we'll be using the following set up to demo Header/Hostname Matching and Path/Prefix Rewrites.
 
 ![System Diagram](./howto-ingress-enhancements.png "System Diagram")
 
 
 - **GatewayRoute:** Gateway Routes allows specifying routing conditions that match the incoming request and determines the Virtual Service to redirect the request to. These conditions are specified as match conditions (`prefix` , `path`, `queryParameters`, `hostname` for HTTP/HTTP2 routes and `serviceName` and `hostname` for GRPC). A sample spec for the GatewayRoute is as follows:
 
-	```json
-	{
+  ```json
+  {
     "spec": {
         "httpRoute" : {
             "match" : {
@@ -40,44 +40,44 @@ In this walkthrough we'll be using the following set up to test out Header/Hostn
             }
         }
     }
-	}
-	```
-	A matched request by a gateway route is rewritten to the target Virtual Service's `hostname` and the matched prefix is rewritten to `/`, by default, or when default Prefix rewrite is `Enabled`. 
-	Alternatively, you can specify a custom prefix to rewrite the matched prefix to, as well as specify configuration for matching/rewriting based on paths.
-	Depending on how you configure your Virtual Service, it could then rely on a Virtual Router to route the request to different virtual nodes, based on specific prefixes or headers.
-	
+  }
+  ```
+  A matched request by a gateway route is rewritten to the target Virtual Service's `hostname` and the matched prefix is rewritten to `/`, by default, or when default Prefix rewrite is `Enabled`. 
+  Alternatively, you can specify a custom prefix to rewrite the matched prefix to, as well as specify configuration for matching/rewriting based on paths.
+  Depending on how you configure your Virtual Service, it could then rely on a Virtual Router to route the request to different virtual nodes, based on specific prefixes or headers.
+  
 - **Routes**: A route is associated with a virtual router. The route is used to match requests for the virtual router and to distribute traffic to its associated virtual nodes. If a route matches a request, it can distribute traffic to one or more target virtual nodes. In this walkthrough, we will look at routes matching on `path`, `prefix`, `queryParameters` and `headers` in HTTP Routes. 
  
     A sample spec for Route is:
     
-    ```
+    ```json
   {
-  	"spec": {
-  		"priority": 1,
-  		"httpRoute": {
-  			"action": {
-  				"weightedTargets": [{
-  					"virtualNode": "my-ingress-v2-node",
-  					"weight": 1
-  				}]
-  			},
-  			"match": {
-  				"headers": [{
-  					"name": "color_header",
-  					"match": {
-  						"prefix": "redoryellow"
-  					}
-  				}],
-  				"prefix": "/",
-  				"queryParameters": [{
-  					"name": "color",
-  					"match": {
-  						"exact": "yellow"
-  					}
-  				}],
-  			}
-  		}
-  	}
+    "spec": {
+      "priority": 1,
+      "httpRoute": {
+        "action": {
+          "weightedTargets": [{
+            "virtualNode": "my-ingress-v2-node",
+            "weight": 1
+          }]
+        },
+        "match": {
+          "headers": [{
+            "name": "color_header",
+            "match": {
+              "prefix": "redoryellow"
+            }
+          }],
+          "prefix": "/",
+          "queryParameters": [{
+            "name": "color",
+            "match": {
+              "exact": "yellow"
+            }
+          }],
+        }
+      }
+    }
   }       
     ```
  
@@ -246,22 +246,22 @@ Let's create the mesh.
 
 1. After a few minutes, the applications should be deployed and you will see an output such as:
 
-	```bash
-	Successfully created/updated stack - ${ENVIRONMENT_NAME}-ecs-service
-	Bastion endpoint:
-	12.345.6.789
-	ColorApp endpoint:
-	http://howto-Publi-55555555.us-west-2.elb.amazonaws.com
-	```
+  ```bash
+  Successfully created/updated stack - ${ENVIRONMENT_NAME}-ecs-service
+  Bastion endpoint:
+  12.345.6.789
+  ColorApp endpoint:
+  http://howto-Publi-55555555.us-west-2.elb.amazonaws.com
+  ```
  
-	```bash
-	export COLORAPP_ENDPOINT=<your_http_colorApp_endpoint e.g. http://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
-	```
-	And export the bastion endpoint for use later.
+  ```bash
+  export COLORAPP_ENDPOINT=<your_http_colorApp_endpoint e.g. http://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
+  ```
+  And export the bastion endpoint for use later.
 
-	```bash
-	export BASTION_IP=<your_bastion_endpoint e.g. 12.245.6.189>
-	```
+  ```bash
+  export BASTION_IP=<your_bastion_endpoint e.g. 12.245.6.189>
+  ```
 
 Your demo application is now set up and ready to use. 
 
@@ -271,13 +271,13 @@ curl "${COLORAPP_ENDPOINT}/red/tell"
 ```
  and see if the service correctly gives you a color back. 
 
-## Step 6: Test out Ingress Enhancements Configuration
+## Step 6: Demo Ingress Enhancements Scenarios
 
 
 ### Hostname Matching
 
 
-Here we will set up the mesh with an example to test matching on Hostnames in Gateway Routes. 
+Here we will set up the mesh with an example to demo matching on Hostnames in Gateway Routes. 
 
 The Gateway Route specification that will be using is:
 
@@ -368,7 +368,7 @@ In this example, we will be first setting up the ability
 to match on query parameters that are present in the URL. 
 To enable this, we configure an exact query parameter match on `"fishes=nemo"`. 
 
-We will also be testing out configuring custom prefix rewrites on the gateway route. Here we will rewrite 
+We will also demo configuring custom prefix rewrites on the gateway route. Here we will rewrite 
 the prefix `"/maroon/"` to `/red/` and we will modify the match on the appropriate Route Resource to match on `/red/tell` since we are disabling default prefix rewrites.
 
 The Gateway Route specification that we will be using is:
