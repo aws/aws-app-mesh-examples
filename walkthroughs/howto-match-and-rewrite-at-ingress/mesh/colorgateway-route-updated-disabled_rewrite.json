@@ -1,0 +1,21 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/red/"
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                },
+                "rewrite" : {
+                    "prefix" : {
+                        "defaultPrefix": "DISABLED"
+                    }
+                }
+            }
+        }
+    }
+}
