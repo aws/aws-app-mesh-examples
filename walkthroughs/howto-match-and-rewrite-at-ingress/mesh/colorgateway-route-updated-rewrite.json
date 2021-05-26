@@ -1,0 +1,27 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "prefix" : "/maroon/",
+                "queryParameters" : [{
+                    "name" : "fishes",
+                    "match" : {
+                        "exact" : "nemo"
+                    }
+                }]
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    }
+                },
+                "rewrite" : {
+                    "prefix" : {
+                        "prefix" : "/red/"
+                    }
+                }
+            }
+        }
+    }
+}
