@@ -112,12 +112,12 @@ Let's now jump into the example.
 4. You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
-aws ec2 create-key-pair --key-name color-app-match-and-rewrite-at-ingress | jq -r .KeyMaterial > ~/.ssh/color-app-match-and-rewrite-at-ingress.pem
-chmod go-r ~/.ssh/color-app-match-and-rewrite-at-ingress.pem
+aws ec2 create-key-pair --key-name color-app-ingress | jq -r .KeyMaterial > ~/.ssh/color-app-ingress.pem
+chmod go-r ~/.ssh/color-app-ingress.pem
 ```
 
-This command creates an Amazon EC2 Key Pair with name `color-app-match-and-rewrite-at-ingress` and saves the private key at
-`~/.ssh/color-app-match-and-rewrite-at-ingress.pem`.
+This command creates an Amazon EC2 Key Pair with name `color-app-ingress` and saves the private key at
+`~/.ssh/color-app-ingress.pem`.
 
 ## Step 2: Set Environment Variables
 We need to set a few environment variables before provisioning the
@@ -126,17 +126,17 @@ infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, a
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
-export KEY_PAIR_NAME=<color-app-match-and-rewrite-at-ingress or your-keypair-name>
+export KEY_PAIR_NAME=<color-app-ingress or your-keypair-name>
 ```
 
 Set the following environment variables specific to the walkthrough:
 
 ```bash
 export AWS_DEFAULT_REGION=us-west-2
-export ENVIRONMENT_NAME=AppMeshMatchAndRewriteIngressExample
-export MESH_NAME=ColorApp-MatchAndRewrite-Ingress
+export ENVIRONMENT_NAME=AppMeshIngressExample
+export MESH_NAME=ColorApp-Ingress
 export SERVICES_DOMAIN="default.svc.cluster.local"
-export COLOR_TELLER_IMAGE_NAME="howto-match-and-rewrite-ingress/colorteller"
+export COLOR_TELLER_IMAGE_NAME="howto-ingress/colorteller"
 ```
 
 These variables are also stored in `vars.env` and you can easily set them by setting the appropriate values in `vars.env` and then running `source ./vars.env`!
