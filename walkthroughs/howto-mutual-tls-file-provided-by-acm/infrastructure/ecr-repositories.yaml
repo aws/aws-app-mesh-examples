@@ -1,0 +1,97 @@
+Parameters:
+
+  ColorTellerImageName:
+    Description: The name for the color teller image
+    Type: String
+  
+  ColorTellerEnvoyImageName:
+    Description: The name for the color app envoy image
+    Type: String
+
+Resources:
+
+  ColorTellerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ColorTellerImageName
+
+  ColorTellerEnvoyRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ColorTellerEnvoyImageName
+  
+  EcrCleanupServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: EcrCleanup
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecr:DescribeImages'
+                  - 'ecr:BatchDeleteImage'
+                Resource: 
+                  - !GetAtt ColorTellerEnvoyRepository.Arn
+                  - !GetAtt ColorTellerRepository.Arn
+  
+  EcrCleanupFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Cleanup ECR images on delete of stack
+      Handler: index.lambda_handler
+      Role: !GetAtt EcrCleanupServiceRole.Arn
+      Runtime: python3.8
+      Timeout: 900
+      Environment:
+        Variables:
+          ColorTeller: !Ref ColorTellerEnvoyRepository
+          ColorTellerEnvoy: !Ref ColorTellerRepository
+      Code:
+        ZipFile: |
+          import json
+          import cfnresponse
+          import boto3
+          import os
+          import time
+          ecr = boto3.client('ecr')
+          ecr_teller = os.environ['ColorTeller']
+          ecr_envoy = os.environ['ColorTellerEnvoy']
+          
+          def lambda_handler(event, context):
+            print(json.dumps(event))
+            try:
+              if event['RequestType'] == 'Delete':
+                print('Delete event, will clean up ECR')
+                time.sleep(120)
+                delete_all_ecr_images(ecr_teller)
+                delete_all_ecr_images(ecr_envoy)
+              else:
+                print('This is Update or Create event, will send success')
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
+            except:
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, '')
+          
+          def delete_all_ecr_images(ecr_repo):
+            len_images = ecr.describe_images(repositoryName=ecr_repo)['imageDetails']
+            while len(len_images) > 0:
+              for image in len_images:
+                ecr.batch_delete_image(repositoryName=ecr_repo,imageIds = [{'imageDigest': image['imageDigest']}])
+              len_images = ecr.describe_images(repositoryName=ecr_repo)['imageDetails']
+
+  EcrCleanupCustomResource:
+    Type: Custom::EcrCleanup
+    Properties:
+      ServiceToken: !GetAtt EcrCleanupFunction.Arn
+      ColorTeller: !Ref ColorTellerEnvoyRepository
+      ColorTellerEnvoy: !Ref ColorTellerRepository

@@ -1,0 +1,151 @@
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Environment Name for the deployment
+    Default: mtls-ec2-appmesh-example
+  MeshName:
+    Type: String
+    Description: Name of AWS App Mesh
+    Default: mtls-ec2-appmesh
+  ServiceDomain:
+    Type: String
+    Description: Service Domain for AWS App Mesh
+    Default: mtls-ec2.svc.cluster.local
+  TlsState:
+    Type: String
+    Default: mtls
+    Description: State of TLS in AWS App Mesh
+    AllowedValues:
+      - no-tls
+      - 1way-tls
+      - mtls
+Conditions:
+  1wayTls: !Equals 
+    - !Ref TlsState
+    - 1way-tls
+  mtls: !Equals 
+    - !Ref TlsState
+    - mtls
+  setTls: !Or 
+    - Condition: mtls
+    - Condition: 1wayTls
+
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E3002
+
+Resources:
+  Mesh:
+    Type: 'AWS::AppMesh::Mesh'
+    Properties:
+      MeshName: !Ref MeshName
+
+  Gateway:
+    Type: 'AWS::AppMesh::VirtualGateway'
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualGatewayName: gateway-vgw
+      Spec: !If 
+        - setTls
+        - !If 
+          - 1wayTls
+          -
+            BackendDefaults:
+              ClientPolicy:
+                TLS:
+                  Enforce: true
+                  Validation:
+                    Trust:
+                      ACM:
+                        CertificateAuthorityArns:
+                          - !ImportValue 
+                            'Fn::Sub': '${EnvironmentName}:AcmPcaColorTellerRootCAArn'
+            Listeners:
+              - PortMapping:
+                  Port: 9080
+                  Protocol: http
+          -
+            BackendDefaults:
+              ClientPolicy:
+                TLS:
+                  Certificate:
+                    File:
+                      CertificateChain: /keys/colorgateway_endpoint_cert_chain.pem
+                      PrivateKey: /keys/colorgateway_endpoint_dec_pri_key.pem
+                  Enforce: true
+                  Validation:
+                    Trust:
+                      ACM:
+                        CertificateAuthorityArns:
+                            - !ImportValue 
+                              'Fn::Sub': '${EnvironmentName}:AcmPcaColorTellerRootCAArn'
+            Listeners:
+              - PortMapping:
+                  Port: 9080
+                  Protocol: http
+        - Listeners:
+            - PortMapping:
+                Port: 9080
+                Protocol: http
+
+  Service:
+    Type: 'AWS::AppMesh::VirtualService'
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: !Sub colorteller.${ServiceDomain}
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: !GetAtt Node.VirtualNodeName
+
+  Route:
+    Type: 'AWS::AppMesh::GatewayRoute'
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualGatewayName: gateway-vgw
+      GatewayRouteName: colorteller-route
+      Spec:
+        HttpRoute:
+          Action:
+            Target:
+              VirtualService:
+                VirtualServiceName: !GetAtt Service.VirtualServiceName
+          Match:
+            Prefix: /
+
+  Node:
+    Type: 'AWS::AppMesh::VirtualNode'
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+            TLS: !If
+            - setTls
+            - !If 
+              - 1wayTls
+              - Certificate:
+                  ACM:
+                    CertificateArn: !ImportValue 
+                          'Fn::Sub': '${EnvironmentName}:AcmPcaColorTellerEndpointCertArn'
+                Mode: STRICT
+              - Certificate:
+                  ACM:
+                    CertificateArn: !ImportValue 
+                          'Fn::Sub': '${EnvironmentName}:AcmPcaColorTellerEndpointCertArn'
+                Mode: STRICT
+                Validation:
+                  Trust:
+                    File:
+                      CertificateChain: /keys/colorgateway_endpoint_cert_chain.pem
+            - !Ref 'AWS::NoValue'
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: !Ref ServiceDomain
+            ServiceName: colorteller
+
