@@ -3,31 +3,28 @@ In this walk through, we'll enable mTLS between two applications in App Mesh usi
 
 Refer to [Envoy SDS](https://www.envoyproxy.io/docs/envoy/latest/configuration/security/secret) docs for additional details on Envoy's Secret Discovery Service.
 
-SPIRE will be used as SDS provider in this walk through and will be the only SDS provider option supported in the Preview release. SPIRE is an Identity Management platform which at its heart is a tool chain that automatically issues and rotates authorized SVIDs (SPIFFE Verifiable Identity Document). A SPIRE Agent will run on each of the nodes on the cluster and will expose a Workload API via a Unix Domain Socket. All the envoys on a particular node will reach out to the local SPIRE Agent over UDS. Please refer [here](https://spiffe.io/docs/latest/spire/understand/) for additional details.
+SPIRE will be used as SDS provider in this walk through and will be the only SDS provider option supported currently. SPIRE is an Identity Management platform which at its heart is a tool chain that automatically issues and rotates authorized SVIDs (SPIFFE Verifiable Identity Document). A SPIRE Agent will run on each of the nodes on the cluster and will expose a Workload API via a Unix Domain Socket. All the envoys on a particular node will reach out to the local SPIRE Agent over UDS. Please refer [here](https://spiffe.io/docs/latest/spire/understand/) for additional details.
 
 In App Mesh, traffic encryption is enabled between Virtual Nodes and VirtualGateways, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy(envoy) to negotiate and terminate TLS on your application's behalf. We will be configuring an SDS cluster in Envoy to obtain certificates from the SDS provider (i.e.,) SPIRE.
 
 ## Prerequisites
 
-This feature is currently only available in [App Mesh preview](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) and will work with App Mesh controller [here](https://github.com/aws/eks-charts/tree/preview/stable/appmesh-controller). App Mesh preview is only provided in the `us-west-2` region.
-
 1. [Walkthrough: App Mesh with EKS](../eks/)
-2. Run the following to check the version of controller you are running.
+2. Run the following to check the version of controller you are running. v1.3.0 is the minimum controller version required for mTLS feature.
 ```
 $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 
-v1.2.1-mtls-preview
-```
-3. [Setup](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html) AWS CLI to use preview channel
-```
-curl https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json \
-        -o $HOME/appmesh-preview-model.json
-aws configure add-model \
-    --service-name appmesh-preview \
-    --service-model file://$HOME/appmesh-preview-model.json
+v1.3.0
 ```
 
-4. Install Docker. `deploy_app.sh` script builds the demo application images using Docker CLI.
+3. Run the following to check that SDS is enabled.
+```
+$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.spec.template.spec.containers[].args[] | select(contains("enable-sds"))'
+
+--enable-sds=true
+```
+
+4. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Setup Environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-mtls-sds-based folder, all commands will be ran from this location
@@ -57,6 +54,7 @@ Walk through uses built-in k8s node attestor([k8s_sat](https://github.com/spiffe
 ```bash
 ./deploy_spire.sh
 ```
+**Note:** You can also install sample SPIRE Server and Agent via helm. Please refer to [SPIRE Server](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-server) and [SPIRE Agent](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-agent) charts in EKS charts repository for instructions on how to install them. If you prefer to install SPIRE via the sample helm charts for this walkthrough then please make sure to set the SPIRE trust domain to `howto-k8s-mtls-sds-based.aws` (--set config.trustDomain=howto-k8s-mtls-sds-based.aws)
 
 Let's check if both SPIRE Server and Agent are up and running. You should see a SPIRE Agent up and running on every node on your cluster.
 
@@ -183,16 +181,16 @@ replicaset.apps/green-7d6c78dfd8   1         1         1       2m
 replicaset.apps/red-64c8887c8d     1         1         1       2m
 
 NAME                                  ARN                                                                                                                         AGE
-virtualrouter.appmesh.k8s.aws/color   arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualRouter/color_howto-k8s-mtls-sds-based   2m
+virtualrouter.appmesh.k8s.aws/color   arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualRouter/color_howto-k8s-mtls-sds-based   2m
 
 NAME                                   ARN                                                                                                                                            AGE
-virtualservice.appmesh.k8s.aws/color   arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualService/color.howto-k8s-mtls-sds-based.svc.cluster.local   2m
+virtualservice.appmesh.k8s.aws/color   arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualService/color.howto-k8s-mtls-sds-based.svc.cluster.local   2m
 
 NAME                                ARN                                                                                                                       AGE
-virtualnode.appmesh.k8s.aws/blue    arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/blue_howto-k8s-mtls-sds-based    2m
-virtualnode.appmesh.k8s.aws/front   arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/front_howto-k8s-mtls-sds-based   2m
-virtualnode.appmesh.k8s.aws/green   arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/green_howto-k8s-mtls-sds-based   2m
-virtualnode.appmesh.k8s.aws/red     arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/red_howto-k8s-mtls-sds-based     2m
+virtualnode.appmesh.k8s.aws/blue    arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/blue_howto-k8s-mtls-sds-based    2m
+virtualnode.appmesh.k8s.aws/front   arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/front_howto-k8s-mtls-sds-based   2m
+virtualnode.appmesh.k8s.aws/green   arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/green_howto-k8s-mtls-sds-based   2m
+virtualnode.appmesh.k8s.aws/red     arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/red_howto-k8s-mtls-sds-based     2m
 
 Note: "1111111111" is a dummy Account ID. You should see your Accoount ID in place of "1111111111"
 ```
@@ -289,15 +287,15 @@ spec:
       hostname: color-blue.howto-k8s-mtls-sds-based.svc.cluster.local
 ```
 
-We can check VirtualNode info in App Mesh Preview. Let's check blue VirtualNode config with mTLS enabled under listener.
+We can check VirtualNode info in App Mesh. Let's check blue VirtualNode config with mTLS enabled under listener.
 
 ```
-aws appmesh-preview describe-virtual-node --virtual-node-name blue_howto-k8s-mtls-sds-based --mesh-name howto-k8s-mtls-sds-based
+aws appmesh describe-virtual-node --virtual-node-name blue_howto-k8s-mtls-sds-based --mesh-name howto-k8s-mtls-sds-based
 {
     "virtualNode": {
         "meshName": "howto-k8s-mtls-sds-based",
         "metadata": {
-            "arn": "arn:aws:appmesh-preview:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/blue_howto-k8s-mtls-sds-based",
+            "arn": "arn:aws:appmesh:us-west-2:1111111111:mesh/howto-k8s-mtls-sds-based/virtualNode/blue_howto-k8s-mtls-sds-based",
             "createdAt": 1606022091.476,
             "lastUpdatedAt": 1606022091.476,
             "meshOwner": "1111111111",

@@ -89,7 +89,7 @@ deploy_images() {
 }
 
 deploy_cloudmap_ns() {
-    nsId=($(aws servicediscovery list-namespaces |
+    nsId=($(aws servicediscovery list-namespaces --output json |
         jq -r ".Namespaces[] | select(.Name | contains(\"${CLOUDMAP_NAMESPACE}\")) | .Id"))
 
     if [ -z "${nsId}" ]; then

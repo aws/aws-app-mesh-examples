@@ -1,7 +1,7 @@
 ## Overview
 In this article, we are going to start to explore how to use App Mesh across kubernetes clusters. App Mesh is a service mesh that lets you control and monitor services spanning multiple AWS compute environments. We'll demonstrate this by using 2 kubernetes clusters(EKS) within a VPC and a App Mesh that spans the clusters using Cloud Map. This example shows how Kubernetes deployments can use AWS Cloud Map for service-discovery when using App Mesh.
 
-We will use two EKS clusters in a single VPC to explain the concept of cross cluster mesh using Cloud Map. The diagram below illustrates the big picture. This is intentionally meant to be a simple example for clarity, but in the real world the App Mesh can span multiple different compute types like ECS, fargate, Kubernetes on EC2 etc.
+We will use two EKS clusters in a single VPC to explain the concept of cross cluster mesh using Cloud Map. This is intentionally meant to be a simple example for clarity, but in the real world the App Mesh can span multiple different compute types like ECS, fargate, Kubernetes on EC2 etc.
 
 In this example there are two EKS clusters within a VPC and a mesh spanning both clusters . The setup Cloud Map services and three EKS Deployments as described below. The front container will be deployed in Cluster 1 and the color containers will be deployed in Cluster 2 . The Goal is to have a single Mesh across the clusters works via DNS resolution using Cloud Map.
 
@@ -38,7 +38,8 @@ In order to successfully carry out the base deployment:
 * Make sure to have kubectl installed (https://kubernetes.io/docs/tasks/tools/install-kubectl/), at least version 1.11 or above.
 * Make sure to have jq installed (https://stedolan.github.io/jq/download/).
 * Make sure to have aws-iam-authenticator installed (https://github.com/kubernetes-sigs/aws-iam-authenticator), required for eksctl
-* Install eksctl (https://eksctl.io/), for example, on macOS with brew tap weaveworks/tap and brew install weaveworks/tap/eksctl, and make sure it's on at least on version 0.23.0. 
+* Install eksctl (https://eksctl.io/), for example, on macOS with brew tap weaveworks/tap and brew install weaveworks/tap/eksctl, and make sure it's on at least on version 0.23.0.
+* Install Docker. It is needed to build the demo application images.
 
 v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
@@ -47,28 +48,31 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 
 You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [=v0.3.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/legacy-controller/CHANGELOG.md)
 
-Note that this walkthrough assumes throughout to operate in the us-east-1 region.
-
 ### Cluster provisioning
+
+Setup region
+```
+export AWS_DEFAULT_REGION=<enter AWS region>
+```
 
 Create an EKS cluster with eksctl using the following command:
 ```
-eksctl create cluster --name=eksc2 --nodes=3 --alb-ingress-access 
---region=us-east-1 --ssh-access --asg-access  --full-ecr-access  
---external-dns-access --appmesh-access --vpc-cidr 172.16.0.0/16
+eksctl create cluster --name=eksc2 --nodes=3 --alb-ingress-access \
+--region=$AWS_DEFAULT_REGION --ssh-access --asg-access  --full-ecr-access \
+--external-dns-access --appmesh-access --vpc-cidr 172.16.0.0/16 \
 --auto-kubeconfig
-#[✔]  EKS cluster "eksc2-useast1" in "us-east-1" region is ready
+#[✔]  EKS cluster "eksc2" is ready
 ```
 
 Once cluster creation is complete open an other tab and create an other EKS cluster with eksctl using the following command:
 Note: Use the public and private subnets created as part of cluster1 in this command. See this (https://eksctl.io/usage/vpc-networking/) for more details.
 ```
-eksctl create cluster --name=eksc1 --nodes=2 --alb-ingress-access 
---region=us-east-1 --ssh-access --asg-access  --full-ecr-access  
---external-dns-access --appmesh-access  --auto-kubeconfig 
---vpc-private-subnets=<comma seperated private subnets>
---vpc-public-subnets=<comma seperated public subnets>
-#[✔]  EKS cluster "eksc1" in "us-east-1" region is ready
+eksctl create cluster --name=eksc1 --nodes=2 --alb-ingress-access \
+--region=$AWS_DEFAULT_REGION --ssh-access --asg-access  --full-ecr-access \
+--external-dns-access --appmesh-access  --auto-kubeconfig \
+--vpc-private-subnets=<comma seperated private subnets> \
+--vpc-public-subnets=<comma seperated public subnets> 
+#[✔]  EKS cluster "eksc1" is ready
 ```
 
 When completed, update the KUBECONFIG environment variable in each tab according to the eksctl output, repectively:
@@ -88,33 +92,31 @@ Follow the instructions provided [here](../eks/base.md#install-app-mesh--kuberne
 
 We are now ready to deploy our front and colorapp applications to respective clusters along with the App Mesh which will span both clusters.
 
-
 ## Setup
 
 1. You can run all commands from this location
    ```
-   >> git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
-   >> cd aws-app-mesh-examples/walkthroughs/howto-k8s-cross-cluster
+   git clone https://github.com/aws/aws-app-mesh-examples
+   cd aws-app-mesh-examples/walkthroughs/howto-k8s-cross-cluster
    ```
 2. **Your** account id:
     ```
     export AWS_ACCOUNT_ID=<your_account_id>
     ```
-3. **Region** e.g. us-east-1
+3. **ENVOY_IMAGE** environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
     ```
-    export AWS_DEFAULT_REGION=us-east-1
+    export ENVOY_IMAGE=...
     ```
-4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
-5. **VPC_ID** environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use `aws eks describe-cluster`. See [below](#1-how-can-i-use-cloud-map-namespaces-other-than-privatednsnamespace) for reason why Cloud Map PrivateDnsNamespace is required.
+4. **VPC_ID** environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use `aws eks describe-cluster`. See [below](#1-how-can-i-use-cloud-map-namespaces-other-than-privatednsnamespace) for reason why Cloud Map PrivateDnsNamespace is required.
     ```
     export VPC_ID=...
     ```
-6. **CLUSTER** environment variables are set
+5. **CLUSTER** environment variables are set
     ```
-    export CLUSTER1=<cluster name>
-    export CLUSTER2=<cluster name>
+    export CLUSTER1=eksc1
+    export CLUSTER2=eksc2
     ```
-7. Deploy
+6. Deploy
     ```. 
     ./deploy.sh
     ```
@@ -125,12 +127,16 @@ As a part of deploy command we have pushed the images to ECR, created a namespac
 
 You may verify this, with the following command:
 ```
-aws servicediscovery discover-instances --namespace howto-k8s-cross-cluster.pvt.aws.local
+aws servicediscovery discover-instances --namespace howto-k8s-cross-cluster.pvt.aws.local \
  --service-name colorapp
 ```
 This should resolve to the backend service.
 
 You can verify under App Mesh console to verify that the virtual nodes, virtual services, virtual router and routes are indeed created.
+
+## Enable network ingress from eksc2 to eksc1
+
+Open port 8080 on security group applied on eksc1 Node group to the eksc2 Security group.
 
 ## Test the application
 
@@ -151,42 +157,7 @@ root@curler-5bd7c8d767-x657t:/#curl front.howto-k8s-cross-cluster.svc.cluster.lo
 blue
 ```
 
-*Note:* 
-For this to work, you need to open port 8080 on security group applied on the Cluster2 Node group to the cluster1’s Security group.
-
 Great! You have successfully tested the service communication across clusters using the App Mesh and Cloud Map.
-
-Lets make a few requests and check that our x-ray side car is indeed capturing traces.
-
-Run the following command from a curler pod within Cluster1
-```
-$ for ((n=0;n<200;n++)); do echo "$n: $(curl front/color)"; done
-1: red
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     4  100     4    0     0    205      0 --:--:-- --:--:-- --:--:--   210
-2: blue
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     3  100     3    0     0    136      0 --:--:-- --:--:-- --:--:--   142
-......
-......
-196: blue
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     4  100     4    0     0    236      0 --:--:-- --:--:-- --:--:--   250
-197: blue
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     3  100     3    0     0    180      0 --:--:-- --:--:-- --:--:--   187
-198: red
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100     4  100     4    0     0    212      0 --:--:-- --:--:-- --:--:--   222
-199: blue
-```
-
-You may now look at our X-Ray console to see the service map and traces.
 
 ## FAQ
 ### 1. My front app is unable to talk to colorapp on the seond cluster?

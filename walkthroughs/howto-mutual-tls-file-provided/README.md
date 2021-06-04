@@ -1,7 +1,5 @@
 # Configuring Mutual TLS with File Provided TLS Certificates
 
-> Note: This feature is currently only available in the App Mesh Preview channel.
-
 In this walkthrough, like the [basic file-based TLS example](../howto-tls-file-provided), we'll enable TLS encryption with mutual (two-way) authentication between two endpoints in App Mesh using X.509 certificates.
 
 ## Introduction
@@ -14,23 +12,14 @@ Validation typically involves checking at least that the certificate is signed b
 
 In this guide, we will be configuring Envoy proxies using certificates hosted in AWS Secrets Manager, which a modified Envoy image will retrieve during startup. We will have a virtual gateway connected to a single backend service. Both the gateway and backend proxies will present certificates signed by the same Certificate Authority (CA), though you could choose to use separate CAs.
 
+## Prerequisites
+
+1. Install Docker. It is needed to build the demo application images.
+2. Install the unix command line utility `jq`. If you don't already have it, [you can install it from here](https://stedolan.github.io/jq/).
+
 ## Part 1: Setup
 
-### Step 1: Download the App Mesh Preview CLI
-
-You will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the commands below.
-
-```bash
-curl https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json \
-        -o $HOME/appmesh-preview-model.json
-aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model file://$HOME/appmesh-preview-model.json
-```
-
-Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, [you can install it from here](https://stedolan.github.io/jq/).
-
-### Step 2: Create Color App Infrastructure
+### Step 1: Create Color App Infrastructure
 
 We'll start by setting up the basic infrastructure for our services. All commands will be provided as if run from the same directory as this README.
 
@@ -79,7 +68,7 @@ Next, build and deploy the color app image.
 
 Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`.
 
-### Step 3: Generate the Certficates
+### Step 2: Generate the Certificates
 
 Before we can encrypt traffic between services in the mesh, we need to generate our certificates. For this demo we will generate:
 
@@ -109,7 +98,7 @@ We are going to store these certificates in [AWS Secrets Manager](https://aws.am
 ./src/tlsCertificates/deploy.sh
 ```
 
-### Step 4: Export our Custom Envoy Image
+### Step 3: Export our Custom Envoy Image
 
 Finally, we can build and deploy our custom Envoy image. This container has a `/keys` directory and a custom startup script that will pull the necessary certificates from `AWS Secrets Manager` before starting up the Envoy proxy.
 
@@ -119,7 +108,7 @@ Finally, we can build and deploy our custom Envoy image. This container has a `/
 
 > Note: This walkthrough uses this custom Envoy image for illustration purposes; using this method, rotating certificates will require a deployment of your tasks. You may instead choose to mount to your tasks an Elastic Block Storage or Elastic File System volume to store your TLS materials and reference them through the API accordingly.
 
-### Step 5: Create a basic Mesh without TLS
+### Step 4: Create a basic Mesh without TLS
 
 The initial state of the mesh will provision the gateway and colorteller to communicate in plain HTTP. Once we have bootstrapped the application, a follow-up section will progressively add TLS configuration.
 
@@ -131,7 +120,7 @@ Let's create the mesh.
 
 The gateway will listen on port 9080, and route all traffic to the virtual node listening on port 9080.
 
-### Step 6: Deploy and Verify
+### Step 5: Deploy and Verify
 
 Now with the mesh defined, we can deploy our service to ECS and test it out.
 
@@ -253,6 +242,8 @@ As mentioned above, by default a client proxy will be configured to accept any c
 ```bash
 ./mesh/mesh.sh update_2_client_policy_bad_san
 ```
+
+> Note: if you get an "Unknown parameter" error, you may need to update your AWS CLI
 
 This adds the following configuration to the gateway, specifying which Certificate Authorities it trusts (in our case, just the one certificate that we generated).
 
