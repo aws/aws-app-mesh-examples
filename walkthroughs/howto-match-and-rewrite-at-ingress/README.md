@@ -98,12 +98,12 @@ Let's now jump into the example.
    ```bash
        aws configure add-model \
            --service-name appmesh-preview \
-           --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
+           --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/main/appmesh-preview/service-model.json
    ```
    
    If you're using the AWS CLI version 2, add the service model with the following commands:
    ```bash
-       curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
+       curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/main/appmesh-preview/service-model.json
        aws configure add-model --service-name appmesh-preview --service-model file://service-model.json
    ```
 
@@ -394,7 +394,7 @@ The Gateway Route specification that we will be using is:
                 },
                 "rewrite" : {
                     "prefix" : {
-                        "prefix" : "/red/"
+                        "value" : "/red/"
                     }
                 }
             }
