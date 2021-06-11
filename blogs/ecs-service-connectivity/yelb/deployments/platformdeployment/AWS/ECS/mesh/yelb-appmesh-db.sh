@@ -1,3 +1,4 @@
+
 #Gets the yelb db endpoint from yelb-fargate cloudformation stack
 export YELB_DB_ENDPOINT=$(aws cloudformation describe-stacks --stack-name yelb-fargate --query "Stacks[0].Outputs[?OutputKey=='YelbDBEndpointUrl'].OutputValue" --output text)
 
