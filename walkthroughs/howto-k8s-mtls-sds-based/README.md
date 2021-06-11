@@ -24,6 +24,10 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.
 --enable-sds=true
 ```
 
+If SDS is disabled, run the following to enable it:
+```
+$ helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sds.enabled=true
+```
 4. Install Docker. It is needed to build the demo application images.
 
 ## Step 1: Setup Environment
