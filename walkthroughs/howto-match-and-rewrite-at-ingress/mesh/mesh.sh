@@ -22,7 +22,7 @@ sanity_check() {
     fi
 }
 
-appmesh_cmd="aws appmesh-preview"
+appmesh_cmd="aws appmesh"
 
 create_mesh() {
     spec_file=$1

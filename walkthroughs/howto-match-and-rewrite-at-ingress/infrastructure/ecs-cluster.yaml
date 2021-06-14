@@ -75,7 +75,6 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchFullAccess
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
         - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
-        - arn:aws:iam::aws:policy/AWSAppMeshPreviewEnvoyAccess
 
   TaskExecutionIamRole:
     Type: AWS::IAM::Role
