@@ -92,24 +92,9 @@ Let's now jump into the example.
 
 1. This walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 
-2. This example uses features in the [App Mesh Preview Channel](https://docs.aws.amazon.com/app-mesh/latest/userguide/preview.html). You'll need to install the latest `appmesh-preview`      model.
+2. Install Docker. It is needed to build the demo application images.
 
-   Add the Preview Channel service model to the AWS CLI version 1 with the following command:
-   ```bash
-       aws configure add-model \
-           --service-name appmesh-preview \
-           --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/main/appmesh-preview/service-model.json
-   ```
-   
-   If you're using the AWS CLI version 2, add the service model with the following commands:
-   ```bash
-       curl -o service-model.json https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/main/appmesh-preview/service-model.json
-       aws configure add-model --service-name appmesh-preview --service-model file://service-model.json
-   ```
-
-3. Install Docker. It is needed to build the demo application images.
-
-4. You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+3. You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
 aws ec2 create-key-pair --key-name color-app-ingress | jq -r .KeyMaterial > ~/.ssh/color-app-ingress.pem
