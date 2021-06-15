@@ -1,0 +1,17 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: rewrite-prefix
+  namespace: ${APP_NAMESPACE}
+spec:
+  httpRoute:
+    match:
+      prefix: "/test/"  
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-paths
+      rewrite:
+        prefix:
+          value: "/red/"
