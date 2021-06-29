@@ -185,7 +185,7 @@ The `tls` block specifies the ACM certificate to use.
 ## Setup 4: Verify TLS is enabled
 
 ```bash
-kubectl -n default run -it --rm curler --image=tutum/curl /bin/bash
+kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
 ```
