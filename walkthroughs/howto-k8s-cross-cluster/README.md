@@ -152,7 +152,7 @@ blue
 
 You can also test it using a simple curler pod, like so:
 ```
->>kubectl --generator=run-pod/v1 run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest
+>>kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 root@curler-5bd7c8d767-x657t:/#curl front.howto-k8s-cross-cluster.svc.cluster.local/color
 blue
 ```
