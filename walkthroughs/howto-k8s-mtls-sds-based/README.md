@@ -475,7 +475,7 @@ listener.0.0.0.0_15000.ssl.handshake: 1
 Let's start a sample `curler` pod
 
 ```bash
-kubectl --generator=run-pod/v1 run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest
+kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 Once you're at the prompt, let's try to reach out to `blue` backend
 ```
