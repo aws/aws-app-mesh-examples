@@ -36,7 +36,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 Add a curler on your cluster -
 ```
-kubectl run -it curler --image=tutum/curl /bin/bash
+kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
 Run the commands on curler to test.
