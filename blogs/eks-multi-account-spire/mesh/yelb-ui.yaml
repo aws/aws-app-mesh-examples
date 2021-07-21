@@ -1,0 +1,48 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yelb-ui
+  namespace: yelb
+spec:
+  podSelector:
+    matchLabels:
+      app: yelb-ui
+  listeners:
+    - portMapping:
+        port: 4567
+        protocol: http  
+  serviceDiscovery:
+    dns:
+      hostname: yelb-ui.yelb.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceARN: ${VS_ARN}
+  backendDefaults:
+    clientPolicy:
+      tls:
+        enforce: true
+        mode: STRICT
+        certificate:
+          sds:
+            secretName: spiffe://am-multi-account-mesh/frontend
+        validation:
+          trust:
+            sds:
+              secretName: spiffe://am-multi-account-mesh
+          subjectAlternativeNames:
+            match:
+              exact:
+              - spiffe://am-multi-account-mesh/yelbapp
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: yelb-ui
+  namespace: yelb
+spec:
+  awsName: yelb-ui
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: yelb-ui
