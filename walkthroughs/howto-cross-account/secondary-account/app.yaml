@@ -99,12 +99,8 @@ Resources:
     Type: AWS::ServiceDiscovery::Service
     Properties:
       Name: 'backend'
-      DnsConfig:
-        NamespaceId:
-          Fn::ImportValue: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
-        DnsRecords:
-        - Type: A
-          TTL: 300
+      NamespaceId:
+        Fn::ImportValue: !Sub '${ProjectName}:ECSServiceDiscoveryNamespace'
       HealthCheckCustomConfig:
         FailureThreshold: 1
 
