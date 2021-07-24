@@ -14,10 +14,9 @@ Resources:
       ClusterName: !Ref ProjectName
 
   ECSServiceDiscoveryNamespace:
-    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Type: AWS::ServiceDiscovery::HttpNamespace
     Properties:
       Name: !Sub 'secondary.${ProjectName}.local'
-      Vpc: !Ref VPC
 
 Outputs:
   ECSCluster:
