@@ -40,7 +40,7 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.
 
     export ENVOY_IMAGE=...
     
-    **Note:** 1.15.1.0 is the minimum envoy version required for mTLS support using SDS.
+    **Note:** By default, the appmesh-controller v1.4.0 comes with envoy version 1.17.2.0. Until we fix this walkthrough to work with the latest envoy version, we recommend that you use envoy version >= 1.15.1.0 and <= 1.16.3.0 for mTLS support using SDS.
 
 
 ## Step 2: SPIRE Installation
