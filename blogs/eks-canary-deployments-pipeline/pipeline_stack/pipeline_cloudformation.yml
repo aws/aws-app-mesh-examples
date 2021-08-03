@@ -253,7 +253,7 @@ Resources:
                 Version: 1
               Configuration:
                 RepositoryName: !GetAtt [ CodeRepository, Name ]
-                BranchName: master
+                BranchName: main
               OutputArtifacts:
                 - Name: SourceOutput
         - Name: Build
