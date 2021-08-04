@@ -16,7 +16,11 @@ base_path="$(dirname $(dirname $(realpath $0)) )"
 cd /tmp
 git clone https://github.com/mreferre/yelb.git
 
-cd ./yelb
+cp /tmp/yelb/yelb-ui/* $base_path/microservices/yelb-ui/ -rf
+cp /tmp/yelb/yelb-db/* $base_path/microservices/yelb-db/ -rf
+cp /tmp/yelb/yelb-appserver/* $base_path/microservices/yelb-appserver/ -rf
+
+cd $base_path/microservices
 
 for dockerfile in `find ./ |grep Dockerfile`
   do
@@ -34,11 +38,6 @@ for dockerfile in `find ./ |grep Dockerfile`
         fi
       done
   done
-
-
-cp ./yelb/yelb-ui/* $base_path/microservices/yelb-ui/ -rf
-cp ./yelb/yelb-db/* $base_path/microservices/yelb-db/ -rf
-cp ./yelb/yelb-appserver/* $base_path/microservices/yelb-appserver/ -rf
 
 # Zip the microservice resources
 cd $base_path/microservices/yelb-ui && zip -r yelb-ui.zip ./* > /dev/null
@@ -80,3 +79,12 @@ while [ "$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --
 done
 echo -e "\n$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')"
 
+
+#Cleanup
+rm /tmp/yelb -rf
+rm $base_path/microservices/yelb-ui/* > /dev/null
+rm $base_path/microservices/yelb-ui/clarity-seed-newfiles -rf
+rm $base_path/microservices/yelb-db/* > /dev/null
+rm $base_path/microservices/yelb-appserver/* > /dev/null
+rm $base_path/microservices/yelb-appserver/modules -rf
+rm $base_path/microservices/redis-server/redis-server.zip

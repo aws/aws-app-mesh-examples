@@ -113,6 +113,15 @@ Resources:
                   - !GetAtt [ CodeRepository, Arn ]
               - Effect: Allow
                 Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource:
+                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/nginx'
+                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/node'
+                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/postgres'
+                  - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/redis'
+              - Effect: Allow
+                Action:
                   - ecr:PutImage
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchCheckLayerAvailability
