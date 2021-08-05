@@ -82,9 +82,10 @@ echo -e "\n$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME 
 
 #Cleanup
 rm /tmp/yelb -rf
-rm $base_path/microservices/yelb-ui/* > /dev/null
+rm $base_path/microservices/yelb-ui/* 2> /dev/null 
 rm $base_path/microservices/yelb-ui/clarity-seed-newfiles -rf
-rm $base_path/microservices/yelb-db/* > /dev/null
-rm $base_path/microservices/yelb-appserver/* > /dev/null
+rm $base_path/microservices/yelb-db/* 2> /dev/null
+rm $base_path/microservices/yelb-appserver/* 2> /dev/null
 rm $base_path/microservices/yelb-appserver/modules -rf
 rm $base_path/microservices/redis-server/redis-server.zip
+rm $base_path/microservices/redis-server/Dockerfile.bak 2> /dev/null

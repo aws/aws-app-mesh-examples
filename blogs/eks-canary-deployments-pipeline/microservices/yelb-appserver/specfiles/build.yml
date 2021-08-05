@@ -7,6 +7,7 @@ phases:
       - $(aws ecr get-login --no-include-email)
   build:
     commands:
+      - chmod +x ./startup.sh
       - docker build --tag $REPOSITORY .
   post_build:
     commands:
