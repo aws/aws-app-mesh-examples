@@ -7,7 +7,12 @@ SHARED_STACK_NAME=eks-deployment-stepfunctions
 BUILD_COMPUTE_TYPE=BUILD_GENERAL1_SMALL
 USE_SAMPLE_MICROSERVICES='True'
 
+
+export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
+
+
 # Add environment variables to bash_profile
+echo "export ACCOUNT_ID=${ACCOUNT_ID}" | tee -a ~/.bash_profile
 echo "export AWS_REGION=${AWS_REGION}" | tee -a ~/.bash_profile
 echo "export EKS_CLUSTER_NAME=${EKS_CLUSTER_NAME}" | tee -a ~/.bash_profile
 echo "export SHARED_STACK_NAME=${SHARED_STACK_NAME}" | tee -a ~/.bash_profile

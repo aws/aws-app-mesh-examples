@@ -30,7 +30,7 @@ for dockerfile in `find ./ |grep Dockerfile`
           echo "Adding $image to ECR"
           docker pull $image
           imagename=$(echo $image |cut -d ':' -f1)
-          aws ecr create-repository --repository-name $imagename
+          aws ecr create-repository --repository-name $imagename --region $AWS_REGION
           docker tag $image $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image
           docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image
           sed -i.bak "s#$image#$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image#g" $dockerfile
@@ -88,4 +88,10 @@ rm $base_path/microservices/yelb-db/* 2> /dev/null
 rm $base_path/microservices/yelb-appserver/* 2> /dev/null
 rm $base_path/microservices/yelb-appserver/modules -rf
 rm $base_path/microservices/redis-server/redis-server.zip
-rm $base_path/microservices/redis-server/Dockerfile.bak 2> /dev/null
+rm $base_path/microservices/redis-server/Dockerfile 2> /dev/null
+mv $base_path/microservices/redis-server/Dockerfile.bak $base_path/microservices/redis-server/Dockerfile
+rm $base_path/shared_stack/lambda_functions/check_deployment_version/function.zip
+rm $base_path/shared_stack/lambda_functions/deploy_and_switch_traffic/function.zip
+rm $base_path/shared_stack/lambda_functions/gather_healthcheck_status/function.zip 
+rm $base_path/shared_stack/lambda_functions/rollback_or_finish_upgrade/function.zip
+rm $base_path/shared_stack/lambda_functions/update_deployment_version/function.zip
