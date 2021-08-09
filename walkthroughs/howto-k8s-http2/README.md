@@ -13,7 +13,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 3. Install Docker. It is needed to build the demo application images.
 
-```
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/howto-k8s-http2 folder, all commands will be ran from this location
