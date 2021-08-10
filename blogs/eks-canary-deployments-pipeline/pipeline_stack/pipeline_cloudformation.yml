@@ -147,6 +147,74 @@ Resources:
                     - BucketName:
                         Fn::ImportValue:
                           !Sub '${SharedStackName}-Pipeline-Artifacts'
+  
+  AmazonCloudWatchEventRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - !Join 
+            - ''
+            - - 'arn:aws:codecommit:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !Ref MicroserviceName
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - main
+      Targets:
+        - Arn: !Join 
+            - ''
+            - - 'arn:aws:codepipeline:'
+              - !Ref 'AWS::Region'
+              - ':'
+              - !Ref 'AWS::AccountId'
+              - ':'
+              - !Ref CodePipeline
+          RoleArn: !GetAtt 
+            - AmazonCloudWatchEventRole
+            - Arn
+          Id: !Sub 'codepipeline-${MicroserviceName}'
+          
+  AmazonCloudWatchEventRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: !Sub 'cwe-pipeline-execution-${MicroserviceName}'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'codepipeline:StartPipelineExecution'
+                Resource: !Join 
+                  - ''
+                  - - 'arn:aws:codepipeline:'
+                    - !Ref 'AWS::Region'
+                    - ':'
+                    - !Ref 'AWS::AccountId'
+                    - ':'
+                    - !Ref CodePipeline
+  
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -263,6 +331,7 @@ Resources:
               Configuration:
                 RepositoryName: !GetAtt [ CodeRepository, Name ]
                 BranchName: main
+                PollForSourceChanges: false
               OutputArtifacts:
                 - Name: SourceOutput
         - Name: Build

@@ -39,6 +39,11 @@ for dockerfile in `find ./ |grep Dockerfile`
       done
   done
 
+#Modifying the increment to 2 to demonstrate in blog post
+sed -i "s/count +1 WHERE name/count +2 WHERE name/g" $base_path/microservices/yelb-appserver/modules/restaurantsdbupdate.rb
+
+
+
 # Zip the microservice resources
 cd $base_path/microservices/yelb-ui && zip -r yelb-ui.zip ./* > /dev/null
 cd $base_path/microservices/yelb-db && zip -r yelb-db.zip ./* > /dev/null
