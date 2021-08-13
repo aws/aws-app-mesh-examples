@@ -26,7 +26,10 @@ for stack in "${stacks[@]}"; do
 done
 
 echo "Waiting on stack delete"
-sleep 10
+seconds=45; date1=$((`date +%s` + $seconds)); 
+while [ "$date1" -ge `date +%s` ]; do 
+  echo -ne "$(date -u --date @$(($date1 - `date +%s` )) +%H:%M:%S)\r"; 
+done
 
 echo "Getting s3 buckets in stack eks-deployment-stepfunctions to remove."
 bucket=$(aws cloudformation describe-stack-resources --stack-name eks-deployment-stepfunctions --region $AWS_REGION| jq -c -r '.StackResources[] | select( .ResourceType == "AWS::S3::Bucket" ) | .PhysicalResourceId')
@@ -34,10 +37,14 @@ echo "Deleting bucket : $bucket"
 aws s3 rb s3://$bucket --force || true
 echo "Deleting stack eks-deployment-stepfunctions"
 aws cloudformation delete-stack --stack-name eks-deployment-stepfunctions --region $AWS_REGION|| true
-
-echo "Deleting stack eks-deployment-stepfunctions"
+echo "Deleting stack kubectl-lambda-layer"
 aws cloudformation delete-stack --stack-name kubectl-lambda-layer --region $AWS_REGION|| true
 
+echo "Waiting on stack delete"
+seconds=45; date1=$((`date +%s` + $seconds)); 
+while [ "$date1" -ge `date +%s` ]; do 
+  echo -ne "$(date -u --date @$(($date1 - `date +%s` )) +%H:%M:%S)\r"; 
+done
 
 eksctl delete iamserviceaccount --region $AWS_REGION --cluster $EKS_CLUSTER_NAME --namespace appmesh-system --name appmesh-controller
 
@@ -63,3 +70,6 @@ done
 
 echo "Deleting EKS cluster : blogpost"
 eksctl delete cluster --region $AWS_REGION --name $EKS_CLUSTER_NAME
+
+aws appmesh delete-mesh --mesh-name yelb --region $AWS_REGION
+

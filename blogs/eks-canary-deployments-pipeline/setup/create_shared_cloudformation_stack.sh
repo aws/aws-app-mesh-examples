@@ -13,43 +13,46 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 # Get the base directory path that will be used to zip the resources before uploading to S3
 base_path="$(dirname $(dirname $(realpath $0)) )"
 
-cd /tmp
-git clone https://github.com/mreferre/yelb.git
 
-cp /tmp/yelb/yelb-ui/* $base_path/microservices/yelb-ui/ -rf
-cp /tmp/yelb/yelb-db/* $base_path/microservices/yelb-db/ -rf
-cp /tmp/yelb/yelb-appserver/* $base_path/microservices/yelb-appserver/ -rf
-
-cd $base_path/microservices
-
-for dockerfile in `find ./ |grep Dockerfile`
-  do
-    for image in `cat $dockerfile |grep FROM|cut -d ' ' -f2`
-      do
-        if ! echo $image |grep -q '/'; then
-          echo "Adding $image to ECR"
-          docker pull $image
-          imagename=$(echo $image |cut -d ':' -f1)
-          aws ecr create-repository --repository-name $imagename --region $AWS_REGION
-          docker tag $image $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image
-          sed -i.bak "s#$image#$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image#g" $dockerfile
-          
-        fi
-      done
-  done
-
-#Modifying the increment to 2 to demonstrate in blog post
-sed -i "s/count +1 WHERE name/count +2 WHERE name/g" $base_path/microservices/yelb-appserver/modules/restaurantsdbupdate.rb
-
-
-
-# Zip the microservice resources
-cd $base_path/microservices/yelb-ui && zip -r yelb-ui.zip ./* > /dev/null
-cd $base_path/microservices/yelb-db && zip -r yelb-db.zip ./* > /dev/null
-cd $base_path/microservices/yelb-appserver && zip -r yelb-appserver.zip ./* > /dev/null
-cd $base_path/microservices/redis-server && zip -r redis-server.zip ./* > /dev/null
-
+if [ $USE_SAMPLE_MICROSERVICES == "True" ]
+then
+  cd /tmp
+  git clone https://github.com/mreferre/yelb.git
+  
+  cp /tmp/yelb/yelb-ui/* $base_path/microservices/yelb-ui/ -rf
+  cp /tmp/yelb/yelb-db/* $base_path/microservices/yelb-db/ -rf
+  cp /tmp/yelb/yelb-appserver/* $base_path/microservices/yelb-appserver/ -rf
+  
+  cd $base_path/microservices
+  
+  for dockerfile in `find ./ |grep Dockerfile`
+    do
+      for image in `cat $dockerfile |grep FROM|cut -d ' ' -f2`
+        do
+          if ! echo $image |grep -q '/'; then
+            echo "Adding $image to ECR"
+            docker pull $image
+            imagename=$(echo $image |cut -d ':' -f1)
+            aws ecr create-repository --repository-name $imagename --region $AWS_REGION
+            docker tag $image $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image
+            docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image
+            sed -i.bak "s#$image#$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$image#g" $dockerfile
+            
+          fi
+        done
+    done
+  
+  #Modifying the increment to 2 to demonstrate in blog post
+  sed -i "s/count +1 WHERE name/count +2 WHERE name/g" $base_path/microservices/yelb-appserver/modules/restaurantsdbupdate.rb
+  
+  
+  
+  # Zip the microservice resources
+  cd $base_path/microservices/yelb-ui && zip -r yelb-ui.zip ./* > /dev/null
+  cd $base_path/microservices/yelb-db && zip -r yelb-db.zip ./* > /dev/null
+  cd $base_path/microservices/yelb-appserver && zip -r yelb-appserver.zip ./* > /dev/null
+  cd $base_path/microservices/redis-server && zip -r redis-server.zip ./* > /dev/null
+fi
 
 # Zip the lambda function resources
 cd $base_path/shared_stack/lambda_functions/check_deployment_version && zip -r function.zip ./* > /dev/null
