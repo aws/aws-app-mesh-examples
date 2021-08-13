@@ -151,7 +151,7 @@ spec:
       serviceAccountName: spire-server
       containers:
         - name: spire-server
-          image: gcr.io/spiffe-io/spire-server:0.10.0
+          image: gcr.io/spiffe-io/spire-server:0.12.0
           args:
             - -config
             - /run/spire/config/server.conf
@@ -272,7 +272,7 @@ spec:
           args: ["-t", "30", "spire-server:8081"]
       containers:
         - name: spire-agent
-          image: gcr.io/spiffe-io/spire-agent:0.10.0
+          image: gcr.io/spiffe-io/spire-agent:0.12.0
           args: ["-config", "/run/spire/config/agent.conf"]
           volumeMounts:
             - name: spire-config
