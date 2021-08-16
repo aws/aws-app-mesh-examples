@@ -47,25 +47,29 @@ kubectl logs -f deploy/greeter -c app -n howto-k8s-grpc-ingress-v2
 The basic setup configures gatewayroute (metadata-match) which forwards request if the service name is 'Hello'
 
 You will need the gRPC CLI tool:  
-#### Option1:  
-You can install the grpc_cli tool by following the link [here](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) 
-#### Option2:  
-You can use [Dockerfile](https://github.com/aws/aws-app-mesh-examples/blob/main/walkthroughs/howto-grpc-ingress-gateway/Dockerfile) to build an ubuntu image with grpc_cli installed  
+#### Option1: Recommended  
+You can use provided Dockerfile in root folder to build an ubuntu image with grpc_cli installed  
 ```
 docker build -t grpc_cli .
 docker run -it --rm grpc_cli
 ```
 
+#### Option2:  
+You can install the grpc_cli tool by following the link [here](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) 
+
+
 Get the GW endpoint which is backed by an NLB. Wait till NLB becomes active. You can check the State in aws console  
 ```
 GW_ENDPOINT=$(kubectl get svc ingress-gw -n howto-k8s-grpc-ingress-v2 --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+echo ${GW_ENDPOINT}
 ```
 
 ### ServiceName Based Match  
 The basic setup configures gatewayroute which forwards request based on service name alone  
 In other terminal, call the GW_ENDPOINT as below
 ```
-grpc_cli call ${GW_ENDPOINT}:80 SayHello 'user:"Alice"' --protofiles=greeter/input/input.proto
+grpc_cli call ${GW_ENDPOINT}:80 SayHello 'user:"Alice"' --protofiles=<relative_path_to_input.proto_file #./greeter/input/input.proto>
 
 Received initial metadata from server:
 date : Fri, 04 Jun 2021 07:19:42 GMT
