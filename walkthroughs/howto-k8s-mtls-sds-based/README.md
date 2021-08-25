@@ -44,9 +44,6 @@ v1.3.0
 4. ENVOY_IMAGE environment variable is set to App Mesh Envoy, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
 
     export ENVOY_IMAGE=...
-    
-    **Note:** By default, the appmesh-controller v1.4.0 comes with envoy version 1.17.2.0. However, this walkthrough is designed to work with envoy version >= 1.15.1.0 & <= 1.16.3.0 and so we recommend you to pick an envoy version in this range.
-
 
 ## Step 2: SPIRE Installation
 
@@ -59,7 +56,8 @@ Walk through uses built-in k8s node attestor([k8s_sat](https://github.com/spiffe
 ```bash
 ./deploy_spire.sh
 ```
-**Note:** You can also install sample SPIRE Server and Agent via helm. Please refer to [SPIRE Server](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-server) and [SPIRE Agent](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-agent) charts in EKS charts repository for instructions on how to install them. If you prefer to install SPIRE via the sample helm charts for this walkthrough then please make sure to set the SPIRE trust domain to `howto-k8s-mtls-sds-based.aws` (--set config.trustDomain=howto-k8s-mtls-sds-based.aws)
+**Note:** You can also install sample SPIRE Server and Agent via helm. Please refer to [SPIRE Server](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-server) and [SPIRE Agent](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-agent) charts in EKS charts repository for instructions on how to install them. If you prefer to install SPIRE via the sample helm charts for this walkthrough then please make sure to set the SPIRE trust domain to `howto-k8s-mtls-sds-based.aws` (--set config.trustDomain=howto-k8s-mtls-sds-based.aws)  
+The following walkthrough is designed to work with spire version >= v0.12.0 and < v1.0.0 with default set to 0.12.0
 
 Let's check if both SPIRE Server and Agent are up and running. You should see a SPIRE Agent up and running on every node on your cluster.
 
