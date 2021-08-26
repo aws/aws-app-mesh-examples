@@ -208,7 +208,7 @@ As we can see above, only `blue` passed the health check. Health check failed fo
 ## Setup 4: Verify TLS is enabled
 
 ```bash
-kubectl -n default run -it --rm curler --image=tutum/curl /bin/bash
+kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 
 ```

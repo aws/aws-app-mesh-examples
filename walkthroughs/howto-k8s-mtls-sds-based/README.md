@@ -18,11 +18,16 @@ v1.3.0
 ```
 
 3. Run the following to check that SDS is enabled.
-```
-$ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.spec.template.spec.containers[].args[] | select(contains("enable-sds"))'
+   
+		kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.spec.template.spec.containers[].args[] | select(contains("enable-sds"))'
 
---enable-sds=true
-```
+	 You should get as output:
+	 
+	 *--enable-sds=true*
+	 
+	 If SDS is not enable, update the App Mesh controller to enable it by running:
+
+		helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sds.enabled=true
 
 4. Install Docker. It is needed to build the demo application images.
 
@@ -40,7 +45,7 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r '.
 
     export ENVOY_IMAGE=...
     
-    **Note:** 1.15.1.0 is the minimum envoy version required for mTLS support using SDS.
+    **Note:** By default, the appmesh-controller v1.4.0 comes with envoy version 1.17.2.0. However, this walkthrough is designed to work with envoy version >= 1.15.1.0 & <= 1.16.3.0 and so we recommend you to pick an envoy version in this range.
 
 
 ## Step 2: SPIRE Installation
@@ -471,7 +476,7 @@ listener.0.0.0.0_15000.ssl.handshake: 1
 Let's start a sample `curler` pod
 
 ```bash
-kubectl -n default run -it --rm curler --image=tutum/curl /bin/bash
+kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest --rm
 ```
 Once you're at the prompt, let's try to reach out to `blue` backend
 ```

@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "./input";
+
+service Hello{
+    rpc SayHello(name) returns (Result){}
+}
+
+message Result{
+    string output=1;
+}
+
+message name{
+string user=1;
+}

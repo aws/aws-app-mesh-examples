@@ -18,7 +18,7 @@
                 },
                 "rewrite" : {
                     "prefix" : {
-                        "prefix" : "/red/"
+                        "value" : "/red/"
                     }
                 }
             }

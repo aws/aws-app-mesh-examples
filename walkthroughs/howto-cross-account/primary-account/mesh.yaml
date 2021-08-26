@@ -11,10 +11,10 @@ Resources:
 
   VirtualGateway:
     Type: AWS::AppMesh::VirtualGateway
-    Properties: 
+    Properties:
       MeshName: !GetAtt Mesh.MeshName
-      Spec: 
-        Listeners: 
+      Spec:
+        Listeners:
         - PortMapping:
             Port: 80
             Protocol: http
@@ -22,7 +22,7 @@ Resources:
 
   GatewayRoute:
     Type: AWS::AppMesh::GatewayRoute
-    Properties: 
+    Properties:
       GatewayRouteName: gateway-gr
       MeshName: !GetAtt Mesh.MeshName
       Spec:
@@ -48,9 +48,9 @@ Resources:
             Protocol: http
         ServiceDiscovery:
           AWSCloudMap:
-            NamespaceName: !Sub "${ProjectName}.local"
-            ServiceName: "backend"
-              
+            NamespaceName: !Sub '${ProjectName}.local'
+            ServiceName: backend
+
   VirtualRouter:
     Type: AWS::AppMesh::VirtualRouter
     Properties:
