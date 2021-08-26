@@ -1,0 +1,18 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: query-match
+  namespace: ${APP_NAMESPACE}
+spec:
+  httpRoute:
+    match:
+      prefix: "/query"
+      queryParameters:
+        - name: "color_type"
+          match:
+            exact: "white"   
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-white

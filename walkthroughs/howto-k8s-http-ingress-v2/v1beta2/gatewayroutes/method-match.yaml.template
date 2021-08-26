@@ -1,0 +1,15 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: method-match
+  namespace: ${APP_NAMESPACE}
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+      method: GET 
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-white

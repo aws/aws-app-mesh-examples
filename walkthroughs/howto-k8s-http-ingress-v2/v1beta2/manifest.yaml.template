@@ -1,0 +1,479 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${APP_NAMESPACE}
+  labels:
+    mesh: ${MESH_NAME}
+    gateway: ingress-gw
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: ${MESH_NAME}
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: ${MESH_NAME}
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: ingress-gw
+  namespace: ${APP_NAMESPACE}
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: ingress-gw
+  podSelector:
+    matchLabels:
+      app: ingress-gw
+  listeners:
+    - portMapping:
+        port: 8088
+        protocol: http
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: yellow
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: yellow
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-yellow.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: blue
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-blue.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: red
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: red
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-red.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: green
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: green
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-green.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: white
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: white
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-white.${APP_NAMESPACE}.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color-paths
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: color-paths.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: color-paths
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: ${APP_NAMESPACE}
+  name: color-paths
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  routes:
+    - name: color-route-blue
+      httpRoute:
+        match:
+          prefix: /blue
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: blue
+              weight: 1
+    - name: color-route-red
+      httpRoute:
+        match:
+          prefix: /red
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: red
+              weight: 1
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color-yellow
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: color-yellow.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: yellow
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color-green
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: color-green.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: green
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color-white
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: color-white.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: white
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-white
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: white
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-yellow
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: yellow
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-green
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: green
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: blue
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-red
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: red
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-paths
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-gw
+  namespace: ${APP_NAMESPACE}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8088
+      name: http
+  selector:
+    app: ingress-gw
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: green
+  template:
+    metadata:
+      labels:
+        app: color
+        version: green
+    spec:
+      containers:
+        - name: app
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${APP_NAMESPACE}/${APP}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "green"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: color
+        version: blue
+    spec:
+      containers:
+        - name: app
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${APP_NAMESPACE}/${APP}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "blue"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yellow
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: yellow
+  template:
+    metadata:
+      labels:
+        app: color
+        version: yellow
+    spec:
+      containers:
+        - name: app
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${APP_NAMESPACE}/${APP}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "yellow"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: red
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: red
+  template:
+    metadata:
+      labels:
+        app: color
+        version: red
+    spec:
+      containers:
+        - name: app
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${APP_NAMESPACE}/${APP}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "red"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: white
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: white
+  template:
+    metadata:
+      labels:
+        app: color
+        version: white
+    spec:
+      containers:
+        - name: app
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${APP_NAMESPACE}/${APP}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "white"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-gw
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingress-gw
+  template:
+    metadata:
+      labels:
+        app: ingress-gw
+    spec:
+      containers:
+        - name: envoy
+          image: 840364872350.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-envoy
+          ports:
+            - containerPort: 8088

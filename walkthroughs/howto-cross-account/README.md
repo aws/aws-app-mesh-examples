@@ -27,8 +27,8 @@ These backends will be configured in distinct accounts and made accessible throu
     cd walkthroughs/howto-cross-account
     ```
 2. Edit the `vars.env` file to add your account and profile settings:
-    
-    1. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. cross-account
+
+    1. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-cross-account
         ```
         export PROJECT_NAME=cross-account
         ```
@@ -69,9 +69,9 @@ These backends will be configured in distinct accounts and made accessible throu
         ```
         export AWS_DEFAULT_REGION=us-west-2
         ```
-    5. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
+    5. **ENVOY_IMAGE** set to the location of the App Mesh Envoy container image, see https://gallery.ecr.aws/appmesh/aws-appmesh-envoy
         ```
-        export ENVOY_IMAGE=840364872350.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/aws-appmesh-envoy:v1.12.2.1-prod
+        export ENVOY_IMAGE=public.ecr.aws/appmesh/aws-appmesh-envoy:v1.18.3.0-prod
         ```
     6. **Backend Images**
         ```

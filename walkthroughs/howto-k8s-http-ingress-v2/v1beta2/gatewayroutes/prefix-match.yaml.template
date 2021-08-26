@@ -1,0 +1,14 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: prefix-match
+  namespace: ${APP_NAMESPACE}
+spec:
+  httpRoute:
+    match:
+      prefix: "/paths"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-paths
