@@ -58,5 +58,5 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     curl localhost:7000/color
     ```
    
-1. You can edit these specifications in the manifest.yaml.template [here](./manifest.yaml.template). Run ./deploy.sh after any changes you make. For instance you can remove one of the weighted targets and trigger the curl command above to confirm that color route no longer appears.
+1. You can edit these specifications in the manifest.yaml.template [here](./v1beta2/manifest.yaml.template). Run ./deploy.sh after any changes you make. For instance you can remove one of the weighted targets and trigger the curl command above to confirm that color route no longer appears.
 

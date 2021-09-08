@@ -78,7 +78,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
    This is because our current mesh is only configured to route the gRPC Method `GetColor`. 
 
    We'll remove the `methodName` match condition in the gRPC route to match all methods for `color.ColorService`. 
-1. To do this remove the methodName specification in the [manifest](./manifest.yaml.template) and rerun the deploy script
+1. To do this remove the methodName specification in the [manifest](./v1beta2/manifest.yaml.template) and rerun the deploy script
 
 1. Now try updating the color again
     ```

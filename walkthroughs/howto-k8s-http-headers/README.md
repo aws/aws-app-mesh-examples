@@ -13,7 +13,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 3. Install Docker. It is needed to build the demo application images.
 
-```
+
 ## Setup
 
 1. Clone this repository and navigate to the walkthrough/howto-k8s-http-headers folder, all commands will be ran from this location
@@ -28,9 +28,9 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
 
 5. Deploy
-    ```.
+    ```
     ./deploy.sh
-```
+    ```
 
 ## Using curl to test
 

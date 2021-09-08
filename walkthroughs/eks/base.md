@@ -46,15 +46,15 @@ export KUBECONFIG=~/.kube/eksctl/clusters/appmeshtest
 
 In order to automatically inject App Mesh components and proxies on pod creation we need to create some custom resources on the clusters. We will use *helm* for that.
 
-*Code base*
+**Code base**
 
 Clone the repo and cd into the appropriate directory. We will be running all commands from this path.
 ```sh
-git clone https://github.com/aws/aws-app-mesh-examples (https://github.com/aws/aws-app-mesh-examples).git
+git clone https://github.com/aws/aws-app-mesh-examples.git
 cd aws-app-mesh-examples/walkthroughs/eks/
 ```
 
-*Install App Mesh Components*
+**Install App Mesh Components**
 
 Run the following set of commands to install the App Mesh controller 
 
