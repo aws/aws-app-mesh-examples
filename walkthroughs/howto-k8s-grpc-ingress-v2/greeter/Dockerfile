@@ -15,7 +15,7 @@ RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -o greeter ./cmd/main.go
 
-FROM amazonlinux:2
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
 COPY --from=builder /grpc_server/greeter ./greeter
 
 EXPOSE 9111

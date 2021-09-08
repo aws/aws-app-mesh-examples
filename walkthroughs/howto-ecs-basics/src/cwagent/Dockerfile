@@ -1,8 +1,10 @@
-FROM amazonlinux
-
-RUN yum install -y \
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+RUN yum update -y && \
+    yum install -y \
     shadow-utils \
-    https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+    https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 
 # NOTICE: copied from https://github.com/istio/istio/blob/master/docker/Dockerfile.base
 # Change ownership to allow agent to write generated files
