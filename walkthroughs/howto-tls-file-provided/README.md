@@ -43,7 +43,7 @@ If you are creating a new keypair, run these commands:
 
 ```bash
 aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | jq -r .KeyMaterial > ~/.ssh/$KEY_PAIR_NAME.pem
-chmod go-r ~/.ssh/$KEY_PAIR_NAME.pem
+chmod 400 ~/.ssh/$KEY_PAIR_NAME.pem
 ```
 
 This command creates an Amazon EC2 Key Pair and saves the private key at `~/.ssh/${KEY_PAIR_NAME}.pem`.

@@ -98,7 +98,7 @@ Let's now jump into the example.
 
 ```bash
 aws ec2 create-key-pair --key-name color-app-ingress | jq -r .KeyMaterial > ~/.ssh/color-app-ingress.pem
-chmod go-r ~/.ssh/color-app-ingress.pem
+chmod 400 ~/.ssh/color-app-ingress.pem
 ```
 
 This command creates an Amazon EC2 Key Pair with name `color-app-ingress` and saves the private key at

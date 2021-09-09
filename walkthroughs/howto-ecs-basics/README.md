@@ -202,4 +202,5 @@ When you are done with the example you can delete everything we created by runni
 
 ```
 ./deploy.sh delete
+./deploy-cw-dashboards.sh delete
 ```
