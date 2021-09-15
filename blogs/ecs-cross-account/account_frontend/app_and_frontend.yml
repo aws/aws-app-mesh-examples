@@ -220,7 +220,7 @@ Resources:
             - ContainerPort: 4567
               Protocol: "tcp"
         - Name: xray-daemon
-          Image: amazon/aws-xray-daemon
+          Image: public.ecr.aws/xray/aws-xray-daemon
           Essential: true
           User: "1337"
           PortMappings:
@@ -351,7 +351,7 @@ Resources:
             - ContainerPort: 80
               Protocol: "tcp"
         - Name: xray-daemon
-          Image: amazon/aws-xray-daemon
+          Image: public.ecr.aws/xray/aws-xray-daemon
           Essential: true
           User: "1337"
           PortMappings:

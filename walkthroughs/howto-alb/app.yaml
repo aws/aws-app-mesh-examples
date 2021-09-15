@@ -201,7 +201,7 @@ Resources:
                     - '/'
                     - !GetAtt 'BackendV1VirtualNode.VirtualNodeName'
         - Name: 'xray'
-          Image: "amazon/aws-xray-daemon"
+          Image: "public.ecr.aws/xray/aws-xray-daemon"
           Essential: true
           User: '1337'
           LogConfiguration:
@@ -303,7 +303,7 @@ Resources:
                     - '/'
                     - !GetAtt 'BackendV2VirtualNode.VirtualNodeName'
         - Name: 'xray'
-          Image: "amazon/aws-xray-daemon"
+          Image: "public.ecr.aws/xray/aws-xray-daemon"
           Essential: true
           User: '1337'
           LogConfiguration:
@@ -642,7 +642,7 @@ Resources:
                     - '/'
                     - !GetAtt 'FrontVirtualNode.VirtualNodeName'
         - Name: 'xray'
-          Image: "amazon/aws-xray-daemon"
+          Image: "public.ecr.aws/xray/aws-xray-daemon"
           Essential: true
           User: '1337'
           LogConfiguration:
