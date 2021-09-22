@@ -54,6 +54,7 @@ for PROFILE in shared frontend backend
       --set serviceAccount.create=false \
       --set serviceAccount.name=appmesh-controller \
       --set sds.enabled=true
+      # --set sidecar.image.tag=v1.16.3.0-prod
 
     echo "Creating the yelb namespace..."
     kubectl create ns yelb

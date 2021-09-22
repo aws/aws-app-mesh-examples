@@ -14,7 +14,6 @@ data:
       socket_path = "{{ .Values.config.socketPath }}"
       trust_bundle_path = "/run/spire/bundle/bundle.crt"
       trust_domain = "{{ .Values.config.trustDomain }}"
-      enable_sds = true
     }
 
     plugins {
@@ -39,4 +38,12 @@ data:
           plugin_data {
           }
       }
+    }
+
+    health_checks {
+      listener_enabled = true
+      bind_address = "0.0.0.0"
+      bind_port = "8080"
+      live_path = "/live"
+      ready_path = "/ready"
     }

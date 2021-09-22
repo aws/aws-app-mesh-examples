@@ -16,4 +16,5 @@
 # ignore backend kubeconfig ConfigMap
 **/back_kubeconfig.yaml 
 
-
+# ignore spire bundle 
+**/spire-bundle.yaml

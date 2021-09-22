@@ -6,8 +6,8 @@ replicaCount: 1
 
 image:
   repository: public.ecr.aws/g0z4v6x0/aws-spire-server
-  tag: latest
-  pullPolicy: IfNotPresent
+  tag: 1.0.1
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: "spire-server"
@@ -53,3 +53,5 @@ config:
   bindAddress: 0.0.0.0
   #SPIRE Server Bind Port
   bindPort: 8081
+  #SPIRE Server Socket Path
+  socketPath: /tmp/spire-server/private/api.sock
