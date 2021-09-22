@@ -505,10 +505,14 @@ Delete the CloudFormation stacks:
 
 ```bash
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecs-cluster
 aws ecr delete-repository --force --repository-name $COLOR_TELLER_IMAGE_NAME
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-vpc
 ```
 Delete the Mesh:
 
