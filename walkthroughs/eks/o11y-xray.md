@@ -13,14 +13,19 @@ $ aws iam attach-role-policy \
       --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 ```
 
-Enable X-Ray tracing for the App Mesh data plane
+Enable X-Ray tracing for the App Mesh data plane. Optionally you can set the sampling rate by specifying the field `tracing.samplingRate=0.1` which corresponds to 10%.
 
 ```sh
 helm upgrade -i appmesh-controller eks/appmesh-controller \
     --namespace appmesh-system \
     --set tracing.enabled=true \
-    --set tracing.provider=x-ray
+    --set tracing.provider=x-ray \
+    --set tracing.samplingRate=0.1
 ```
+
+> Note: `tracing.samplingRate` option is only available on the App Mesh controller v1.4.2 onwards.
+
+&nbsp;
 
 The X-Ray daemon is automatically injected by [App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s) into your app containers. Let's verify that with the following command:
 
