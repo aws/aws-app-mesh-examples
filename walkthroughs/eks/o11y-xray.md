@@ -23,7 +23,7 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
     --set tracing.samplingRate=0.1
 ```
 
-> Note: `tracing.samplingRate` option and `appmesh.k8s.aws/volumeMounts` option is only available on the App Mesh controller v1.4.2 onwards.
+> Note: `tracing.samplingRate` option and `appmesh.k8s.aws/volumeMounts` option is only available on the App Mesh controller v1.5.0 onwards.
 
 &nbsp;
 
