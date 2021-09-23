@@ -15,13 +15,16 @@ Set or export the following environment variables with appropriate values for yo
 
 ```bash
 # Your AWS account ID
-export AWS_ACCOUNT_ID=999999999999
+export AWS_ACCOUNT_ID=<YOUR AWS ACCOUNT ID>
 
 # The AWS region you want to use
 export AWS_DEFAULT_REGION=us-west-2
 
 # The prefix to use for all the resources we create
 export RESOURCE_PREFIX=demo
+
+# Set the `ENVOY_IMAGE` environment variables.
+export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 ```
 
 ## Publish application container images to ECR
@@ -52,4 +55,11 @@ Save the endpoint in a variable and curl it to see responses:
 ```bash
 app=http://demo-Public-1G1K8NGKE7VH6-369254194.us-west-1.elb.amazonaws.com
 curl $app/color
+```
+
+## Teardown
+When you are done with the example you can delete everything we created by running:
+
+```
+./deploy.sh delete
 ```

@@ -93,7 +93,7 @@ Internet --> (terminate TLS) NLB (originate TLS) --> (terminate TLS) Gateway (or
 
 ```bash
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
-chmod go-r ~/.ssh/color-app.pem
+chmod 400 ~/.ssh/color-app.pem
 ```
 
 This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at
@@ -505,10 +505,14 @@ Delete the CloudFormation stacks:
 
 ```bash
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecs-cluster
 aws ecr delete-repository --force --repository-name $COLOR_TELLER_IMAGE_NAME
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
+aws cloudformation wait stack-delete-complete --stack-name $ENVIRONMENT_NAME-vpc
 ```
 Delete the Mesh:
 

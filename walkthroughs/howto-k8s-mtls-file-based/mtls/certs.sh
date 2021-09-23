@@ -45,7 +45,7 @@ echo "Generating CA certificates."
 generate_ca ca_1
 generate_ca ca_2
 
-# Generate RSA cert for the blue color app
+# Generate RSA cert for the frontend app
 echo "Generating frontend certificate."
 generate_rsa_key front ca_1
 generate_x509_cert front ca_1
