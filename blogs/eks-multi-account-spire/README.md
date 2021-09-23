@@ -224,7 +224,7 @@ This script creates a spire namespace within the main EKS cluster and launches t
 
 Next, install the SPIRE server using a helm chart:
 ```bash
-helm install appmesh-spire-server appmesh-spire-server \
+helm install appmesh-spire-server ./appmesh-spire-server \
  --namespace spire \
  --set config.trustDomain=am-multi-account-mesh
  ```
@@ -294,7 +294,7 @@ kubectl describe cm spire-bundle -n spire
 ```
 Next, install the spire agent using the provided Helm chart: 
 ```bash
-helm install appmesh-spire-agent appmesh-spire-agent \
+helm install appmesh-spire-agent ./appmesh-spire-agent \
  --namespace spire \
  --set serviceAccount.name=spire-agent-front \
  --set config.clusterName=frontend-k8s-cluster \
