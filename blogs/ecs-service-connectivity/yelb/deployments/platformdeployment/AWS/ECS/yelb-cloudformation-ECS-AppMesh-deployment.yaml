@@ -158,7 +158,7 @@ Resources:
                       - ContainerName: envoy
                         Condition: HEALTHY
                 - Name: xray
-                  Image: amazon/aws-xray-daemon
+                  Image: public.ecr.aws/xray/aws-xray-daemon
                   Essential: true
                   User: '1337'
                   LogConfiguration:
@@ -377,7 +377,7 @@ Resources:
                       - ContainerName: envoy
                         Condition: HEALTHY
                 - Name: xray
-                  Image: amazon/aws-xray-daemon
+                  Image: public.ecr.aws/xray/aws-xray-daemon
                   Essential: true
                   User: '1337'
                   LogConfiguration:

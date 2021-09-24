@@ -1,6 +1,6 @@
 {
   "name": "xray-daemon",
-  "image": "amazon/aws-xray-daemon",
+  "image": "public.ecr.aws/xray/aws-xray-daemon",
   "user": "1337",
   "essential": true,
   "cpu": 32,

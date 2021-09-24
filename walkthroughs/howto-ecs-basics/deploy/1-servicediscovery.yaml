@@ -315,7 +315,7 @@ Resources:
             - Name: XRAY_APP_NAME
               Value: 'color'
         - Name: 'xray'
-          Image: "amazon/aws-xray-daemon"
+          Image: "public.ecr.aws/xray/aws-xray-daemon"
           Essential: true
           User: '1337'
           LogConfiguration:
@@ -416,7 +416,7 @@ Resources:
             - Name: XRAY_APP_NAME
               Value: 'front'
         - Name: 'xray'
-          Image: "amazon/aws-xray-daemon"
+          Image: "public.ecr.aws/xray/aws-xray-daemon"
           Essential: true
           User: '1337'
           LogConfiguration:
