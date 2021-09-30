@@ -16,8 +16,11 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -o /frontend-app .
 
-FROM amazonlinux:2
-RUN yum install -y ca-certificates
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+RUN yum update -y && \
+    yum install -y ca-certificates && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 COPY --from=builder /frontend-app bin/frontend-app
 
 ENTRYPOINT ["bin/frontend-app"]
