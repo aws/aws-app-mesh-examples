@@ -1,13 +1,15 @@
-FROM ubuntu:20.04
+FROM public.ecr.aws/ubuntu/ubuntu:20.04
 
-RUN apt-get -y update
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get -y install \
+
+RUN apt-get -y update && \
+    apt-get -y install \
     tzdata \
     libgflags-dev \
     build-essential \
     cmake \
-    git
+    git && \
+    apt-get clean
 
 WORKDIR /home
 COPY ./color.proto .
