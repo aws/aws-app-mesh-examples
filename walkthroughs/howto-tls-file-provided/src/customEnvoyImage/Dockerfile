@@ -1,19 +1,21 @@
-ARG ENVOY_IMAGE
+ARG ENVOY_IMAGE=public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod
 FROM ${ENVOY_IMAGE}
 
+ARG AWS_DEFAULT_REGION
+
 RUN yum update -y && \
-    yum install -y python3 jq curl unzip && \
-    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip" && \
-    unzip awscli-bundle.zip && \
-    sed -i "s/env python/env python3/g" ./awscli-bundle/install && \
-    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws && \
-    rm -rf awscli-bundle.zip ./awscli-bundle && \
-    yum remove -y python3 unzip && \
+    yum install -y jq curl unzip less && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    yum -y remove curl unzip && \
+    rm -rf awscliv2.zip ./aws/install && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 RUN mkdir /keys && chown 1337:1337 /keys 
 
+ENV AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
 COPY entryPoint.sh /bin/entryPoint.sh
 
 CMD ["/bin/entryPoint.sh"]

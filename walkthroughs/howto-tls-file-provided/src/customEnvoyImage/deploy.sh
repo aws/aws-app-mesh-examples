@@ -46,6 +46,8 @@ ecr_login() {
 ecr_login $ENVOY_REGISTRY_ID
 
 # build and push
-docker build -t $IMAGE $DIR --build-arg ENVOY_IMAGE=$ENVOY_IMAGE
+docker build -t $IMAGE $DIR \
+    --build-arg ENVOY_IMAGE=$ENVOY_IMAGE \
+    --build-arg AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
 ecr_login $AWS_ACCOUNT_ID
 docker push $IMAGE
