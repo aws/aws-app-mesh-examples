@@ -8,7 +8,7 @@ RUN yum update -y && \
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
-    rpm -e --nodeps curl unzip && \
+    rpm -e --nodeps unzip && \
     rm -rf awscliv2.zip ./aws/install && \
     yum clean all && \
     rm -rf /var/cache/yum
