@@ -1,4 +1,4 @@
-ARG ENVOY_IMAGE=public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod
+ARG ENVOY_IMAGE
 FROM ${ENVOY_IMAGE}
 
 ARG AWS_DEFAULT_REGION
