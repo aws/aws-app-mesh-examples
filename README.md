@@ -18,6 +18,19 @@ Learn more at https://aws.amazon.com/app-mesh
 
 For help getting started with App Mesh, take a look at the [examples](https://github.com/aws/aws-app-mesh-examples/tree/master/examples) in this repo.
 
+### China Regions
+All the examples and walkthrough are written for commercial regions. You need to make few changes to make them work for China regions, below are some changes that will be needed:
+
+* Change ARN:
+  For China regions include aws-cn in all arns. So instead of 'arn:aws:' it starts with 'arn:aws-cn:'.
+  Replace 'arn:aws:' with 'arn:${AWS::Partition}:' to make it work for all partitions.
+* Change Endpoints:
+  The endpoint domain for China regions is amazonaws.com.cn. Replace the endpoints from amazonaws.com to amazonaws.com.cn Refer [this](https://docs.amazonaws.cn/en_us/aws/latest/userguide/endpoints-Beijing.html) doc for a list of endpoints for cn-north-1.
+  Do not change the Service Principal like ecs-tasks.amazonaws.com, it is a Service Principal not an endpoint.
+* Change TCP ports 80/8080/443
+  By default all AWS China accounts are blocked for TCP ports 80/8080/443 with EC2 and S3 services. These ports will be unlocked when an ICP license has been provided by customers. As a workaround you can use some other port for ex: 9090. The url that you curl for, needs to explicitly mention the port now.
+  For example: http://appme-.....us-west-2.elb.amazonaws.com.cn:9090/color
+
 ### Roadmap
 
 The AWS App Mesh team maintains a [public roadmap](https://github.com/aws/aws-app-mesh-roadmap).
