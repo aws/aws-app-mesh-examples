@@ -1,4 +1,4 @@
-FROM bitnami/ruby:2.4.2-r1
+FROM public.ecr.aws/bitnami/ruby:latest
 MAINTAINER massimo@it20.info
 
 ################## BEGIN INSTALLATION ######################
