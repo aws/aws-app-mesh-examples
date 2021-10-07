@@ -12,14 +12,7 @@ ENV GOPATH="${HOME}/go"
 ENV PATH="${PATH}:${GOPATH}/bin"
 
 # Copy the code from the host and compile it
-WORKDIR $GOPATH/src/github.com/username/repo
-COPY Gopkg.toml Gopkg.lock ./
 COPY . ./
-
-# Use the default go proxy
-ARG GO_PROXY=https://proxy.golang.org
-ENV GOPROXY=$GO_PROXY
-RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -a -installsuffix nocgo -o /app .
 
 FROM scratch

@@ -11,12 +11,8 @@ ENV PATH="${PATH}:/usr/local/go/bin"
 ENV GOPATH="${HOME}/go"
 ENV PATH="${PATH}:${GOPATH}/bin"
 
+# Copy the code from the host and compile it
 COPY . ./
-
-# Use the default go proxy
-ARG GO_PROXY=https://proxy.golang.org
-ENV GOPROXY=$GO_PROXY
-RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -o /app .
 
 FROM scratch
