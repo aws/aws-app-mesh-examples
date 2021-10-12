@@ -12,8 +12,11 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -o /aws-app-mesh-examples-colorapp .
 
-FROM amazonlinux:2
-RUN yum install -y ca-certificates
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+RUN yum update -y && \
+    yum install -y ca-certificates && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 COPY --from=builder /aws-app-mesh-examples-colorapp bin/aws-app-mesh-examples-colorapp
 
 ENTRYPOINT ["/bin/aws-app-mesh-examples-colorapp"]

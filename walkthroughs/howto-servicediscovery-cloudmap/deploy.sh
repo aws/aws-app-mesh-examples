@@ -75,4 +75,28 @@ main() {
     print_endpoint
 }
 
+delete_cfn_stack() {
+    stack_name=$1
+    echo "Deleting Cloud Formation stack: \"${stack_name}\"..."
+    aws cloudformation delete-stack --stack-name $stack_name
+    echo "Waiting for the stack $stack_name to be deleted, this may take a few minutes..."
+    aws cloudformation wait stack-delete-complete --stack-name $stack_name
+    echo 'Done'
+}
+
+delete_stacks() {
+    echo "delete stack ${RESOURCE_PREFIX}..."
+    delete_cfn_stack ${RESOURCE_PREFIX}
+    echo "delete stack ${RESOURCE_PREFIX}-mesh..."
+    delete_cfn_stack ${RESOURCE_PREFIX}-mesh
+    echo "delete stack ${RESOURCE_PREFIX}-vpc..."
+    delete_cfn_stack ${RESOURCE_PREFIX}-vpc
+}
+
+action=${1:-"deploy"}
+if [ "$action" == "delete" ]; then
+    delete_stacks
+    exit 0
+fi
+
 main $@

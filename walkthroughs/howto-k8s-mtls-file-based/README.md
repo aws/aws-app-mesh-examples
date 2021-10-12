@@ -236,7 +236,7 @@ You should see connection getting refused when you attempt to communicate with `
 Let's check for SSL errors in  `front`.
 
 ```bash
-kubectl exec -it $FRONT_POD -n howto-k8s-mtls-file-based -c envoy  -- curl -s http://localhost:9901/stats | grep ssl | grep green | grep fail_verify_error`
+kubectl exec -it $FRONT_POD -n howto-k8s-mtls-file-based -c envoy  -- curl -s http://localhost:9901/stats | grep ssl | grep green | grep fail_verify_error
 
 cluster.cds_egress_howto-k8s-mtls-file-based_green_howto-k8s-mtls-file-based_http_8080.ssl.fail_verify_error: 9
 ```

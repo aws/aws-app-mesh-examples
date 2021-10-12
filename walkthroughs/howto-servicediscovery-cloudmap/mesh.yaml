@@ -92,7 +92,7 @@ Resources:
           Action:
             Target:
               VirtualService:
-                VirtualServiceName: !GetAtt ColorTellerService.VirtualNodeName
+                VirtualServiceName: !GetAtt ColorTellerService.VirtualServiceName
           Match:
             Prefix: /
       VirtualGatewayName: colorgateway

@@ -27,9 +27,17 @@ ecr_login() {
     fi
 }
 
+describe_create_ecr_registry() {
+    local repo_name=$1
+    local region=$2
+    aws ecr describe-repositories --repository-names ${repo_name} --region ${region} \
+        || aws ecr create-repository --repository-name ${repo_name} --region ${region}
+}
+
 # build
 docker build --build-arg GO_PROXY=$GO_PROXY -t $COLOR_TELLER_IMAGE ${DIR}
 
 # push
 ecr_login
+describe_create_ecr_registry colorteller ${AWS_DEFAULT_REGION}
 docker push $COLOR_TELLER_IMAGE
