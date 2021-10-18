@@ -3,9 +3,8 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2
 COPY requirements.txt ./
 
 RUN yum update -y && \
-    yum install -y python3 python3-pip && \
+    yum install -y python3 && \
     pip3 install --no-cache-dir -r requirements.txt && \
-    yum remove -y python3-pip && \
     yum clean all && \
     rm -rf /var/cache/yum
 

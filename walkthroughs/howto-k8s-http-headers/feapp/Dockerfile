@@ -7,4 +7,4 @@ RUN yum update -y && \
 COPY serve.py ./
 RUN chmod +x ./serve.py
 
-CMD ["python", "-u", "./serve.py"]
+CMD ["python3", "-u", "./serve.py"]
