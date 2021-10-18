@@ -1,9 +1,18 @@
-FROM golang:1-stretch as builder
+FROM public.ecr.aws/amazonlinux/amazonlinux:2 AS builder
+RUN yum update -y && \
+    yum install -y ca-certificates unzip tar gzip git && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+RUN curl -LO https://golang.org/dl/go1.17.1.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzvf go1.17.1.linux-amd64.tar.gz
+
+ENV PATH="${PATH}:/usr/local/go/bin"
+ENV GOPATH="${HOME}/go"
+ENV PATH="${PATH}:${GOPATH}/bin"
+
 ARG GOPROXY=https://proxy.golang.org
 WORKDIR /go/src/github.com/aws/aws-app-mesh-examples/feapp
-
-# Force the go compiler to use modules.
-ENV GO111MODULE=on
 
 # go.mod and go.sum go into their own layers.
 COPY go.mod .
