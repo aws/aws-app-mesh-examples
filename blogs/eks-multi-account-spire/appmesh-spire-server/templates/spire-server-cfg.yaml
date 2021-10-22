@@ -9,7 +9,7 @@ data:
     server {
       bind_address = "{{ .Values.config.bindAddress }}"
       bind_port = "{{ .Values.config.bindPort }}"
-      registration_uds_path = "/tmp/spire-registration.sock"
+      socket_path = "{{ .Values.config.socketPath }}"
       trust_domain = "{{ .Values.config.trustDomain }}"
       data_dir = "/run/spire/data"
       log_level = "{{ .Values.config.logLevel }}"
@@ -35,19 +35,15 @@ data:
         plugin_data {
           clusters = {
             "frontend-k8s-cluster" = {
-              service_account_whitelist = ["spire:spire-agent-front"]
+              service_account_allow_list = ["spire:spire-agent-front"]
               kube_config_file = "/etc/kubeconfig/frontend/frontend.conf"
             },
             "backend-k8s-cluster" = {
-              service_account_whitelist = ["spire:spire-agent-back"]
+              service_account_allow_list = ["spire:spire-agent-back"]
               kube_config_file = "/etc/kubeconfig/backend/backend.conf"
             }
           }
         }
-      }
-
-      NodeResolver "noop" {
-        plugin_data {}
       }
 
       KeyManager "disk" {

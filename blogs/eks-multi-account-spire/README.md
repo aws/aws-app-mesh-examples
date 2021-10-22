@@ -65,7 +65,7 @@ Start by deploying the shared services CloudFormation stack in the main account 
 
 ```bash
 aws --profile shared cloudformation deploy \
- --template-file eks-multi-account-spire/cf-templates/shared-services-template.json \
+ --template-file cf-templates/shared-services-template.json \
  --stack-name eks-cluster-shared-services-stack \
  --capabilities CAPABILITY_NAMED_IAM \
  --parameter-overrides \
@@ -101,7 +101,7 @@ Next, deploy the frontend CloudFormation stack in the account you have designate
 
 ```bash
 aws --profile frontend cloudformation deploy \
- --template-file eks-multi-account-spire/cf-templates/frontend-template.json \
+ --template-file cf-templates/frontend-template.json \
  --stack-name eks-cluster-frontend-stack \
  --capabilities CAPABILITY_NAMED_IAM \
  --parameter-overrides \
@@ -120,7 +120,7 @@ Finally, deploy the backend CloudFormation stack in the account you have designa
 
 ```bash
 aws --profile backend cloudformation deploy \
- --template-file eks-multi-account-spire/cf-templates/backend-template.json \
+ --template-file cf-templates/backend-template.json \
  --stack-name eks-cluster-backend-stack \
  --capabilities CAPABILITY_NAMED_IAM \
  --parameter-overrides \
@@ -172,31 +172,30 @@ Execute the following commands to edit the frontend aws-auth ConfigMap:
 ```bash 
 kubectl config use-context $FRONT_CXT
 
-kubectl edit cm -n kube-system aws-auth 
-```
-Add the following to the aws-auth ConfigMap under mapRoles, replacing \<account-id> with the frontend account ID:
-```bash 
-- groups: 
-    - system:masters
-  rolearn: arn:aws:iam::<account-id>:role/eks-cluster-frontend-access-role
-  username: eks-cluster-frontend-access-role
-```
+ACCOUNT_ID=$(aws --profile frontend sts get-caller-identity | jq -r .Account)
 
+ROLE_ARN=arn:aws:iam::${ACCOUNT_ID}:role/eks-cluster-frontend-access-role
+
+eksctl --profile frontend create iamidentitymapping \
+--cluster=eks-cluster-frontend \
+--arn ${ROLE_ARN} \
+--group system:masters \
+--username eks-cluster-frontend-access-role
+```
 Execute the following commands to edit the backend aws-auth ConfigMap: 
 ```bash
 kubectl config use-context $BACK_CXT
 
-kubectl edit cm -n kube-system aws-auth
-```
-Add the following to the aws-auth ConfigMap under mapRoles, replacing \<account-id> with the backend account ID:
-```bash
-- groups: 
-    - system:masters
-  rolearn: arn:aws:iam::<account-id>:role/eks-cluster-backend-access-role
-  username: eks-cluster-backend-access-role
-```
-**Note:** Press the “i” key to enter insert mode, the “esc” key to exit insert mode, and “:wq!” to save your changes. Also remember to use spaces instead of tabs to implement the appropriate indentation as YAML does not support tabs. 
+ACCOUNT_ID=$(aws --profile backend sts get-caller-identity | jq -r .Account)
 
+ROLE_ARN=arn:aws:iam::${ACCOUNT_ID}:role/eks-cluster-backend-access-role
+
+eksctl --profile backend create iamidentitymapping \
+--cluster=eks-cluster-backend \
+--arn ${ROLE_ARN} \
+--group system:masters \
+--username eks-cluster-backend-access-role
+```
 You can verify the updates by executing the following command: 
 ```bash
 kubectl describe cm -n kube-system aws-auth
@@ -205,7 +204,7 @@ kubectl describe cm -n kube-system aws-auth
 ## Create the App Mesh Service Mesh and Cloud Map Namespace
 Run the following helper script to install the appmesh-controller in each EKS cluster, create an AWS App Mesh service mesh (**am-multi-account-mesh**) in the main account, share the service mesh with the frontend and backend accounts, and create an AWS Cloud Map namespace (**am-multi-account.local**) in the backend account: 
 ```bash 
-./eks-multi-account-spire/helper-scripts/app_mesh_setup.sh
+./helper-scripts/app_mesh_setup.sh
 ```
 This helper script also creates a **yelb** namespace in each EKS cluster and labels it with the following annotations: 
 - mesh=am-multi-account-mesh 
@@ -219,13 +218,13 @@ The AWS Cloud Map namespace in the backend account is used for service discovery
 ## Deploy the SPIRE Server
 Earlier, we modified the aws-auth ConfigMap to allow the The SPIRE server in the main EKS cluster (**eks-cluster-shared**) to verify the identities of the SPIRE agents during node attestation. We also need to create copies of the [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) files for the frontend (**eks-cluster-frontend**) and backend (**eks-cluster-backend**) EKS clusters and make them available to the SPIRE server through ConfigMaps mounted as volumes.  Executing the following helper script will expedite this process: 
 ```bash
-./eks-multi-account-spire/helper-scripts/kubeconfig.sh
+./helper-scripts/kubeconfig.sh
 ```
 This script creates a spire namespace within the main EKS cluster and launches two new ConfigMaps in that namespace (**front-kubeconfig** and **back-kubeconfig**) that store copies of the kubeconfig data for the frontend and backend EKS clusters respectively.  Since the SPIRE server will be conducting cross-account cluster authentication, the kubeconfig data also specifies the ARN of the corresponding cross-account IAM role (**eks-cluster-frontend-access-role** and **eks-cluster-backend-access-role**). 
 
 Next, install the SPIRE server using a helm chart:
 ```bash
-helm install appmesh-spire-server eks-multi-account-spire/appmesh-spire-server \
+helm install appmesh-spire-server ./appmesh-spire-server \
  --namespace spire \
  --set config.trustDomain=am-multi-account-mesh
  ```
@@ -261,11 +260,11 @@ NodeAttestor "k8s_psat" {
     plugin_data {
       clusters = {
         "frontend-k8s-cluster" = {
-          service_account_whitelist = ["spire:spire-agent-front"]
+          service_account_allow_list = ["spire:spire-agent-front"]
           kube_config_file = "/etc/kubeconfig/frontend/frontend.conf"
         },
         "backend-k8s-cluster" = {
-          service_account_whitelist = ["spire:spire-agent-back"]
+          service_account_allow_list = ["spire:spire-agent-back"]
           kube_config_file = "/etc/kubeconfig/backend/backend.conf"
         }
       }
@@ -295,7 +294,7 @@ kubectl describe cm spire-bundle -n spire
 ```
 Next, install the spire agent using the provided Helm chart: 
 ```bash
-helm install appmesh-spire-agent eks-multi-account-spire/appmesh-spire-agent \
+helm install appmesh-spire-agent ./appmesh-spire-agent \
  --namespace spire \
  --set serviceAccount.name=spire-agent-front \
  --set config.clusterName=frontend-k8s-cluster \
@@ -319,7 +318,7 @@ kubectl apply -f spire-bundle.yaml
 
 kubectl describe cm spire-bundle -n spire 
 
-helm install appmesh-spire-agent eks-multi-account-spire/appmesh-spire-agent \
+helm install appmesh-spire-agent appmesh-spire-agent \
  --namespace spire \
  --set serviceAccount.name=spire-agent-back \
  --set config.clusterName=backend-k8s-cluster \
@@ -335,7 +334,7 @@ At this point you are ready to register node and workload entries with the SPIRE
 ```bash
 kubectl config use-context $SHARED_CXT 
 
-./eks-multi-account-spire/helper-scripts/register_server_entries.sh
+./helper-scripts/register_server_entries.sh
 ```
 Inspect the registered entries by executing the following command: 
 ```bash
@@ -374,11 +373,11 @@ You can now deploy the AWS App Mesh [virtual nodes](https://docs.aws.amazon.com/
 ```bash
 kubectl config use-context $BACK_CXT
 
-kubectl apply -f eks-multi-account-spire/mesh/yelb-redis.yaml 
+kubectl apply -f mesh/yelb-redis.yaml 
 
-kubectl apply -f eks-multi-account-spire/mesh/yelb-db.yaml 
+kubectl apply -f mesh/yelb-db.yaml 
 
-kubectl apply -f eks-multi-account-spire/mesh/yelb-appserver.yaml
+kubectl apply -f mesh/yelb-appserver.yaml
 ```
 Using the yelb-appserver virtual node as an example, notice that it has a tls section defined for both its inbound listeners and its outbound backends.  
 ```bash
@@ -434,13 +433,12 @@ The certificate section under tls specifies the Envoy Secret Discovery Service (
 
 Now deploy the backend Kubernetes resources that the virtual nodes point to:  
 ```bash
-kubectl apply -f eks-multi-account-spire/yelb/resources_backend.yaml
+kubectl apply -f yelb/resources_backend.yaml
 ```
 Before deploying the frontend virtual node and virtual service for the yelb-ui service, run the following helper script to retrieve the ARN of the yelb-appserver virtual service from the backend EKS cluster and create an updated version of the yelb-ui virtual node spec file (**yelb-ui-final.yaml**) containing that ARN as a reference.
 ```bash
 kubectl config use-context $FRONT_CXT
 
-cd eks-multi-account-spire
 ./helper-scripts/replace_vs_arn.sh
 ```
 Now deploy the AWS App Mesh components and the Kubernetes resources for the yelb-ui frontend: 
@@ -519,7 +517,7 @@ listener.0.0.0.0_15000.ssl.handshake: 13
 ## Cleanup:
 Run the following helper script to delete all resources in the yelb and spire namespaces, the Cloud Map am-multi-account.local namespace, the App Mesh am-multi-account-mesh service mesh, the appmesh-controller, and the appmesh-system namespace. 
 ```bash
-./eks-multi-account-spire/helper-scripts/cleanup.sh
+./helper-scripts/cleanup.sh
 ```
 Now delete the CloudFormation stacks, starting with the frontend account: 
 ```bash

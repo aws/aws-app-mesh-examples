@@ -4,8 +4,8 @@
 
 image:
   repository: gcr.io/spiffe-io/spire-agent
-  tag: 0.10.0
-  pullPolicy: IfNotPresent
+  tag: 1.0.1
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: "spire-agent"
@@ -51,5 +51,6 @@ config:
   serverPort: 8081
   #SPIRE Agent Socket Path
   socketPath: /run/spire/sockets/agent.sock
+  # socketPath: /tmp/spire-agent/public/api.sock
   # cluster name for k8s_psat node attestor 
   clusterName: "k8s-cluster"

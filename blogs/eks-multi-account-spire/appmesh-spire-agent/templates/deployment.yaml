@@ -36,6 +36,7 @@ spec:
             name: spire-bundle
         - name: spire-agent-socket
           hostPath:
+            # path: /tmp/spire-agent/public
             path: /run/spire/sockets
             type: DirectoryOrCreate
         - name: spire-token 
@@ -53,24 +54,17 @@ spec:
             - -config
             - /run/spire/config/agent.conf
           livenessProbe:
-            exec:
-              command:
-                - /opt/spire/bin/spire-agent
-                - healthcheck
-                - -socketPath
-                - /run/spire/sockets/agent.sock
+            httpGet:
+              path: /live
+              port: 8080
             failureThreshold: 2
             initialDelaySeconds: 15
             periodSeconds: 60
             timeoutSeconds: 3
           readinessProbe: 
-            exec: 
-              command: 
-                - /opt/spire/bin/spire-agent
-                - healthcheck
-                - -socketPath
-                - /run/spire/sockets/agent.sock
-                - --shallow 
+            httpGet:
+              path: /ready
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
           volumeMounts:
@@ -81,6 +75,7 @@ spec:
               mountPath: /run/spire/bundle
               readOnly: true
             - name: spire-agent-socket
+              # mountPath: /tmp/spire-agent/public
               mountPath: /run/spire/sockets
               readOnly: false
             - name: spire-token
