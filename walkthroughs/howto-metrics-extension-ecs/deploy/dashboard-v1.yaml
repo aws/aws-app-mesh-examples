@@ -1,0 +1,88 @@
+Parameters:
+  DashboardImage:
+    Type: String
+    Description: Docker image url for dashboard lambda image
+
+  MetricNamespace:
+    Type: String
+    Description: The CloudWatch metric namespace containing metrics
+
+  MeshName:
+    Type: String
+
+  Name:
+    Type: String
+
+  Period:
+    Type: Number
+    Default: 60
+
+  Start:
+    Type: String
+    Default: '-PT1H'
+
+  MetricNameSanitizer:
+    Type: String
+    Default: ''
+
+  VirtualNodes:
+    Type: CommaDelimitedList
+    Description: List of virtual nodes names this dashboard will display
+    Default: ''
+
+  VirtualGateway:
+    Type: String
+    Description: Virtual gateway name this dashboard will display
+    Default: ''
+
+Resources:
+  
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSAppMeshReadOnly
+      Policies:
+        - PolicyName: CreateDeleteDashboardPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutDashboard
+                  - cloudwatch:DeleteDashboards
+                  - cloudwatch:GetDashboard
+                Resource: '*'
+
+  MetricsExtensionDashboard:
+    Type: Custom::DashboardGenerator
+    Properties:
+      ServiceToken: !GetAtt DashboardGeneratorFunction.Arn
+      MetricNamespace: !Ref MetricNamespace
+      MeshName: !Ref MeshName
+      Name: !Ref Name
+      Period: !Ref Period
+      Start: !Ref Start
+      MetricNameSanitizer: !Ref MetricNameSanitizer
+      VirtualNodes: !Join [ ',', !Ref VirtualNodes ] 
+      VirtualGateway: !Ref VirtualGateway
+      Region: !Ref AWS::Region
+
+  DashboardGeneratorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      Timeout: 300
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ImageUri: !Ref DashboardImage
