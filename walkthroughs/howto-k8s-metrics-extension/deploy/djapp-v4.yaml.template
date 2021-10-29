@@ -1,0 +1,603 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: $NAMESPACE_NAME
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: $NAMESPACE_NAME
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: djapp
+  namespace: $NAMESPACE_NAME
+spec:
+  podSelector:
+    matchLabels:
+      app: djapp
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: metal
+    - virtualService:
+        virtualServiceRef:
+          name: jazz
+  serviceDiscovery:
+    dns:
+      hostname: djapp.$NAMESPACE_NAME.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: jazz
+  namespace: $NAMESPACE_NAME
+spec:
+  podSelector:
+    matchLabels:
+      app: jazz
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: jazz.$NAMESPACE_NAME.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: metal-v1
+  namespace: $NAMESPACE_NAME
+spec:
+  podSelector:
+    matchLabels:
+      app: metal
+      version: v1
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: metal-v1.$NAMESPACE_NAME.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: metal-v2
+  namespace: $NAMESPACE_NAME
+spec:
+  podSelector:
+    matchLabels:
+      app: metal
+      version: v2
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: metal-v2.$NAMESPACE_NAME.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: $NAMESPACE_NAME
+  name: metal
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  routes:
+    - name: route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: metal-v1
+              weight: 60
+            - virtualNodeRef:
+                name: metal-v2
+              weight: 40
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: djapp
+  namespace: $NAMESPACE_NAME
+spec:
+  awsName: djapp.$NAMESPACE_NAME.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: djapp 
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: metal
+  namespace: $NAMESPACE_NAME
+spec:
+  awsName: metal.$NAMESPACE_NAME.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: metal
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: jazz
+  namespace: $NAMESPACE_NAME
+spec:
+  awsName: jazz.$NAMESPACE_NAME.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: jazz
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: ingress-gw
+  namespace: $NAMESPACE_NAME
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: ingress-gw
+  podSelector:
+    matchLabels:
+      app: ingress-gw
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route
+  namespace: $NAMESPACE_NAME
+spec:
+  httpRoute:
+    match:
+      prefix: /
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: djapp
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: djapp
+  namespace: $NAMESPACE_NAME
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: djapp
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: djapp
+  namespace: $NAMESPACE_NAME
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: djapp
+  template:
+    metadata:
+      labels:
+        app: djapp
+      annotations:
+        appmesh.k8s.aws/sidecarEnv: "APPMESH_METRIC_EXTENSION_VERSION=1"
+    spec:
+      serviceAccountName: service-pod
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: app
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NAMESPACE_NAME/djapp
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: '8080'
+            - name: BACKENDS
+              value: >
+                [
+                  "jazz.$NAMESPACE_NAME.svc.cluster.local:8080",
+                  "metal.$NAMESPACE_NAME.svc.cluster.local:8080"
+                ]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jazz
+  namespace: $NAMESPACE_NAME
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: jazz
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jazz
+  namespace: $NAMESPACE_NAME
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jazz
+  template:
+    metadata:
+      labels:
+        app: jazz
+      annotations:
+        appmesh.k8s.aws/sidecarEnv: "APPMESH_METRIC_EXTENSION_VERSION=1"
+    spec:
+      serviceAccountName: service-pod
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: app
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NAMESPACE_NAME/djapp
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: '8080'
+            - name: RESPONSES
+              value: >
+                [
+                  "Astrud Gilberto",
+                  "Miles Davis"
+                ]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-v1
+  namespace: $NAMESPACE_NAME
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: metal
+    version: v1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-v1
+  namespace: $NAMESPACE_NAME
+  labels:
+    app: metal
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: metal
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: metal
+        version: v1
+      annotations:
+        appmesh.k8s.aws/sidecarEnv: "APPMESH_METRIC_EXTENSION_VERSION=1"
+    spec:
+      serviceAccountName: service-pod
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: app
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NAMESPACE_NAME/djapp
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: '8080'
+            - name: RESPONSES
+              value: >
+                [
+                  "Megadeth",
+                  "Judas Priest"
+                ]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-v2
+  namespace: $NAMESPACE_NAME
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: metal
+    version: v2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-v2
+  namespace: $NAMESPACE_NAME
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: metal
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: metal
+        version: v2
+      annotations:
+        appmesh.k8s.aws/sidecarEnv: "APPMESH_METRIC_EXTENSION_VERSION=1"
+    spec:
+      serviceAccountName: service-pod
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: app
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NAMESPACE_NAME/djapp
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: '8080'
+            - name: RESPONSES
+              value: >
+                [
+                  "Megadeth (Los Angeles, California)",
+                  "Judas Priest (West Bromwich, England)"
+                ]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal
+  namespace: $NAMESPACE_NAME
+  labels:
+    app: metal
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: metal
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-gw
+  namespace: $NAMESPACE_NAME
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+  selector:
+    app: ingress-gw
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-gw
+  namespace: $NAMESPACE_NAME
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ingress-gw
+  template:
+    metadata:
+      labels:
+        app: ingress-gw
+    spec:
+      serviceAccountName: service-pod
+      securityContext:
+        fsGroup: 1337
+      containers:
+        - name: envoy
+          image: $ENVOY_IMAGE
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APPMESH_METRIC_EXTENSION_VERSION
+              value: "1"
+
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cwagent-prometheus-role
+rules:
+  - apiGroups: [""]
+    resources:
+    - nodes
+    - nodes/proxy
+    - services
+    - endpoints
+    - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+    - extensions
+    resources:
+    - ingresses
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cwagent-prometheus-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: cloudwatch-agent
+    namespace: $NAMESPACE_NAME
+roleRef:
+  kind: ClusterRole
+  name: cwagent-prometheus-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cloudwatch-agent
+  namespace: $NAMESPACE_NAME
+spec:
+  selector:
+    matchLabels:
+      name: cloudwatch-agent
+  template:
+    metadata:
+      labels:
+        name: cloudwatch-agent
+      annotations:
+        appmesh.k8s.aws/sidecarInjectorWebhook: disabled
+    spec:
+      serviceAccountName: cloudwatch-agent
+      containers:
+        - name: cwagent
+          image: public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest 
+          env:
+            - name: PROMETHEUS_CONFIG_CONTENT
+              value: |
+                global:
+                  scrape_interval: 1m
+                  scrape_timeout: 10s
+                scrape_configs:
+                  - job_name: kubernetes-pod-appmesh-envoy
+                    sample_limit: 10000
+                    metrics_path: /stats/prometheus
+                    kubernetes_sd_configs:
+                      - role: pod
+                    relabel_configs:
+                      - source_labels: [__meta_kubernetes_pod_container_name]
+                        action: keep
+                        regex: ^envoy$
+                      - source_labels: [__meta_kubernetes_pod_container_name]
+                        target_label: container_name
+                        action: replace
+                    metric_relabel_configs:
+                      - source_labels: [__name__]
+                        regex: ^(envoy_appmesh_.+)|(envoy_cluster_upstream_cx_total)$
+                        action: keep
+                      - source_labels: [envoy_cluster_name]
+                        target_label: TargetVirtualNode
+                        regex: ^cds_egress_${NAMESPACE_NAME}_(.+_${NAMESPACE_NAME})_(.+)_[0-9]+$
+                        replacement: \${1}
+            - name: CW_CONFIG_CONTENT
+              value: >
+                {
+                  "agent": {
+                    "omit_hostname": true
+                  },
+                  "logs": {
+                    "force_flush_interval": 5,
+                    "metrics_collected": {
+                      "prometheus": {
+                        "log_group_name": "$NAMESPACE_NAME",
+                        "prometheus_config_path": "env:PROMETHEUS_CONFIG_CONTENT",
+                        "emf_processor": {
+                          "metric_namespace": "$NAMESPACE_NAME",
+                          "metric_declaration_dedup": true,
+                          "metric_declaration": [
+                            {
+                              "source_labels": [ "container_name" ],
+                              "label_matcher": "^envoy$",
+                              "dimensions": [
+                                ["Mesh", "VirtualNode"],
+                                ["Mesh", "VirtualNode", "TargetVirtualNode"],
+                                ["Mesh", "VirtualNode", "TargetVirtualNode", "TargetVirtualService"],
+                                ["Mesh", "VirtualGateway"],
+                                ["Mesh", "VirtualGateway", "TargetVirtualNode"],
+                                ["Mesh", "VirtualGateway", "TargetVirtualNode", "TargetVirtualService"]
+                              ],
+                              "metric_selectors": [
+                                "^.+$"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                } 

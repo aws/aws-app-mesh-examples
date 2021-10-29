@@ -1,0 +1,50 @@
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: $CLUSTER_NAME
+  region: $AWS_DEFAULT_REGION
+
+managedNodeGroups:
+  - name: ctrl-ng-1
+    minSize: 2
+    maxSize: 5
+    desiredCapacity: 5
+    volumeSize: 20
+    labels: {role: ctrl-workers}
+    tags:
+      nodegroup-role: ctrl-workers
+    iam:
+      withAddonPolicies:
+        appMesh: true
+        albIngress: true
+        xRay: true
+        cloudWatch: true
+        certManager: true
+        autoScaler: true
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: service-pod
+        namespace: $NAMESPACE_NAME
+        labels: {aws-usage: application}
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+    - metadata:
+        name: cloudwatch-agent
+        namespace: $NAMESPACE_NAME
+        labels: {aws-usage: application}
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+    - metadata:
+        name: appmesh-controller
+        namespace: appmesh-system
+        labels: {aws-usage: application}
+      attachPolicyARNs:
+        - arn:aws:iam::$AWS_ACCOUNT_ID:policy/AWSAppMeshK8sControllerIAMPolicy
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]

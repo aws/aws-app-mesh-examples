@@ -1,0 +1,16 @@
+{
+  "name": "appmesh-metrics-extension-dashboard-v1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Amazon Web Services",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "cfn-response-promise": "1.1.0",
+    "@aws-sdk/client-app-mesh": "3.37.0",
+    "@aws-sdk/client-cloudwatch": "3.37.0"
+  }
+}
