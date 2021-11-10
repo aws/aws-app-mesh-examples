@@ -1,0 +1,43 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: redis-server
+  namespace: yelb
+spec:
+  backendDefaults:
+    clientPolicy:
+      tls:
+        enforce: true,
+          validation:
+            trust:
+              acm:
+                certificateAuthorityArns: CA_ARN              
+  podSelector:
+    matchLabels:
+      app: redis-server
+  listeners:
+    - portMapping:
+        port: 6379
+        protocol: tcp
+    - tls:
+        mode: STRICT
+        certificate:
+          acm:
+             certificateArn: <CERTIFICATE_ARN>          
+        protocol: http        
+  serviceDiscovery:
+    dns:
+      hostname: redis-server.yelb.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: redis-server
+  namespace: yelb
+spec:
+  awsName: redis-server
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: redis-server

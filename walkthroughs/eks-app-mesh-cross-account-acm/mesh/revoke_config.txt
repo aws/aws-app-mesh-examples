@@ -1,0 +1,8 @@
+{
+   "CrlConfiguration":{
+      "Enabled":false,
+      "ExpirationInDays":7,
+      "CustomCname":"some_name.crl",
+      "S3BucketName":"your-bucket-name"
+   }
+}
