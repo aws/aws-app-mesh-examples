@@ -1,0 +1,17 @@
+{
+    "spec": {
+        "httpRoute" : {
+            "match" : {
+                "port": 2222
+            },
+            "action" : {
+                "target" : {
+                    "virtualService": {
+                        "virtualServiceName": $VIRTUALSERVICE_NAME
+                    },
+                    "port": 7777
+                }
+            }
+        }
+    }
+}
