@@ -1,0 +1,18 @@
+{
+    "spec": {
+      "listeners": [
+        {
+          "portMapping": {
+            "port": 1111,
+            "protocol": "http"
+          }
+        },
+        {
+          "portMapping": {
+            "port": 2222,
+            "protocol": "http"
+          }
+        }
+      ]
+    }
+}
