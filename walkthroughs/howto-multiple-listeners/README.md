@@ -17,7 +17,7 @@ Let's deploy a mesh with a multiple listener gateway, router and node.
 You will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the commands below.
 
 ```bash
-curl https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json \
+curl https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/main/appmesh-preview/service-model.json \
         -o $HOME/appmesh-preview-model.json
 aws configure add-model \
         --service-name appmesh-preview \
