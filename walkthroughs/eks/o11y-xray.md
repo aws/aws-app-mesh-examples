@@ -19,7 +19,13 @@ Enable X-Ray tracing for the App Mesh data plane
 helm upgrade -i appmesh-controller eks/appmesh-controller \
     --namespace appmesh-system \
     --set tracing.enabled=true \
-    --set tracing.provider=x-ray
+    --set tracing.provider=x-ray \
+    --set serviceAccount.create=false
+```
+
+Note: you will need to _restart_ all the running pods inside the mesh after enabling tracing so the Envoy sidecar can pick up the tracing config. Replace the `<name-space>` with your EKS namespace.
+```sh
+kubectl -n <name-space> rollout restart deployment
 ```
 
 The X-Ray daemon is automatically injected by [App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s) into your app containers. Let's verify that with the following command:
