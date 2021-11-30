@@ -292,7 +292,7 @@ Resources:
             DatabaseName: 'yelbdatabase'
             DBClusterIdentifier: yelb-cluster
             Engine: aurora-postgresql
-            EngineVersion: '10.7'
+            EngineVersion: '10.18'
             Port: !Ref 'DBPort'
             DBClusterParameterGroupName: default.aurora-postgresql10
             EnableCloudwatchLogsExports:
