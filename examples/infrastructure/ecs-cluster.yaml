@@ -64,6 +64,7 @@ Resources:
       VPCZoneIdentifier: 
         - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
         - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
+        - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet3"
       LaunchConfigurationName: !Ref ECSLaunchConfiguration
       MinSize: !Ref ClusterSize
       MaxSize: !Ref ClusterSize
@@ -366,31 +367,31 @@ Resources:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
       Name: { Ref: ECSServicesDomain }
 
-  BastionSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow http to client host
-      VpcId: 
-        'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: 0.0.0.0/0
+  # BastionSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: Allow http to client host
+  #     VpcId: 
+  #       'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
+  #     SecurityGroupIngress:
+  #     - IpProtocol: tcp
+  #       FromPort: 22
+  #       ToPort: 22
+  #       CidrIp: 0.0.0.0/0
 
-  BastionHost:
-    Type: AWS::EC2::Instance
-    Properties: 
-      ImageId: !Ref EC2Ami
-      KeyName: !Ref KeyName
-      InstanceType: t2.micro
-      SecurityGroupIds:
-      - !Ref BastionSecurityGroup
-      SubnetId: 
-        'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1"
-      Tags: 
-        - Key: Name
-          Value: bastion-host
+  # BastionHost:
+  #   Type: AWS::EC2::Instance
+  #   Properties: 
+  #     ImageId: !Ref EC2Ami
+  #     KeyName: !Ref KeyName
+  #     InstanceType: t2.micro
+  #     SecurityGroupIds:
+  #     - !Ref BastionSecurityGroup
+  #     SubnetId: 
+  #       'Fn::ImportValue': !Sub "${EnvironmentName}:PublicSubnet1"
+  #     Tags: 
+  #       - Key: Name
+  #         Value: bastion-host
 
 Outputs:
 
@@ -438,8 +439,8 @@ Outputs:
     Export:
       Name: !Sub "${EnvironmentName}:TaskIamRoleArn"
 
-  BastionIP:
-    Description: Public IP for ssh access to bastion host
-    Value:
-      'Fn::GetAtt': [ BastionHost, PublicIp ]
+  # BastionIP:
+  #   Description: Public IP for ssh access to bastion host
+  #   Value:
+  #     'Fn::GetAtt': [ BastionHost, PublicIp ]
 

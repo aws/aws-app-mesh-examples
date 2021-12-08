@@ -5,6 +5,8 @@ export AWS_ACCOUNT_ID=12345678
 # friendlyname-for-stack e.g. AppMeshSample
 export ENVIRONMENT_NAME=CIPMeshSample
 
+export AWS_DEFAULT_REGION=eu-west-2
+
 # your-choice-of-mesh-name, e.g. default
 export MESH_NAME=cip-mesh
 
