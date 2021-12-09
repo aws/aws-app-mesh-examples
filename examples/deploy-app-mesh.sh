@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export AWS_PROFILE=xxx
-export AWS_ACCOUNT_ID=12345678
+export AWS_PROFILE={aws-profile}
+export AWS_ACCOUNT_ID={aws-accountid}
 # friendlyname-for-stack e.g. AppMeshSample
 export ENVIRONMENT_NAME=CIPMeshSample
 
@@ -26,7 +26,7 @@ export KEY_PAIR_NAME=$MESH_NAME
 
 # the latest recommended envoy image
 # see https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
-export ENVOY_IMAGE=v1.20.0.1-prod   
+export ENVOY_IMAGE=840364872350.dkr.ecr.eu-west-2.amazonaws.com/aws-appmesh-envoy:v1.20.0.1-prod    
 
 # number of ec2 instances to spin up to join cluster, default is 5
 export CLUSTER_SIZE=3               
@@ -44,13 +44,34 @@ export COLOR_TELLER_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.amazonaws.com/colorteller:la
 
 env | sort
 
+#=================================================
+# Build the docker images for example
+#=================================================
+#./build-docker-images.sh
+
+#=================================================
 # Following steps will setup a VPC, Mesh, and ECS.
+#=================================================
 
 # Setup VPC
-./infrastructure/vpc.sh
+#./infrastructure/vpc.sh
 
 # Setup Mesh
-./infrastructure/appmesh-mesh.sh
+#./infrastructure/appmesh-mesh.sh
 
 # Setup ECS Cluster (Optional if using EKS)
-./infrastructure/ecs-cluster.sh
+#./infrastructure/ecs-cluster.sh
+
+# Configure App Mesh resources
+# apps/colorapp/servicemesh/appmesh-colorapp.sh
+
+# deploy services to ECS
+# apps/colorapp/ecs/ecs-colorapp.sh
+
+#=================================================
+# Test the application
+#=================================================
+
+# colorapp=$(aws cloudformation describe-stacks --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text); echo $colorapp
+# curl $colorapp/color
+

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # set this to the profile for the target AWS Account
-export AWS_PROFILE=xxx
+export AWS_PROFILE={aws-profile}
 # set this to the AccountId for the target AWS Account
-export AWS_ACCOUNT_ID=12345678
+export AWS_ACCOUNT_ID={aws-accountid}
 # we default to eu-west-2 (London)
 export AWS_DEFAULT_REGION=eu-west-2
 

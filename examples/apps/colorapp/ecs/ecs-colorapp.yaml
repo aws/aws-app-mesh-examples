@@ -364,7 +364,7 @@ Resources:
       VpcId:
         'Fn::ImportValue': !Sub "${EnvironmentName}:VPC"
       SecurityGroupIngress:
-          - CidrIp: 0.0.0.0/0
+          - CidrIp: 82.69.62.219/32
             IpProtocol: -1
 
   # public ALB for color gateway
