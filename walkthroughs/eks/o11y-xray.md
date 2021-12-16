@@ -13,7 +13,7 @@ $ aws iam attach-role-policy \
       --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 ```
 
-Enable X-Ray tracing for the App Mesh data plane. Optionally you can set the sampling rate by specifying the field `tracing.samplingRate=0.1` which corresponds to 10%. Also if you would like to write your own custom X-Ray tracing sampling rules then refer the example [howto-k8s-http2's template](../howto-k8s-http2/v1beta2/manifest.yaml.template) to see `xray-sampling-rules` configMap manually mounted on to the envoy proxy sidecar. For more information on how to write this sampling-rules.json configMap please refer [AWS X-Ray Developer Guide](https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-go-configuration.html#xray-sdk-go-configuration-sampling).
+Enable X-Ray tracing for the App Mesh data plane. Optionally you can set the sampling rate by specifying the field `tracing.samplingRate=0.1` which corresponds to 10%. Also if you would like to write your own custom X-Ray tracing sampling rules then refer the example [howto-k8s-http2's template](../howto-k8s-http2/v1beta2/manifest.yaml.template) to see `xray-sampling-rules` configMap manually mounted on to the envoy proxy sidecar. Specifically in that given example we are trying to trace anything other than health check traffic. For more information on how to write this sampling-rules.json configMap please refer [AWS X-Ray Developer Guide](https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-go-configuration.html#xray-sdk-go-configuration-sampling).
 
 ```sh
 helm upgrade -i appmesh-controller eks/appmesh-controller \
@@ -23,7 +23,7 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
     --set tracing.samplingRate=0.1
 ```
 
-> Note: `tracing.samplingRate` option and `appmesh.k8s.aws/volumeMounts` option is only available on the App Mesh controller v1.5.0 onwards.
+> Note: `tracing.samplingRate` option and `appmesh.k8s.aws/volumeMounts` option is only available on the App Mesh controller [v1.4.2](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.4.2) onwards.
 
 &nbsp;
 
