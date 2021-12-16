@@ -1,5 +1,9 @@
 # AWS App Mesh
 
+**NOTE**  
+Appmesh-controller [v1.4.2](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.4.2) and higher will be supporting arm64 linux instances as well, but the kubernetes walkthrough examples (howto-k8s-*) in this repo are compatible only with amd64 linux instances. We are working on updating these walkthroughs to be arm64 compatible as well.   
+---  
+
 ## Introduction
 
 App Mesh makes it easy to run microservices by providing consistent visibility and network traffic controls for every microservice in an application. App Mesh separates the logic needed for monitoring and controlling communications into a proxy that runs next to every microservice. App Mesh removes the need to coordinate across teams or update application code to change how monitoring data is collected or traffic is routed. This allows you to quickly pinpoint the exact location of errors and automatically re-route network traffic when there are failures or when code changes need to be deployed.
