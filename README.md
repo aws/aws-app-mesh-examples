@@ -17,12 +17,10 @@ Learn more at https://aws.amazon.com/app-mesh
 ## Getting started
 For help getting started with App Mesh, take a look at the [examples](https://github.com/aws/aws-app-mesh-examples/tree/master/examples) in this repo.  
 
-### NOTE     
+### ARM64 support    
 All the [walkthrough](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs) examples in this repo are compatible only
-with amd64 linux instances. arm64 is only supported from version v1.20.0.1 or later of [aws-appmesh-envoy](https://gallery.ecr.aws
-appmesh/aws-appmesh-envoy) and [v1.4.2](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.4.2) and later for
-Appmesh-controller. We are working on updating these walkthroughs to be arm64 compatible as well. See https://github.com/aws
-aws-app-mesh-examples/issues/473 for more up-to-date information.  
+with amd64 linux instances. arm64 is only supported from version v1.20.0.1 or later of [aws-appmesh-envoy](https://gallery.ecr.aws/appmesh/aws-appmesh-envoy) and [v1.4.2](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.4.2) and later for
+Appmesh-controller. We are working on updating these walkthroughs to be arm64 compatible as well. See https://github.com/aws/aws-app-mesh-examples/issues/473 for more up-to-date information.  
 
 ### China Regions
 All the examples and walkthrough are written for commercial regions. You need to make few changes to make them work for China regions, below are some changes that will be needed:
