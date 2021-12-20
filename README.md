@@ -1,9 +1,5 @@
 # AWS App Mesh
 
-**NOTE**  
-Appmesh-controller [v1.4.2](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.4.2) and higher will be supporting arm64 linux instances as well, but the kubernetes walkthrough examples (howto-k8s-*) in this repo are compatible only with amd64 linux instances. We are working on updating these walkthroughs to be arm64 compatible as well.   
----  
-
 ## Introduction
 
 App Mesh makes it easy to run microservices by providing consistent visibility and network traffic controls for every microservice in an application. App Mesh separates the logic needed for monitoring and controlling communications into a proxy that runs next to every microservice. App Mesh removes the need to coordinate across teams or update application code to change how monitoring data is collected or traffic is routed. This allows you to quickly pinpoint the exact location of errors and automatically re-route network traffic when there are failures or when code changes need to be deployed.
@@ -19,8 +15,10 @@ Today, AWS App Mesh is generally available for production use. You can use App M
 Learn more at https://aws.amazon.com/app-mesh
 
 ## Getting started
+For help getting started with App Mesh, take a look at the [examples](https://github.com/aws/aws-app-mesh-examples/tree/master/examples) in this repo.  
 
-For help getting started with App Mesh, take a look at the [examples](https://github.com/aws/aws-app-mesh-examples/tree/master/examples) in this repo.
+### NOTE     
+Appmesh-controller [v1.4.2](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.4.2) and higher will be supporting arm64 linux instances as well, but the kubernetes [walkthrough](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs) examples (howto-k8s-*) in this repo are compatible only with amd64 linux instances. We are working on updating these walkthroughs to be arm64 compatible as well.   
 
 ### China Regions
 All the examples and walkthrough are written for commercial regions. You need to make few changes to make them work for China regions, below are some changes that will be needed:
