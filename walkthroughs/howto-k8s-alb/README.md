@@ -31,13 +31,13 @@ Note: Only [setup the AWS Load Balancer controller](https://kubernetes-sigs.gith
 
 Check the events of the ingress to see what has occur.
 
-    ```
+    
     kubectl describe ing -n howto-k8s-alb color
-    ```
+    
 
 You should see similar to the following.
 
-    ```
+    
     Name:             color
     Namespace:        howto-k8s-alb
     Address:          80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com
@@ -59,7 +59,7 @@ You should see similar to the following.
       Normal  CREATE  11m    alb-ingress-controller  LoadBalancer 80113f18-howtok8salb-color-0f20 created, ARN: arn:aws:elasticloadbalancing:us-west-2:669977933099:loadbalancer/app/80113f18-howtok8salb-color-0f20/7c45f6fd4eefa871
       Normal  CREATE  11m    alb-ingress-controller  rule 1 created with conditions [{    Field: "path-pattern",    PathPatternConfig: {      Values: ["/"]    }  }]
       Normal  MODIFY  4m12s  alb-ingress-controller  rule 1 modified with conditions [{    Field: "path-pattern",    PathPatternConfig: {      Values: ["/color"]    }  }]
-     ```
+     
 
 To check if the application is reachable via ALB Ingress Controller
 
@@ -87,3 +87,9 @@ You should see similar to the following.
 * Connection #0 to host 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com left intact
 blue
 ```
+
+&nbsp;
+
+## Clean up once done
+
+    kubectl delete ns howto-k8s-alb && kubectl delete mesh howto-k8s-alb
