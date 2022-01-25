@@ -5,7 +5,7 @@ This example shows how to use [AWS Load Balancer Controller](https://github.com/
 
 ## Prerequisites
 - [Walkthrough: App Mesh with EKS](../eks/)
-- [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/)
+- [Walkthrough: AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/)
 - Install Docker. It is needed to build the demo application images.
 
 Note: Only [setup the AWS Load Balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#setup-the-aws-load-balancer-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
