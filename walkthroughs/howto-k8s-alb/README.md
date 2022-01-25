@@ -1,14 +1,14 @@
 ## Overview
-This example shows how to use [ALB Ingress Controller](https://github.com/kubernetes-sigs/aws-alb-ingress-controller) with targets registered as virtual-nodes under App Mesh.
+This example shows how to use [AWS Load Balancer Controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) with targets registered as virtual-nodes under App Mesh.
 
 ![System Diagram](./howto-k8s-alb.png "System Diagram")
 
 ## Prerequisites
 - [Walkthrough: App Mesh with EKS](../eks/)
-- [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/)
+- [Walkthrough: ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/)
 - Install Docker. It is needed to build the demo application images.
 
-Note: Only [deploy the ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/walkthrough/echoserver/#deploy-the-alb-ingress-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
+Note: Only [setup the AWS Load Balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#setup-the-aws-load-balancer-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
 
 ## Setup
 
