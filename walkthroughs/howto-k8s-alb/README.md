@@ -8,7 +8,7 @@ This example shows how to use [AWS Load Balancer Controller](https://github.com/
 - [Walkthrough: AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/)
 - Install Docker. It is needed to build the demo application images.
 
-Note: Only [deploy the AWS Load Balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#setup-the-aws-load-balancer-controller) and rest this example service will replace the echoserver in the AWS Load Balancer Controller link provider
+Note: Only [Setup the AWS Load Balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#setup-the-aws-load-balancer-controller) and rest this example service will replace the echoserver mentioned in the AWS Load Balancer Controller page. That means you **don't** have to do the rest of the steps mentioned at [Deploy the echoserver resources](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#deploy-the-echoserver-resources).
 
 ## Setup
 
