@@ -8,7 +8,7 @@ This example shows how to use [AWS Load Balancer Controller](https://github.com/
 - [Walkthrough: AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/)
 - Install Docker. It is needed to build the demo application images.
 
-Note: Only [setup the AWS Load Balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#setup-the-aws-load-balancer-controller) and rest this example service will replace the echoserver in the ALB Ingress Controller link provider
+Note: Only [setup the AWS Load Balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/examples/echo_server/#setup-the-aws-load-balancer-controller) and rest this example service will replace the echoserver in the AWS Load Balancer Controller link provider
 
 ## Setup
 
@@ -40,52 +40,49 @@ You should see similar to the following.
     
     Name:             color
     Namespace:        howto-k8s-alb
-    Address:          80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com
-    Default backend:  default-http-backend:80 (<none>)
+    Address:          k8s-howtok8s-color-63786f35e6-1171992961.us-west-2.elb.amazonaws.com
+    Default backend:  default-http-backend:80 (<error: endpoints "default-http-backend" not found>)
     Rules:
-      Host  Path  Backends
-      ----  ----  --------
-      *
-            /color   color:8080 (192.168.16.27:8080,192.168.59.249:8080)
-    Annotations:
-      kubectl.kubernetes.io/last-applied-configuration:  {"apiVersion":"extensions/v1beta1","kind":"Ingress","metadata":{"annotations":{"alb.ingress.kubernetes.io/healthcheck-path":"/ping","alb.ingress.kubernetes.io/scheme":"internet-facing","alb.ingress.kubernetes.io/target-type":"ip","kubernetes.io/ingress.class":"alb"},"name":"color","namespace":"howto-k8s-alb"},"spec":{"rules":[{"http":{"paths":[{"backend":{"serviceName":"color","servicePort":8080},"path":"/color"}]}}]}}
-      kubernetes.io/ingress.class:                 alb
-      alb.ingress.kubernetes.io/healthcheck-path:  /ping
-      alb.ingress.kubernetes.io/scheme:            internet-facing
-      alb.ingress.kubernetes.io/target-type:       ip
+    Host        Path  Backends
+    ----        ----  --------
+    *           
+                /color   front:8080 ()
+    Annotations:  alb.ingress.kubernetes.io/healthcheck-path: /color
+                alb.ingress.kubernetes.io/scheme: internet-facing
+                alb.ingress.kubernetes.io/target-type: ip
+                kubernetes.io/ingress.class: alb
     Events:
-      Type    Reason  Age    From                    Message
-      ----    ------  ----   ----                    -------
-      Normal  CREATE  11m    alb-ingress-controller  LoadBalancer 80113f18-howtok8salb-color-0f20 created, ARN: arn:aws:elasticloadbalancing:us-west-2:669977933099:loadbalancer/app/80113f18-howtok8salb-color-0f20/7c45f6fd4eefa871
-      Normal  CREATE  11m    alb-ingress-controller  rule 1 created with conditions [{    Field: "path-pattern",    PathPatternConfig: {      Values: ["/"]    }  }]
-      Normal  MODIFY  4m12s  alb-ingress-controller  rule 1 modified with conditions [{    Field: "path-pattern",    PathPatternConfig: {      Values: ["/color"]    }  }]
+    Type    Reason                  Age   From     Message
+    ----    ------                  ----  ----     -------
+    Normal  SuccessfullyReconciled  5s    ingress  Successfully reconciled
      
 
-To check if the application is reachable via ALB Ingress Controller
+To check if the application is reachable via AWS Load Balancer Controller
 
 ```
-curl -v 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com/color
+curl -v k8s-howtok8s-color-63786f35e6-1171992961.us-west-2.elb.amazonaws.com/color
 ```
 
 You should see similar to the following.
 
 ```
-*   Trying 34.208.158.34...
+*   Trying 54.148.15.33...
 * TCP_NODELAY set
-* Connected to 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com (34.208.158.34) port 80 (#0)
-> GET /color HTTP/1.1> Host: 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com
-> User-Agent: curl/7.61.1
+* Connected to k8s-howtok8s-color-63786f35e6-1171992961.us-west-2.elb.amazonaws.com (54.148.15.33) port 80 (#0)
+> GET /color HTTP/1.1
+> Host: k8s-howtok8s-color-63786f35e6-1171992961.us-west-2.elb.amazonaws.com
+> User-Agent: curl/7.64.1
 > Accept: */*
->
+> 
 < HTTP/1.1 200 OK
-< Date: Sat, 09 May 2020 01:30:06 GMT
+< Date: Wed, 26 Jan 2022 20:31:19 GMT
 < Transfer-Encoding: chunked
 < Connection: keep-alive
 < server: envoy
-< x-envoy-upstream-service-time: 0
-<
-* Connection #0 to host 80113f18-howtok8salb-color-0f20-319733316.us-west-2.elb.amazonaws.com left intact
-blue
+< x-envoy-upstream-service-time: 11
+< 
+* Connection #0 to host k8s-howtok8s-color-63786f35e6-1171992961.us-west-2.elb.amazonaws.com left intact
+green
 ```
 
 &nbsp;
