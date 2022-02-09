@@ -78,6 +78,7 @@ The front-end is Virtual Gateway that maintains a persistent gRPC connection to 
     **Option 3**: It takes significant time to build this image, so easier option is just to pull from this public repo
     ```
     git pull public.ecr.aws/suniltheta/grpc_cli:latest
+    docker run -it --rm grpc_cli
     ```
 3. Try calling the `SetColor` method:
     ```
