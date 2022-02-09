@@ -69,11 +69,15 @@ The front-end is Virtual Gateway that maintains a persistent gRPC connection to 
     export NLB_ENDPOINT=<your_public_endpoint e.g. howto-Publi-55555555.us-west-2.elb.amazonaws.com:80>
     ```
 2. You'll need to install the gRPC CLI tool:
-   **Option 1**: You can install the `grpc_cli` tool by following the link [here](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md)
+   **Option 1**: You can install the `grpc_cli` tool by following the link [here](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md)  
    **Option 2**: You can use the [Dockerfile](./Dockerfile) to build an ubuntu image with `grpc_cli` installed:
     ```
     docker build -t grpc_cli .
     docker run -it --rm grpc_cli
+    ```
+    **Option 3**: It takes significant time to build this image, so easier option is just to pull from this public repo
+    ```
+    git pull public.ecr.aws/suniltheta/grpc_cli:latest
     ```
 3. Try calling the `SetColor` method:
     ```
