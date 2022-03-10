@@ -20,9 +20,9 @@ for PROFILE in frontend backend shared
 
     if [ "$PROFILE" == "backend" ]; then 
       echo "Deleting the Cloud Map namespace am-multi-account.local..."
-      aws --profile backend servicediscovery get-operation \
+      aws --output json --profile backend servicediscovery get-operation \
         --operation-id $(aws --profile backend servicediscovery delete-namespace \
-        --id $(aws --profile backend servicediscovery list-namespaces \
+        --id $(aws --profile backend servicediscovery list-namespaces --output json \
         | jq -r '.Namespaces[] | select(.Name=="am-multi-account.local").Id') \
         | jq -r '.OperationId') > /dev/null
     fi
@@ -34,7 +34,7 @@ for PROFILE in frontend backend shared
       echo "Deleting the mesh-share RAM resource share..."
       aws --profile shared ram delete-resource-share \
         --resource-share-arn $(aws --profile shared ram get-resource-shares \
-        --resource-owner SELF | jq -r '.resourceShares[] | select((.name=="mesh-share") and (.status=="ACTIVE")).resourceShareArn') > /dev/null
+        --resource-owner SELF --output json | jq -r '.resourceShares[] | select((.name=="mesh-share") and (.status=="ACTIVE")).resourceShareArn') > /dev/null
     fi 
 
     echo "Deleting the appmesh-controller..."

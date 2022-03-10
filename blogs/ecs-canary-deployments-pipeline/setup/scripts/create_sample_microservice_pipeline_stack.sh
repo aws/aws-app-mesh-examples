@@ -32,11 +32,11 @@ done
 
 for item in "${sample_microservices[@]}"; do
     microservice="${item%%:*}"
-    while [ "$(aws cloudformation describe-stacks --stack-name ${ENVIRONMENT_NAME}-pipeline-${MICROSERVICE} --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] ; do
+    while [ "$(aws cloudformation describe-stacks --stack-name ${ENVIRONMENT_NAME}-pipeline-${MICROSERVICE} --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] ; do
         echo -n '.'
         sleep 10
     done
-    if [ "$(aws cloudformation describe-stacks --stack-name ${ENVIRONMENT_NAME}-pipeline-${MICROSERVICE} --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" != "CREATE_COMPLETE" ] ; then
+    if [ "$(aws cloudformation describe-stacks --stack-name ${ENVIRONMENT_NAME}-pipeline-${MICROSERVICE} --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" != "CREATE_COMPLETE" ] ; then
         echo -e "\nAn error occurred while creating the stack ${MICROSERVICE}! Don't move forward before fixing it!"
         exit 1
     fi

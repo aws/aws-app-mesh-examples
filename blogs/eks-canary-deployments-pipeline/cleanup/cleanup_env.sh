@@ -32,7 +32,7 @@ while [ "$date1" -ge `date +%s` ]; do
 done
 
 echo "Getting s3 buckets in stack eks-deployment-stepfunctions to remove."
-bucket=$(aws cloudformation describe-stack-resources --stack-name eks-deployment-stepfunctions --region $AWS_REGION| jq -c -r '.StackResources[] | select( .ResourceType == "AWS::S3::Bucket" ) | .PhysicalResourceId')
+bucket=$(aws cloudformation describe-stack-resources --stack-name eks-deployment-stepfunctions --region $AWS_REGION --output json | jq -c -r '.StackResources[] | select( .ResourceType == "AWS::S3::Bucket" ) | .PhysicalResourceId')
 echo "Deleting bucket : $bucket"
 aws s3 rb s3://$bucket --force || true
 echo "Deleting stack eks-deployment-stepfunctions"
@@ -48,13 +48,13 @@ done
 
 eksctl delete iamserviceaccount --region $AWS_REGION --cluster $EKS_CLUSTER_NAME --namespace appmesh-system --name appmesh-controller
 
-roles=$(aws iam list-roles | jq -c -r '.Roles[] | select(.RoleName | contains("eksctl-blogpost"))| .RoleName')
+roles=$(aws iam list-roles --output json | jq -c -r '.Roles[] | select(.RoleName | contains("eksctl-blogpost"))| .RoleName')
 for role in $roles; do
-    inlinepolicies=$(aws iam list-role-policies --role-name $role | jq -r -c .PolicyNames[])
+    inlinepolicies=$(aws iam list-role-policies --role-name $role --output json | jq -r -c .PolicyNames[])
     for policy in $inlinepolicies; do
         aws iam delete-role-policy --role-name $role --policy-name $policy
     done
-    attachedpoliciesarn=$(aws iam list-attached-role-policies --role-name $role| jq -r -c .AttachedPolicies[].PolicyArn)
+    attachedpoliciesarn=$(aws iam list-attached-role-policies --role-name $role --output json | jq -r -c .AttachedPolicies[].PolicyArn)
         for policyarn in $attachedpoliciesarn; do
             aws iam detach-role-policy --role-name $role --policy-arn $policyarn
         done

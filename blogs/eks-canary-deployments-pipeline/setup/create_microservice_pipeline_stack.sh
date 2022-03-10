@@ -49,18 +49,18 @@ ParameterKey=SampleMicroservices,ParameterValue="$USE_SAMPLE_MICROSERVICES" \
 
 
 echo -n "Creating the AWS CloudFormation stacks"
-while [ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-db --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] || \
-[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-redis --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] || \
-[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-appserver --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] || \
-[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-ui --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] ; do
+while [ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-db --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] || \
+[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-redis --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] || \
+[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-appserver --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] || \
+[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-ui --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ] ; do
   echo -n '.'
   sleep 10
 done
 
-if [ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-db --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] && \
-[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-redis --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] && \
-[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-appserver --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] && \
-[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-ui --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] ; then
+if [ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-db --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] && \
+[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-redis --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] && \
+[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-appserver --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] && \
+[ "$(aws cloudformation describe-stacks --stack-name eks-pipeline-yelb-ui --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_COMPLETE" ] ; then
     echo -e "\nAll four stacks created successfully!"
 else
     echo -e "\nAn error occurred while creating the stacks! Don't move forward before fixing it!"
