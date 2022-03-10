@@ -14,7 +14,7 @@ aws ec2 wait security-group-exists \
     --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID}
 
 SECURITY_GROUP_ID=$(echo $(aws ec2 describe-security-groups \
-    --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID}) --output json \
+    --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID} --output json)  \
     | jq -r '.SecurityGroups[0].GroupId')
 
 echo "Security Group Id: ${SECURITY_GROUP_ID}"
