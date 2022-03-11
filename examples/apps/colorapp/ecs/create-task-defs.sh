@@ -20,7 +20,7 @@ if [ -z "${COLOR_TELLER_IMAGE}" ]; then
 fi
 
 stack_output=$(aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
-    cloudformation describe-stacks --stack-name "${ENVIRONMENT_NAME}-ecs-cluster" \
+    cloudformation describe-stacks --stack-name "${ENVIRONMENT_NAME}-ecs-cluster" --output json \
     | jq '.Stacks[].Outputs[]')
 
 task_role_arn=($(echo $stack_output \
@@ -79,7 +79,8 @@ generate_color_teller_task_def() {
     -f "${DIR}/colorteller-base-task-def.json")
     task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     ecs register-task-definition \
-    --cli-input-json "$task_def_json")
+    --cli-input-json "$task_def_json" \
+    --output json)
 }
 
 # Color Gateway Task Definition
@@ -100,7 +101,8 @@ task_def_json=$(jq -n \
     -f "${DIR}/colorgateway-base-task-def.json")
 task_def=$(aws --profile "${AWS_PROFILE}" --region "${AWS_DEFAULT_REGION}" \
     ecs register-task-definition \
-    --cli-input-json "$task_def_json")
+    --cli-input-json "$task_def_json" \
+    --output json )
 colorgateway_task_def_arn=($(echo $task_def \
     | jq -r '.taskDefinition | .taskDefinitionArn'))
 

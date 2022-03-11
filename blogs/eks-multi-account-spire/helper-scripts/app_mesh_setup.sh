@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-MESH_OWNER=$(aws --profile shared sts get-caller-identity | jq -r .Account)
+MESH_OWNER=$(aws --profile shared sts get-caller-identity --output json | jq -r .Account)
 
 cat << EOF > app-mesh.yaml
 apiVersion: appmesh.k8s.aws/v1beta2
@@ -65,7 +65,7 @@ for PROFILE in shared frontend backend
     kubectl label namespace yelb "appmesh.k8s.aws/sidecarInjectorWebhook"=enabled
 
     if [ "$PROFILE" != "shared" ]; then 
-      INVITE_ARN=$(aws --profile $PROFILE ram get-resource-share-invitations \
+      INVITE_ARN=$(aws --profile $PROFILE ram get-resource-share-invitations --output json \
         | jq -r '.resourceShareInvitations[] | select(.resourceShareName=="mesh-share") | .resourceShareInvitationArn')
       if [ "$INVITE_ARN" != "" ]; then
         echo "Accepting resource share..."
@@ -92,8 +92,8 @@ for PROFILE in shared frontend backend
         --name mesh-share \
         --resource-arns $(kubectl get meshes -o json \
         | jq -r '.items[] | select(.metadata.name =="am-multi-account-mesh").status.meshARN') \
-        --principals $(aws --profile frontend sts get-caller-identity | jq -r .Account) \
-        $(aws --profile backend sts get-caller-identity | jq -r .Account) > /dev/null
+        --principals $(aws --profile frontend sts get-caller-identity --output json | jq -r .Account) \
+        $(aws --profile backend sts get-caller-identity --output json | jq -r .Account) > /dev/null
     fi
 
     if [ "$PROFILE" == "backend" ]; then

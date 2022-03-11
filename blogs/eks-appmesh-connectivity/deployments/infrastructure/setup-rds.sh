@@ -2,7 +2,7 @@
 
 export AWS_DEFAULT_OUTPUT="json"
 
-VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true | jq -r '.Vpcs[0].VpcId')
+VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --output json | jq -r '.Vpcs[0].VpcId')
 
 aws ec2 create-security-group \
     --group-name yelb-db-security-group \
@@ -13,7 +13,7 @@ aws ec2 wait security-group-exists \
     --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID}
 
 SECURITY_GROUP_ID=$(echo $(aws ec2 describe-security-groups \
-    --filters Name=group-name,Values=yelb-db-security-group;Name=vpc-id,Values=${VPC_ID}) | jq -r '.SecurityGroups[0].GroupId')
+    --filters Name=group-name,Values=yelb-db-security-group;Name=vpc-id,Values=${VPC_ID}) --output json | jq -r '.SecurityGroups[0].GroupId')
 
 echo "Security Group Id: ${SECURITY_GROUP_ID}"
 
@@ -42,6 +42,6 @@ aws rds wait db-instance-available \
     --db-instance-identifier yelb-db-instance
 
 CLUSTER_END_POINT=$(aws rds describe-db-clusters \
-    --db-cluster-identifier yelb-db-cluster | jq -r '.DBClusters[0].Endpoint')
+    --db-cluster-identifier yelb-db-cluster --output json | jq -r '.DBClusters[0].Endpoint')
 
 echo "RDS endpoint: ${CLUSTER_END_POINT}"

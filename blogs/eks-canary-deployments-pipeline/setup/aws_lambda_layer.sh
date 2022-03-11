@@ -5,7 +5,7 @@ APP_ID='arn:aws:serverlessrepo:us-east-1:903779448426:applications/lambda-layer-
 
 # Create the AWS CloudFormation template
 TEMPLATE_URL=$(aws --region $AWS_REGION serverlessrepo \
-create-cloud-formation-template --application-id  ${APP_ID} \
+create-cloud-formation-template --application-id  ${APP_ID} --output json \
 | jq -r '.TemplateUrl')
 
 # Deploy the AWS CloudFormation template
@@ -15,8 +15,8 @@ aws --region $AWS_REGION cloudformation create-stack \
 --parameters ParameterKey=LayerName,ParameterValue=lambda-layer-kubectl
 
 echo -n "Creating the AWS CloudFormation stack"
-while [ "$(aws cloudformation describe-stacks --stack-name kubectl-lambda-layer --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ]; do
+while [ "$(aws cloudformation describe-stacks --stack-name kubectl-lambda-layer --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ]; do
   echo -n '.'
   sleep 10
 done
-echo -e "\n$(aws cloudformation describe-stacks --stack-name kubectl-lambda-layer --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')"
+echo -e "\n$(aws cloudformation describe-stacks --stack-name kubectl-lambda-layer --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')"

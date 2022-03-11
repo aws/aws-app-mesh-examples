@@ -69,7 +69,7 @@ aws s3 cp ./ s3://$S3_BUCKET_NAME --recursive --region $AWS_REGION > /dev/null
 
 # Get the AWS Lambda Layer ARN from last AWS CloudFormation stack output
 LAMBDA_LAYER_ARN=$(aws cloudformation describe-stacks --stack-name kubectl-lambda-layer \
---region $AWS_REGION | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "LayerVersionArn") | .OutputValue')
+--region $AWS_REGION --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "LayerVersionArn") | .OutputValue')
 
 # Deploy AWS CloudFormation Stack
 aws cloudformation create-stack --stack-name $SHARED_STACK_NAME \
@@ -81,11 +81,11 @@ ParameterKey=LambdaLayerName,ParameterValue="$LAMBDA_LAYER_ARN" \
 --region $AWS_REGION
 
 echo -n "Creating the AWS CloudFormation stack"
-while [ "$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ]; do
+while [ "$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ]; do
   echo -n '.'
   sleep 10
 done
-echo -e "\n$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')"
+echo -e "\n$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')"
 
 
 #Cleanup

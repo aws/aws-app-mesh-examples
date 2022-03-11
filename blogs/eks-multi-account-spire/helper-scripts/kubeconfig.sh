@@ -12,7 +12,7 @@ aws --profile frontend eks update-kubeconfig \
   --kubeconfig front_config \
   --name eks-cluster-frontend \
   --role-arn $(aws --profile frontend iam get-role \
-  --role-name eks-cluster-frontend-access-role | jq -r '.Role.Arn')
+  --role-name eks-cluster-frontend-access-role --output json | jq -r '.Role.Arn')
 
 # remove AWS_PROFILE from the frontend kubeconfig file
 sed "$(( $(wc -l <front_config)-3+1 )),$ d" front_config \
@@ -38,7 +38,7 @@ aws --profile backend eks update-kubeconfig \
   --kubeconfig back_config \
   --name eks-cluster-backend \
   --role-arn $(aws --profile backend iam get-role \
-  --role-name eks-cluster-backend-access-role | jq -r '.Role.Arn')
+  --role-name eks-cluster-backend-access-role --output json | jq -r '.Role.Arn')
  
 # remove AWS_PROFILE from the backend kubeconfig file
 sed "$(( $(wc -l <back_config)-3+1 )),$ d" back_config \

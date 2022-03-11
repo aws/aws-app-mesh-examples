@@ -51,8 +51,8 @@ aws cloudformation create-stack --stack-name $SHARED_STACK_NAME \
 
 # aws cloudformation wait stack-create-complete --stack-name $SHARED_STACK_NAME <Until the bug gets fixed, use the below workaround>
 echo -n "Creating the AWS CloudFormation stack"
-while [ "$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ]; do
+while [ "$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')" == "CREATE_IN_PROGRESS" ]; do
   echo -n '.'
   sleep 10
 done
-echo -e "\n$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION | jq -r '.Stacks[0].StackStatus')"
+echo -e "\n$(aws cloudformation describe-stacks --stack-name $SHARED_STACK_NAME --region $AWS_REGION --output json | jq -r '.Stacks[0].StackStatus')"

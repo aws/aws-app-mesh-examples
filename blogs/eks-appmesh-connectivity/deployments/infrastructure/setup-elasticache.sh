@@ -2,7 +2,7 @@
 
 export AWS_DEFAULT_OUTPUT="json"
 
-VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true \
+VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --output json \
     | jq -r '.Vpcs[0].VpcId')
 
 aws ec2 create-security-group \
@@ -14,7 +14,7 @@ aws ec2 wait security-group-exists \
     --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID}
 
 SECURITY_GROUP_ID=$(echo $(aws ec2 describe-security-groups \
-    --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID}) \
+    --filters Name=group-name,Values=yelb-es-security-group;Name=vpc-id,Values=${VPC_ID} --output json)  \
     | jq -r '.SecurityGroups[0].GroupId')
 
 echo "Security Group Id: ${SECURITY_GROUP_ID}"
@@ -39,6 +39,6 @@ aws elasticache wait cache-cluster-available \
 
 CLUSTER_END_POINT=$(aws elasticache describe-cache-clusters \
     --cache-cluster-id yelb-cache-cluster \
-    --show-cache-node-info | jq -r '.CacheClusters[0].CacheNodes[0].Endpoint.Address')
+    --show-cache-node-info --output json | jq -r '.CacheClusters[0].CacheNodes[0].Endpoint.Address')
 
 echo "ElastiCache endpoint: ${CLUSTER_END_POINT}"
