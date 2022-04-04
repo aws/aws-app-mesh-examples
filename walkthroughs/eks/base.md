@@ -62,7 +62,7 @@ Run the following set of commands to install the App Mesh controller
 helm repo add eks https://aws.github.io/eks-charts
 helm repo update
 kubectl create ns appmesh-system
-kubectl apply -k https://github.com/aws/eks-charts/stable/appmesh-controller/crds?ref=master
+kubectl apply -k "https://github.com/aws/eks-charts/stable/appmesh-controller/crds?ref=master"
 helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system
 
 ```
