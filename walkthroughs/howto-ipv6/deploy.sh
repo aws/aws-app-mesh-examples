@@ -22,8 +22,8 @@ if [ -z $ENVOY_IMAGE ]; then
     exit 1
 fi
 
-if [ -z $KEY_PAIR ]; then
-    echo "KEY_PAIR environment variable is not set. This must be the name of an SSH key pair, see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html"
+if [ -z $KEY_PAIR_NAME ]; then
+    echo "KEY_PAIR_NAME environment variable is not set. This must be the name of an SSH key pair, see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html"
     exit 1
 fi
 
