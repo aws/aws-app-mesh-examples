@@ -116,6 +116,18 @@ Note that the example app used in this walkthrough uses go modules. If you have 
 GO_PROXY=direct ./deploy.sh infra
 ```
 
+Once you the infrastructure has been deployed you should see output like the following.
+
+```bash
+Bastion endpoint:
+12.345.6.789
+```
+
+Save the bastion endpoint for use later.
+```bash
+export BASTION_IP=<your_bastion_endpoint e.g. 12.245.6.189>
+```
+
 ## Step 4: Deploy ECS Service
 Both setups in this walkthrough create ECS services which utilize the same infrastructure and can be set up alongside each other. You can choose to deploy both setups at the same time or just one at a time. Use the commands given for the setup you are interested in for the following sections. After each of these commands is run, output such as the following will be seen
 
