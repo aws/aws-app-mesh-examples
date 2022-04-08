@@ -1,10 +1,10 @@
 {
     "spec": {
         "serviceDiscovery": {
-            "ipPreference": "IPv4_ONLY",
-            "egressFilter": {
-                "type": "ALLOW_ALL"
-            }
+            "ipPreference": "IPv4_ONLY"
+        },
+        "egressFilter": {
+            "type": "ALLOW_ALL"
         }
     }
 }
