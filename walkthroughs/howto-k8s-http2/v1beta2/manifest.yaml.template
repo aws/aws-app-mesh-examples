@@ -7,6 +7,31 @@ metadata:
     mesh: ${MESH_NAME}
     appmesh.k8s.aws/sidecarInjectorWebhook: enabled
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xray-sampling-rules
+  namespace: ${APP_NAMESPACE}
+data:
+  sampling-rules.json: |
+    {
+      "version": 2,
+      "rules": [
+        {
+          "description": "NoHealthChecks",
+          "host": "*",
+          "http_method": "*",
+          "url_path": "/health",
+          "fixed_target": 0,
+          "rate": 0.0
+        }
+      ],
+      "default": {
+        "fixed_target": 1,
+        "rate": 0.15
+      }
+    }
+---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: Mesh
 metadata:
@@ -185,6 +210,9 @@ spec:
     metadata:
       labels:
         app: client
+      annotations:
+        appmesh.k8s.aws/volumeMounts: xray-sampling-rules:/tmp/xray-sampling-rules/
+        appmesh.k8s.aws/sidecarEnv: "XRAY_SAMPLING_RULE_MANIFEST=/tmp/xray-sampling-rules/sampling-rules.json"
     spec:
       containers:
         - name: app
@@ -196,6 +224,11 @@ spec:
               value: "color.${APP_NAMESPACE}.svc.cluster.local:8080"
             - name: "PORT"
               value: "8080"
+      volumes:
+      - name: xray-sampling-rules
+        configMap:
+          name: xray-sampling-rules
+
 ---
 # Service per VirtualNode is a no-op when using CloudMap
 apiVersion: v1
