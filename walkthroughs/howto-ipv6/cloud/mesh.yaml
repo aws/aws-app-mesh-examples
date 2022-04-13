@@ -11,7 +11,7 @@ Resources:
   Mesh:
     Type: AWS::AppMesh::Mesh
     Properties:
-      MeshName: !Sub '${ProjectName}-vg-mesh'
+      MeshName: !Sub '${AppMeshMeshName}'
   ColorGateway:
     Type: AWS::AppMesh::VirtualGateway
     Properties:

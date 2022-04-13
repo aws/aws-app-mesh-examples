@@ -142,29 +142,30 @@ We will want to save this endpoint for use later by doing something such as the 
 export COLORAPP_ENDPOINT=<your_http_colorApp_endpoint e.g. http://app-m-Publi-55555555.elb.us-west-2.amazonaws.com>
 ```
 
-If you are deploying both setups then you will want to save each endpoint separately. (ex. COLORAPP_VN_ENDPOINT, COLORAPP_VG_ENDPOINT)
+If you are deploying both setups then you will want to save each endpoint separately. (ex. COLORAPP_CLOUD_ENDPOINT, COLORAPP_DNS_ENDPOINT) You will need to change later commands if you have both deployed as well.
 
-### Virtual Node
+### CloudMap Service Discovery
 
 ```bash
-./deploy.sh vn-service
+./deploy.sh cloud-service
 ```
 
-### Virtual Gateway
+### DNS Service Discovery
 
 ```bash
-./deploy.sh vg-service
+./deploy.sh dns-service
 ```
 
 ## Step 5: Test Sending Traffic in the Initial Setup
-
-
+The initial setup is using a mesh preference of V4_ONLY. This will apply a V4_ONLY preference to all virtual nodes. Let us see how this impacts traffic being sent to applications.
 
 Try 
 ```bash
 curl "${COLORAPP_ENDPOINT}/red"
 ```
  and see if the service correctly gives you the color red back. 
+
+For the red service, it is discoverable via IPv4 and 
 
 Try 
 ```bash
@@ -188,19 +189,17 @@ You can now change the IP preference set on the mesh and additionally add IP pre
 
 Run the following commands to clean up and tear down the resources that we’ve created.
 
-Delete the virtual node setup if you deployed it:
-
+Delete the CloudMap service discovery setup if you deployed it:
 ```bash
-./deploy.sh delete-vn-service
+./deploy.sh delete-cloud-service
 ```
 
-Delete the virtual gateway setup if you deployed it:
+Delete the DNS service discovery setup if you deployed it:
 ```bash
-./deploy.sh delete-vg-service
+./deploy.sh delete-dns-service
 ```
 
 Delete the infrastructure after you have torn down your setup(s):
-
 ```bash
 ./deploy.sh delete-infra
 ```

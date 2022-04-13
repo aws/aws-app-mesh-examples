@@ -119,7 +119,7 @@ Resources:
               awslogs-stream-prefix: 'red-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualNode/colorteller-red-vn'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-red-vn'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -262,7 +262,7 @@ Resources:
               awslogs-stream-prefix: 'orange-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualNode/colorteller-orange-vn'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-orange-vn'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -405,7 +405,7 @@ Resources:
               awslogs-stream-prefix: 'yellow-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualNode/colorteller-yellow-vn'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-yellow-vn'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -548,7 +548,7 @@ Resources:
               awslogs-stream-prefix: 'green-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualNode/colorteller-green-vn'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-green-vn'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -691,7 +691,7 @@ Resources:
               awslogs-stream-prefix: 'blue-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualNode/colorteller-blue-vn'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-blue-vn'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -834,7 +834,7 @@ Resources:
               awslogs-stream-prefix: 'purple-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualNode/colorteller-purple-vn'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-purple-vn'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -936,7 +936,7 @@ Resources:
               awslogs-stream-prefix: 'gateway-envoy'
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
-              Value: !Sub 'mesh/${AppMeshMeshName}-vg-mesh/virtualGateway/colorgateway-vg'
+              Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/colorgateway-vg'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -1017,7 +1017,7 @@ Resources:
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 3
       TargetType: ip
-      Name: !Sub "${ProjectName}-web"
+      Name: !Sub "${ProjectName}-web-cloud"
       Port: 80
       Protocol: TCP
       UnhealthyThresholdCount: 3
@@ -1037,7 +1037,7 @@ Resources:
       HealthyThresholdCount: 3
       TargetType: ip
       IpAddressType: ipv6
-      Name: !Sub "${ProjectName}-web-ipv6"
+      Name: !Sub "${ProjectName}-web-cloud-ipv6"
       Port: 81
       Protocol: TCP
       UnhealthyThresholdCount: 3

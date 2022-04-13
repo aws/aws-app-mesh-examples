@@ -93,15 +93,11 @@ Resources:
           Value: !Sub ${ProjectName} Public Subnet (AZ2)
 
   PrivateSubnet1: 
-    Type: AWS::EC2::Subnet
-    DependsOn: Ipv6CidrBlock    
+    Type: AWS::EC2::Subnet 
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
       CidrBlock: !Ref PrivateSubnet1CIDR
-      MapPublicIpOnLaunch: false
-      AssignIpv6AddressOnCreation: true
-      Ipv6CidrBlock: !Select [ 2, !Cidr [ !Select [ 0, !GetAtt VPC.Ipv6CidrBlocks], 256, 64 ]]
       Tags: 
         - Key: Name 
           Value: !Sub ${ProjectName} Private Subnet (AZ1)

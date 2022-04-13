@@ -102,12 +102,17 @@ Resources:
       RetentionInDays:
         Ref: ECSServiceLogGroupRetentionInDays
 
-  ECSServiceDiscoveryNamespace:
+  ECSServiceDiscoveryNamespaceDns:
     Type: AWS::ServiceDiscovery::PrivateDnsNamespace
     Properties:
       Vpc:
         'Fn::ImportValue': !Sub "${ProjectName}:VPC"
-      Name: { Ref: ECSServicesDomain }
+      Name: !Sub "${ECSServicesDomain}.dns"
+
+  ECSServiceDiscoveryNamespaceCloud:
+    Type: AWS::ServiceDiscovery::HttpNamespace
+    Properties:
+      Name: !Sub "${ECSServicesDomain}.cloud"
 
   BastionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -143,11 +148,17 @@ Outputs:
     Export:
       Name: !Sub "${ProjectName}:ECSCluster"
 
-  ECSServiceDiscoveryNamespace:
+  ECSServiceDiscoveryNamespaceDns:
     Description: A SDS namespace that will be used by all services in this cluster
-    Value: !Ref ECSServiceDiscoveryNamespace
+    Value: !Ref ECSServiceDiscoveryNamespaceDns
     Export:
-      Name: !Sub "${ProjectName}:ECSServiceDiscoveryNamespace"
+      Name: !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceDns"
+
+  ECSServiceDiscoveryNamespaceCloud:
+    Description: A SDS namespace that will be used by all services in this cluster
+    Value: !Ref ECSServiceDiscoveryNamespaceCloud
+    Export:
+      Name: !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"      
 
   ECSServiceLogGroup:
     Description: Log group for services to publish logs

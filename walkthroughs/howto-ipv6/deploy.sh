@@ -77,123 +77,60 @@ deploy_vpc() {
         ProjectName="${PROJECT_NAME}" 
 }
 
-deploy_vg_service() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-ecs-service\" containing ECS service, task definitions, and tasks..."
-    aws cloudformation deploy \
-        --no-fail-on-empty-changeset \
-        --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-vg-ecs-service"\
-        --template-file "${DIR}/vg/ecs-service.yaml" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides \
-        ProjectName="${PROJECT_NAME}" \
-        ECSServicesDomain="${SERVICES_DOMAIN}" \
-        AppMeshMeshName="${MESH_NAME}" \
-        EnvoyImage="${ENVOY_IMAGE}"
-}
-
-deploy_vn_service() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vn-ecs-service\" containing ALB, ECS Tasks, and Cloud Map Services..."
-    aws cloudformation deploy \
-        --no-fail-on-empty-changeset \
-        --stack-name "${PROJECT_NAME}-vn-ecs-service" \
-        --template-file "${DIR}/vn/ecs-service.yaml" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides \
-        ProjectName="${PROJECT_NAME}" \
-        EnvoyImage="${ENVOY_IMAGE}" \
-        ColorClientImage="${ECR_IMAGE_PREFIX}/color_client" 
-        ColorServerImage="${ECR_IMAGE_PREFIX}/color_server"
-}
-
-deploy_dns_service() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-ecs-service\" containing ECS service, task definitions, and tasks..."
-    aws cloudformation deploy \
-        --no-fail-on-empty-changeset \
-        --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-vg-ecs-service"\
-        --template-file "${DIR}/dns/ecs-service.yaml" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides \
-        ProjectName="${PROJECT_NAME}" \
-        ECSServicesDomain="${SERVICES_DOMAIN}" \
-        AppMeshMeshName="${MESH_NAME}" \
-        EnvoyImage="${ENVOY_IMAGE}"
-}
-
 deploy_cloud_service() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-ecs-service\" containing ECS service, task definitions, and tasks..."
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-cloud-ecs-service\" containing ECS service, task definitions, and tasks..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-vg-ecs-service"\
+        --stack-name "${PROJECT_NAME}-cloud-ecs-service"\
         --template-file "${DIR}/cloud/ecs-service.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
         ProjectName="${PROJECT_NAME}" \
         ECSServicesDomain="${SERVICES_DOMAIN}" \
-        AppMeshMeshName="${MESH_NAME}" \
+        AppMeshMeshName="${MESH_NAME}-cloud-mesh" \
         EnvoyImage="${ENVOY_IMAGE}"
 }
 
-deploy_vg_mesh() {
-    aws appmesh create-mesh --mesh-name "${MESH_NAME}-vg-mesh" --cli-input-json file://${DIR}/vg/mesh/mesh.json 
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-mesh\"..."
+deploy_dns_service() {
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-dns-ecs-service\" containing ECS service, task definitions, and tasks..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
-        --stack-name "${PROJECT_NAME}-vg-mesh" \
-        --template-file "${DIR}/vg/mesh.yaml" \
+        --region "${AWS_DEFAULT_REGION}" \
+        --stack-name "${PROJECT_NAME}-dns-ecs-service"\
+        --template-file "${DIR}/dns/ecs-service.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
-        AppMeshMeshName="${MESH_NAME}-vg-mesh" \
-        ProjectName="${PROJECT_NAME}"
-}
-
-deploy_dns_mesh() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-mesh\"..."
-    aws cloudformation deploy \
-        --no-fail-on-empty-changeset \
-        --stack-name "${PROJECT_NAME}-vg-mesh" \
-        --template-file "${DIR}/dns/mesh.yaml" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides \
-        AppMeshMeshName="${MESH_NAME}-vg-mesh" \
-        ProjectName="${PROJECT_NAME}"
+        ProjectName="${PROJECT_NAME}" \
+        ECSServicesDomain="${SERVICES_DOMAIN}" \
+        AppMeshMeshName="${MESH_NAME}-dns-mesh" \
+        EnvoyImage="${ENVOY_IMAGE}"
 }
 
 deploy_cloud_mesh() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-mesh\"..."
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-cloud-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
-        --stack-name "${PROJECT_NAME}-vg-mesh" \
+        --stack-name "${PROJECT_NAME}-cloud-mesh" \
         --template-file "${DIR}/cloud/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
-        AppMeshMeshName="${MESH_NAME}-vg-mesh" \
+        AppMeshMeshName="${MESH_NAME}-cloud-mesh" \
         ProjectName="${PROJECT_NAME}"
+    ${DIR}/cloud/mesh/update-mesh.sh mesh    
 }
 
-deploy_vn_mesh() {
-    aws appmesh create-mesh --mesh-name "${MESH_NAME}-vn-mesh" --cli-input-json file://${DIR}/vn/mesh/mesh.json 
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vn-mesh\"..."
+deploy_dns_mesh() {
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-dns-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
-        --stack-name "${PROJECT_NAME}-vn-mesh" \
-        --template-file "${DIR}/vn/mesh.yaml" \
+        --stack-name "${PROJECT_NAME}-dns-mesh" \
+        --template-file "${DIR}/dns/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
-        AppMeshMeshName="${MESH_NAME}-vn-mesh" \
+        AppMeshMeshName="${MESH_NAME}-dns-mesh" \
         ProjectName="${PROJECT_NAME}"
-}
-
-deploy_mesh() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-mesh\"..."
-    aws cloudformation deploy \
-        --no-fail-on-empty-changeset \
-        --stack-name "${PROJECT_NAME}-mesh" \
-        --template-file "${DIR}/mesh.yaml" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides "ProjectName=${PROJECT_NAME}"
+    ${DIR}/dns/mesh/update-mesh.sh mesh
 }
 
 print_bastion() {
@@ -222,44 +159,18 @@ deploy_infra() {
     print_bastion
 }
 
-deploy_vg() {
-    deploy_vg_mesh
-    deploy_vg_service
-
-    print_endpoint "vg"
-}
-
-deploy_vn() {
-    deploy_vn_mesh
-    deploy_vn_service
-
-    print_endpoint "vn"
-}
-
 deploy_cloud() {
     deploy_cloud_mesh
     deploy_cloud_service
 
-    print_endpoint "vg"
+    print_endpoint "cloud"
 }
 
 deploy_dns() {
     deploy_dns_mesh
     deploy_dns_service
 
-    print_endpoint "vg"
-}
-
-deploy_stacks() {
-    deploy_images
-    deploy_vpc
-    deploy_cluster
-    deploy_mesh
-    #deploy_app
-    deploy_service
-
-    print_bastion
-    print_endpoint
+    print_endpoint "dns"
 }
 
 delete_cfn_stack() {
@@ -280,20 +191,16 @@ delete_images() {
     done
 }
 
-delete_vg() {
-    delete_cfn_stack "${PROJECT_NAME}-vg-ecs-service"
+delete_dns() {
+    delete_cfn_stack "${PROJECT_NAME}-dns-ecs-service"
 
-    delete_cfn_stack "${PROJECT_NAME}-vg-mesh"
-
-    aws appmesh delete-mesh --mesh-name "${MESH_NAME}-vg-mesh"
+    delete_cfn_stack "${PROJECT_NAME}-dns-mesh"
 }
 
-delete_vn() {
-    delete_cfn_stack "${PROJECT_NAME}-vn-ecs-service"
+delete_cloud() {
+    delete_cfn_stack "${PROJECT_NAME}-cloud-ecs-service"
 
-    delete_cfn_stack "${PROJECT_NAME}-vn-mesh"
-
-    aws appmesh delete-mesh --mesh-name "${MESH_NAME}-vn-mesh"
+    delete_cfn_stack "${PROJECT_NAME}-cloud-mesh"
 }
 
 delete_infra() {
@@ -306,45 +213,10 @@ delete_infra() {
     echo "all resources from this tutorial have been removed"
 }
 
-delete_stacks() {
-    delete_cfn_stack "${PROJECT_NAME}-ecs-service"
-
-    delete_cfn_stack "${PROJECT_NAME}-mesh"
-
-    #delete_cfn_stack "${PROJECT_NAME}-app"
-
-    delete_cfn_stack "${PROJECT_NAME}-ecs-cluster"
-
-    delete_cfn_stack "${PROJECT_NAME}-vpc"
-
-    delete_images
-
-    echo "all resources from this tutorial have been removed"
-}
-
 action=${1:-"deploy"}
-if [ "$action" == "delete" ]; then
-    delete_stacks
-    exit 0
-fi
 
 if [ "$action" == "infra" ]; then
     deploy_infra
-    exit 0
-fi
-
-if [ "$action" == "vg-service" ]; then
-    deploy_vg
-    exit 0
-fi
-
-if [ "$action" == "vn-service" ]; then
-    deploy_vn
-    exit 0
-fi
-
-if [ "$action" == "dns-service" ]; then
-    deploy_dns
     exit 0
 fi
 
@@ -353,19 +225,24 @@ if [ "$action" == "cloud-service" ]; then
     exit 0
 fi
 
+if [ "$action" == "dns-service" ]; then
+    deploy_dns
+    exit 0
+fi
+
 if [ "$action" == "delete-infra" ]; then
     delete_infra
     exit 0
 fi
 
-if [ "$action" == "delete-vg-service" ]; then
-    delete_vg
+if [ "$action" == "delete-cloud-service" ]; then
+    delete_cloud
     exit 0
 fi
 
-if [ "$action" == "delete-vn-service" ]; then
-    delete_vn
+if [ "$action" == "delete-dns-service" ]; then
+    delete_dns
     exit 0
 fi
 
-deploy_stacks
+echo "invalid option chosen"

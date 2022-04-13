@@ -1,7 +1,0 @@
-{
-    "spec": {
-        "serviceDiscovery": {
-            "ipPreference": "IPv4_ONLY"
-        }
-    }
-}
