@@ -1,0 +1,10 @@
+{
+    "spec": {
+        "serviceDiscovery": {
+            "ipPreference": "IPv6_ONLY"
+        },
+        "egressFilter": {
+            "type": "ALLOW_ALL"
+        }
+    }
+}

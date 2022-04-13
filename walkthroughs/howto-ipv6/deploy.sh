@@ -106,6 +106,36 @@ deploy_vn_service() {
         ColorServerImage="${ECR_IMAGE_PREFIX}/color_server"
 }
 
+deploy_dns_service() {
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-ecs-service\" containing ECS service, task definitions, and tasks..."
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --region "${AWS_DEFAULT_REGION}" \
+        --stack-name "${PROJECT_NAME}-vg-ecs-service"\
+        --template-file "${DIR}/dns/ecs-service.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides \
+        ProjectName="${PROJECT_NAME}" \
+        ECSServicesDomain="${SERVICES_DOMAIN}" \
+        AppMeshMeshName="${MESH_NAME}" \
+        EnvoyImage="${ENVOY_IMAGE}"
+}
+
+deploy_cloud_service() {
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-ecs-service\" containing ECS service, task definitions, and tasks..."
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --region "${AWS_DEFAULT_REGION}" \
+        --stack-name "${PROJECT_NAME}-vg-ecs-service"\
+        --template-file "${DIR}/cloud/ecs-service.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides \
+        ProjectName="${PROJECT_NAME}" \
+        ECSServicesDomain="${SERVICES_DOMAIN}" \
+        AppMeshMeshName="${MESH_NAME}" \
+        EnvoyImage="${ENVOY_IMAGE}"
+}
+
 deploy_vg_mesh() {
     aws appmesh create-mesh --mesh-name "${MESH_NAME}-vg-mesh" --cli-input-json file://${DIR}/vg/mesh/mesh.json 
     echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-mesh\"..."
@@ -113,6 +143,30 @@ deploy_vg_mesh() {
         --no-fail-on-empty-changeset \
         --stack-name "${PROJECT_NAME}-vg-mesh" \
         --template-file "${DIR}/vg/mesh.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides \
+        AppMeshMeshName="${MESH_NAME}-vg-mesh" \
+        ProjectName="${PROJECT_NAME}"
+}
+
+deploy_dns_mesh() {
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-mesh\"..."
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --stack-name "${PROJECT_NAME}-vg-mesh" \
+        --template-file "${DIR}/dns/mesh.yaml" \
+        --capabilities CAPABILITY_IAM \
+        --parameter-overrides \
+        AppMeshMeshName="${MESH_NAME}-vg-mesh" \
+        ProjectName="${PROJECT_NAME}"
+}
+
+deploy_cloud_mesh() {
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-vg-mesh\"..."
+    aws cloudformation deploy \
+        --no-fail-on-empty-changeset \
+        --stack-name "${PROJECT_NAME}-vg-mesh" \
+        --template-file "${DIR}/cloud/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
         AppMeshMeshName="${MESH_NAME}-vg-mesh" \
@@ -180,6 +234,20 @@ deploy_vn() {
     deploy_vn_service
 
     print_endpoint "vn"
+}
+
+deploy_cloud() {
+    deploy_cloud_mesh
+    deploy_cloud_service
+
+    print_endpoint "vg"
+}
+
+deploy_dns() {
+    deploy_dns_mesh
+    deploy_dns_service
+
+    print_endpoint "vg"
 }
 
 deploy_stacks() {
@@ -272,6 +340,16 @@ fi
 
 if [ "$action" == "vn-service" ]; then
     deploy_vn
+    exit 0
+fi
+
+if [ "$action" == "dns-service" ]; then
+    deploy_dns
+    exit 0
+fi
+
+if [ "$action" == "cloud-service" ]; then
+    deploy_cloud
     exit 0
 fi
 
