@@ -361,12 +361,13 @@ curl "${COLORAPP_ENDPOINT}/red"
  and see if the service correctly gives you the color red back.
 
 ## Step 8: Sending IPv6 Traffic to the Virtual Gateway
-Up until this point, when traffic has been sent to the services IPv4 has been used to communicate between the load balancer and the virtual gateway. This is due to the load balancer target group that has been used when sending traffic with the commands such as below.
+Up until this point, IPv4 has been used to communicate between the load balancer and the virtual gateway. This is due to the load balancer target group that has been used when sending traffic with the commands such as below.
 ```bash
 curl "${COLORAPP_ENDPOINT}/red"
 ```
+The target group being used here is an IPv4 target group and an IPv6 target group needs to be used to send IPv6 traffic to the virtual gateway from the load balancer.
 
-An IPv6 target group has been already created on the load balancer which can facilitate using IPv6 to communicate between the load balancer and virtual gateway. However, this will require some additional configuration before this IPv6 target group can be used.
+An IPv6 target group has been already created on the load balancer which can facilitate using IPv6. However, this will require some additional configuration before this IPv6 target group can be used.
 
 First we will need to get the IPv6 address of the virtual gateway task. This can by following the following steps in the [ECS console](https://console.aws.amazon.com/ecs).
 
@@ -392,6 +393,27 @@ The response will be the color red assuming that nothing has changed with the me
 
 ## Step 9: Experiment with Different Preferences
 Now that we have made changes to the mesh and virtual node IP preferences it is time to experiment. Updating the mesh and virtual node preferences you can test and see how the preferences impact the traffic being sent to each service.
+
+Like in previous steps, makes changes to the mesh and virtual node JSON files for the setup you have. Then run the `update-mesh.sh` script.
+
+For the script you can update the mesh, a single virtual node, or all virtual nodes at once with the following commands.
+
+Update Mesh
+```bash
+# Choose cloud or dns for the directory depending on which setup you are using.
+./{cloud or dns}/mesh/update-mesh.sh mesh
+```
+
+Update Single Virtual Node
+```bash
+# Replace COLOR with the virtual node you want to update (red-vn, purple-vn)
+./{cloud or dns}/mesh/update-mesh.sh COLOR-vn
+```
+
+Update All Virtual Nodes
+```bash
+./{cloud or dns}/mesh/update-mesh.sh all-vn
+```
 
 ## Step 10: Clean Up
 
