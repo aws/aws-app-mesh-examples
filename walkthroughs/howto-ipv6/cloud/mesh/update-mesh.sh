@@ -17,11 +17,20 @@ update_virtual_nodes() {
     aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/purple-vn.json
 }
 
+update_virtual_node() {
+    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/${1}.json
+}
+
 action=${1:-"mesh"}
 
-if [ "$action" == "node" ]; then
+if [ "$action" == "mesh" ]; then
+    update_mesh
+    exit 0
+fi
+
+if [ "$action" == "all-vn" ]; then
     update_virtual_nodes
     exit 0
 fi
 
-update_mesh
+update_virtual_node $1

@@ -289,19 +289,84 @@ curl "${COLORAPP_ENDPOINT}/yellow"
 ```
  and see if an upstream connection error occurs. (503) 
 
-You can try all of the following colors as well and get these results
+You can also try all of the following colors as well and get these results
 
 * orange - get back orange
 * green - get back green
 * blue - get back blue
 * purple - upstream connection error
 
-## Step 6: Test out Different IP Preferences
+## Step 6: Test out a Different Mesh IP Preference
 
-You can now change the IP preference set on the mesh and additionally add IP preferences to each virtual node to see how it affects each color service. Preferences can be changed by changing the `.json` files in the either `/vg/mesh` or `vn/mesh` depending on which setup you are using. Then running the mesh update script `/vg/mesh/update-mesh.sh` or `/vn/mesh/update-mesh.sh`.
+Let us now change the IP preference set on the mesh to `IPv6_ONLY`. The IP preference can be changed in the `mesh.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using. Then running the mesh update script for the respective setup
 
+CloudMap Service Discovery
+```bash
+./cloud/mesh/update-mesh.sh mesh
+```
 
-## Step 7: Clean Up
+DNS Service Discovery
+```bash
+./dns/mesh/update-mesh.sh mesh
+```
+
+Once the update has been made we can send traaffic to the services again.
+
+Try 
+```bash
+curl "${COLORAPP_ENDPOINT}/purple"
+```
+ and see if the service correctly gives you the color purple back. 
+
+Try 
+```bash
+curl "${COLORAPP_ENDPOINT}/green"
+```
+ and see if an upstream connection error occurs. (503) 
+
+Try 
+```bash
+curl "${COLORAPP_ENDPOINT}/red"
+```
+ and see if a connection error occur due to no healthy upstreams. 
+
+You can also try all of the following colors as well and get these results
+
+* orange - no healthy upstream
+* yellow - no healthy upstream
+* blue - get back blue
+
+## Step 7: Override Mesh IP Preference
+Currently a mesh IP preference of `IPv6_ONLY` had been set causing the red, orange, and yellow services unable to respond to traffic. In order to address this we can override the mesh IP preference by setting an IP preference at the virtual node level.
+
+Let's change the preference for the red service first by modifying the `red-vn.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using.
+
+Once this has been done let us execute the change.
+
+CloudMap Service Discovery
+```bash
+./cloud/mesh/update-mesh.sh red-vn
+```
+
+DNS Service Discovery
+```bash
+./dns/mesh/update-mesh.sh red-vn
+```
+
+Now with this change in place let us send traffic to the service.
+
+Try 
+```bash
+curl "${COLORAPP_ENDPOINT}/red"
+```
+ and see if the service correctly gives you the color red back.
+
+## Step 8: Sending IPv6 Traffic to the Virtual Gateway
+
+## Step 9: Experiment with Different Preferences
+Now that we have made changes to the mesh and virtual node IP preferences it is time to experiment. Updating the mesh and virtual node preferences you can test and see how the preferences impact the traffic being sent to each service.
+
+## Step 10: Clean Up
 
 Run the following commands to clean up and tear down the resources that we’ve created.
 
