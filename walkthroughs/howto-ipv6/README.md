@@ -508,7 +508,7 @@ endpoints:
 
 **Envoy Listener Configuration: Binding Address (Ingress/Egress)**: Envoy listener would accept all IPv4 and IPv6 address if IP preference is set
 
-```aidl
+```
 address:
   socket_address:
     # *::* binds for all IPv6 addresses, currently is 0.0.0.0
