@@ -53,13 +53,13 @@ This field is not a required setting for mesh/virtual nodes. Users could have `N
         }
     }
     ```
- ***Note**: If IP preference is set on both Mesh and Virtual Node configurations for the same resource, IP preference setting in Virtual Nodes will override corresponding Mesh configurations for envoy of this specific virtual node. 
+ **Note: If IP preference is set on both Mesh and Virtual Node configurations for the same resource, IP preference setting in Virtual Nodes will override corresponding Mesh configurations for envoy of this specific virtual node.**
 
 ### Changes in Related Behaviors
 
-- **Service Discovery**: If users specify **Service discovery method** as **DNS** or **AWS Cloud Map** in Virtual Node Configurations, different IP preference settings would change returned service address from AWS Cloud Map or DNS resolution.     
-- **Envoy Listener Configuration Binding Address**:  Envoy will only accept and handle traffic for the addresses it is told to bind to. If IP preference is set in either Mesh or Virtual node configurations, generated envoy configurations would let it bind to all IPv4 and IPv6 addresses for ingress and egress traffic. Otherwise it would only bind to all IPv4 addresses.  
-- **Envoy Cluster Configuration Local Application Address**: Envoy is configured to send traffic to the local application by defining an endpoint using the loopback address as the application’s IP address
+- **Service Discovery**: If a user configures **Service Discovery** on thier virtual node (**DNS** or **AWS Cloud Map**), then the different IP preference settings will affect what IP addresses are returned from AWS Cloud Map or DNS resolution for the different services in this setup.     
+- **Envoy Listener Configuration Binding Address**:  Envoy will only accept and handle traffic for the addresses it is told to bind to. If an IP preference is set either on the mesh or virtual node itself, then the resulting listener generated within a virtual node's Envoy configuration will bind to all IPv4 and IPv6 addresses for ingress and egress traffic. Otherwise, without any IP prefernce set the Envoy will only bind to all IPv4 addresses.  
+- **Envoy Cluster Configuration Local Application Address**: Envoys that are running as a sidercar to an application are configured to send traffic to the application by defining an endpoint that uses a loopback address as the application’s IP address. Only a single address can be defined for this purpose and it will be either the IPv4 loopback address (127.0.0.1) or IPv6 loopback address (::1).
 
 |	|Service Discovery: DNS |Service Discovery: AWS Cloud Map |Envoy Cluster Configuration: Local Application Address	| Envoy Listener Configuration Binding Address (Ingress/Egress) |
 |---	|---	|---	|---	|---  |
@@ -283,13 +283,17 @@ curl "${COLORAPP_ENDPOINT}/red"
 ```
  and see if the service correctly gives you the color red back. 
 
-For the red service, it is discoverable via IPv4 and 
+**Why did this request succeed?**
+The red service is discoverable via IPv4 and the virtual gateway can send it traffic given the current preference is `IPv4_ONLY`. Once the Envoy recieves the request it will send the request to the application via an IPv4 address. This address is compatible with the application because it can recieve IPv4 traffic.
 
 Try 
 ```bash
 curl "${COLORAPP_ENDPOINT}/yellow"
 ```
  and see if an upstream connection error occurs. (503) 
+
+**Why did this request fail?**
+The yellow service is discoverable via IPv4 and the virtual gateway can send it traffic given the current preference is `IPv4_ONLY`. However, once the Envoy recieves the request it will send the request to the application via an IPv4 address. This address is not compatible with the application because it can only recieve IPv6 traffic. This results in a connection error.
 
 You can also try all of the following colors as well and get these results
 
@@ -337,17 +341,26 @@ curl "${COLORAPP_ENDPOINT}/purple"
 ```
  and see if the service correctly gives you the color purple back. 
 
+**Why did this request succeed?**
+The purple service is discoverable via IPv4 and IPv6 and the virtual gateway can send it traffic given the current preference is `IPv6_ONLY`. Once the Envoy recieves the request it will send the request to the application via an IPv6 address. This address is compatible with the application because it can recieve IPv6 traffic.
+
 Try 
 ```bash
 curl "${COLORAPP_ENDPOINT}/green"
 ```
  and see if an upstream connection error occurs. (503) 
 
+**Why did this request fail?**
+The green service is discoverable via IPv4 and IPv6 and the virtual gateway can send it traffic given the current preference is `IPv6_ONLY`. However, once the Envoy recieves the request it will send the request to the application via an IPv6 address. This address is not compatible with the application because it can only recieve IPv4 traffic. This results in a connection error.
+
 Try 
 ```bash
 curl "${COLORAPP_ENDPOINT}/red"
 ```
  and see if a connection error occur due to no healthy upstreams. 
+
+**Why did this request fail?**
+The red service is discoverable via IPv4 and the virtual gateway cannot send it traffic given the current preference is `IPv6_ONLY`. For CloudMap service discovery, there are no IPv6 address that are being registered. For DNS service discovery, there are no AAAA records being registered. As a result the virtual gateway does not have an IP address to route traffic to.
 
 You can also try all of the following colors as well and get these results
 
@@ -379,6 +392,9 @@ Try
 curl "${COLORAPP_ENDPOINT}/red"
 ```
  and see if the service correctly gives you the color red back.
+
+**Why did this request succeed?**
+The red service is discoverable via IPv4 and the virtual gateway can send it traffic given the virtual node preference of `IPv4_ONLY` overrides the mesh prefernce making it this virtual node discoverable. Once the Envoy recieves the request it will send the request to the application via an IPv4 address. This address is compatible with the application because it can recieve IPv4 traffic.
 
 ## Step 8: Sending IPv6 Traffic to the Virtual Gateway
 Up until this point, IPv4 has been used to communicate between the load balancer and the virtual gateway. This is due to the load balancer target group that has been used when sending traffic with the commands such as below.
