@@ -69,10 +69,12 @@ This field is not a required setting for mesh/virtual nodes. Users could have `N
 |`IPv4_ONLY` | Envoy's DNS resolver will only use IPv4  |We will only use the IPv4 address returned by CloudMap |The endpoint created for the local app will use an IPv4 address |The Envoy will bind to all IPv4 and IPv6 addresses |
 |`IPv6_ONLY` | Envoy's DNS resolver will only use IPv6  |We will only use the IPv6 address returned by CloudMap |The endpoint created for the local app will use an IPv6 address |The Envoy will bind to all IPv4 and IPv6 addresses |
 
+[Related Envoy Configuration in Appendix](#appendix)
+
 ## Setup
 For this walkthrough we have use Color App example as the application. An ALB is used to forward traffic to a virtual gateway which then forwards the traffic to virtual nodes in the mesh via gateway routes. Two sets of services have been used and the difference between them is `Service discovery method` for virtual nodes. The first set uses `DNS` and the other uses `AWS Cloud Map`.
 ![Images](setup_graph.png)
-  
+
 Among six virtual nodes, we have different combinations of two variables:
 1. **Service Discovery**: whether the service could be discovered by IPv4 only or IPv6 only or both. This helps us test the `Service Discovery` behavior from table above.
 2. **Application compatibility**: application only listens for IPv4 only or IPv6 only or both types of traffic. This helps us test `Envoy Cluster Configuration: Local Application Address` behavior from the table above
@@ -454,4 +456,80 @@ Delete the DNS service discovery setup if you deployed it:
 Delete the infrastructure after you have torn down your setup(s):
 ```bash
 ./deploy.sh delete-infra
+```
+
+## Appendix 
+
+Envoy configuration changes based on IP Preference setting
+
+**Service Discovery: DNS**: `dns_lookup_family` value would be changed according to IP preference settings    
+
+|IP preference	|dns_lookup_family	|
+|---	|---	|
+|`No Preference` | AUTO (prefer IPv6 and fall back to IPv4 )  |
+|`IPv4_PREFERRED` | V4_PREFERRED |
+|`IPv6_PREFERRED` | AUTO  |
+|`IPv4_ONLY` | V4_ONLY  |
+|`IPv6_ONLY` | V6_ONLY |
+
+
+```
+# DNS Resolution Preference*      
+      
+type: LOGICAL_DNS
+connect_timeout: 1s
+# Determines how the Envoy will perform DNS resolution for this cluster. The default is AUTO which is prefer IPv6 and fall back to IPv4 
+dns_lookup_family: V6_ONLY    
+load_assignment:
+  cluster_name: cds_egress_bookstore_reviews-v1-${scenarioSuffix}_http_8020
+  endpoints:
+    - lb_endpoints:
+      - endpoint:
+          address:
+            socket_address:
+              address: reviews-v1.internal
+              port_value: 8020
+```
+**Service Discovery: AWS Cloud Map**:   
+Example: IPv6 address would be preferred to be used if IP preference is set as IPv6_PREFERRED
+
+```
+# ClouMap IP Preference*     
+     
+endpoints:
+- lb_endpoints:
+  - endpoint:
+      address:
+        socket_address:
+          # The IP address we populate using IPs from CloudMap. Today we prefer IPv4 and fall back to IPv6 for No preference
+          address: 2001:0db8:85a3:ab34:12cd:abcd:0001:2345    
+          port_value: 8080
+```
+
+**Envoy Listener Configuration: Binding Address (Ingress/Egress)**: Envoy listener would accept all IPv4 and IPv6 address if IP preference is set
+
+```aidl
+address:
+  socket_address:
+    # *::* binds for all IPv6 addresses, currently is 0.0.0.0
+    address: :: 
+    # Configures this listener to also bind to all IPv4 addresses when binding to *::*. This is currently is not set and defaults to false            
+    ipv4_compat: true     
+    # Port number depends on ingress or egress listener  
+    port_value: 15000/15001 
+```
+
+**Envoy Cluster Configuration: Local Application Address**: envoy would use 0:0:0:0:0:0:0:1 as the endpoint for local application if IP preference is set as IPv6_ONLY or IPv6_PREFERRED
+``````
+type: STATIC
+connect_timeout: 0.25s
+load_assignment:
+cluster_name: cds_ingress_bookstore_details-${scenarioSuffix}_http_8030
+endpoints:
+- lb_endpoints:
+- endpoint:
+address:
+socket_address:
+address: 0:0:0:0:0:0:0:1
+port_value: 8030
 ```
