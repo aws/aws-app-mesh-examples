@@ -273,7 +273,7 @@ If you are deploying both setups then you will want to save each endpoint separa
 ## Step 5: Test Sending Traffic in the Initial Setup
 The initial setup is using a mesh preference of V4_ONLY. This will apply a V4_ONLY preference to all virtual nodes. Let us see how this impacts traffic being sent to applications.
 
-** Note: If you**
+**Note: If you execute the following command after recently deploying then it may not work and time out. The load balancer will need some time to initialize the target group that is pointint to the virtual gateway. While the target group is initializing all requests will fail.**
 
 Try 
 ```bash
@@ -327,7 +327,7 @@ DNS Service Discovery
 
 Once the update has been made we can send traffic to the services again.
 
-** Note: All updates to your App Mesh resources (mesh and virtual node) will take some time to take effect. You will likely need to wait a little bit before the changes take place. However, this should not take longer than a few minutes. **
+**Note: All updates to your App Mesh resources (mesh and virtual node) will take some time to take effect. You will likely need to wait a little bit before the changes take place. However, this should not take longer than a few minutes.**
 
 Try 
 ```bash
@@ -401,11 +401,11 @@ Now that we have the IPv6 address of the virtual gateway we can now register thi
 3. There should be no registered targets for this target group. Let us now register a target for the virtual gateway. Click on `Register targets` to do so.
 4. Under the Step 2 there will be a field to fill out for `IPv6 address`. Put the IPv6 address saved earlier here. Now change the `Ports` field from `81` to `9080`. Once this is done click on `Including as pending below`. Finally click on `Register pending targets` to complete the target registration.
 
-** Note: This registration process needs to be repeated if you deploy a new ECS task for the virtual gateway because the IP address will change. This will cause the target to be referencing the old IP address which would need to be updated. **
+**Note: This registration process needs to be repeated if you deploy a new ECS task for the virtual gateway because the IP address will change. This will cause the target to be referencing the old IP address which would need to be updated.**
 
 With the target registered we can now send traffic to this target group. This can be done by specifying the port 81 which is being used for the IPv6 target group for this load balancer. 
 
-** Note: It may take some time before you can execute this command. The target group needs to initialize the target that you just registered. It will be in an initializing state some time before it changes state to either `healthy` or `unhealthy`. If the state is healthy then you can execute the following command. Otherwise, if the state is `unhealthy` then either the wrong IPv6 address was registered or there is a problem with the virtual getway task **
+**Note: It may take some time before you can execute this command. The target group needs to initialize the target that you just registered. It will be in an initializing state some time before it changes state to either `healthy` or `unhealthy`. If the state is healthy then you can execute the following command. Otherwise, if the state is `unhealthy` then either the wrong IPv6 address was registered or there is a problem with the virtual getway task.**
 
 Send traffic to this port using this command
 ```bash
