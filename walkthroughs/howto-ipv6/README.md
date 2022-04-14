@@ -70,10 +70,9 @@ This field is not a required setting for mesh/virtual nodes. Users could have `N
 |`IPv6_ONLY` | Envoy's DNS resolver will only use IPv6  |We will only use the IPv6 address returned by CloudMap |The endpoint created for the local app will use an IPv6 address |The Envoy will bind to all IPv4 and IPv6 addresses |
 
 ## Setup
-For this walkthrough there are two setups that can be created. One setup utilizes an NLB to forward traffic to a virtual gateway. The virtual gateway will then forward the traffic to virtual nodes in the mesh via gateway routes. The other setup utilizes an ALB to forward traffic to a virtual node. The virtual node will then forward traffic to backend virtual nodes.   
+For this walkthrough we have use Color App example as the application. An ALB is used to forward traffic to a virtual gateway which then forwards the traffic to virtual nodes in the mesh via gateway routes. Two sets of services have been used and the difference between them is `Service discovery method` for virtual nodes. The first set uses `DNS` and the other uses `AWS Cloud Map`.
 ![Images](setup_graph.png)
-
-**Traffic flow**:   
+  
 Among six virtual nodes, we have different combinations of two variables:
 1. **Service Discovery**: whether the service could be discovered by IPv4 only or IPv6 only or both. This helps us test the `Service Discovery` behavior from table above.
 2. **Application compatibility**: application only listens for IPv4 only or IPv6 only or both types of traffic. This helps us test `Envoy Cluster Configuration: Local Application Address` behavior from the table above
