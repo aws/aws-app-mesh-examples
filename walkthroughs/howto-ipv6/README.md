@@ -338,7 +338,7 @@ You can also try all of the following colors as well and get these results
 ## Step 7: Override Mesh IP Preference
 Currently a mesh IP preference of `IPv6_ONLY` had been set causing the red, orange, and yellow services unable to respond to traffic. In order to address this we can override the mesh IP preference by setting an IP preference at the virtual node level.
 
-Let's change the preference for the red service first by modifying the `red-vn.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using.
+Let's change the preference to `IPv4_PREFERRED` for the red service first by modifying the `red-vn.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using.
 
 Once this has been done let us execute the change.
 
