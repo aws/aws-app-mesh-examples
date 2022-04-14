@@ -4,22 +4,26 @@
 
 In this walkthrough we'll be setting up applications with different IP version capabilites and configuring App Mesh resources to see how they impact these applications.
 
-- **IP Preferences:** With the introduction of IPv6 support in App Mesh a new IP preference field has been added to meshes and virtual nodes. IP preferences will impact how Envoy configuration gets generated. The four possible values for IP preferences are the following.
+### IP Preferences in Mesh/Virtual Node
 
-    * `IPv4_ONLY`
-    * `IPv4_PREFERRED`
-    * `IPv6_ONLY`
-    * `IPv6_PREFERRED`
+With the introduction of IPv6 support in App Mesh a new IP preference field has been added to meshes and virtual nodes. IP preferences will impact how Envoy configuration gets generated. The four possible values for IP preferences in Mesh/Virtual nodes are the following.
+
+  * `IPv4_ONLY`: only use IPv4
+  * `IPv4_PREFERRED`:  prefer IPv4 and fall back to IPv6
+  * `IPv6_ONLY`: only use IPv6
+  * `IPv6_PREFERRED`: prefer IPv6 and fall back to IPv4  
+
+This field is not a required setting for mesh/virtual nodes. Users could have `No Preference` by not specifying the field. The behaviors would be further illustrated below. 
 
 - **Meshes:** Adding an IP preference to a mesh impacts how Envoy configuration will be generated for all virtual nodes and virtual gateways within the mesh. A sample mesh spec that includes an IP preference can be seen below.
 
-	```json
+    ```json
     "spec": {
         "serviceDiscovery": {
             "ipPreference": "IPv6_PREFERRED"
         }
     }
-	```
+    ```
 	
 - **Virtual Nodes**: Adding an IP preference to a virtual node will change how Envoy configuration gets generated for that specific virtual node. Additionally it will change how Envoy configruation for virtual gateways and virtual nodes that are routing traffic to that virtual node. (ex. virtual node backends or gateway routes) A sample virtual node spec that includes an IP preference can be seen below.
     
@@ -49,10 +53,122 @@ In this walkthrough we'll be setting up applications with different IP version c
         }
     }
     ```
- 
+ ***Note**: If IP preference is set on both Mesh and Virtual Node configurations for the same resource, IP preference setting in Virtual Nodes will override corresponding Mesh configurations for envoy of this specific virtual node. 
+
+###Changes in Related Behaviors
+
+- **Service Discovery**: If users specify **Service discovery method** as **DNS** or **AWS Cloud Map** in Virtual Node Configurations, different IP preference settings would change returned service address from AWS Cloud Map or DNS resolution.     
+- **Envoy Listener Configuration Binding Address**:  Envoy will only accept and handle traffic for the addresses it is told to bind to. If IP preference is set in either Mesh or Virtual node configurations, generated envoy configurations would let it bind to all IPv4 and IPv6 addresses for ingress and egress traffic. Otherwise it would only bind to all IPv4 addresses.  
+- **Envoy Cluster Configuration Local Application Address**: Envoy is configured to send traffic to the local application by defining an endpoint using the loopback address as the application’s IP address
+
+|	|Service Discovery: DNS |Service Discovery: AWS Cloud Map |Envoy Cluster Configuration: Local Application Address	| Envoy Listener Configuration Binding Address (Ingress/Egress) |
+|---	|---	|---	|---	|---  |
+|`No Preference` | Envoy's DNS resolver will prefer IPv6 and fall back to IPv4  |We will use the IPv4 address returned by CloudMap if available and fall back to using the IPv6 address |The endpoint created for the local app will use an IPv4 address |The Envoy will bind to all IPv4 addresses |
+|`IPv4_PREFERRED` | Envoy's DNS resolver will prefer IPv4 and fall back to IPv6  |We will use the IPv4 address returned by CloudMap if available and fall back to using the IPv6 address |The endpoint created for the local app will use an IPv4 address |The Envoy will bind to all IPv4 and IPv6 addresses |
+|`IPv6_PREFERRED` | Envoy's DNS resolver will prefer IPv6 and fall back to IPv4  |We will use the IPv6 address returned by CloudMap if available and fall back to using the IPv4 address |The endpoint created for the local app will use an IPv6 address |The Envoy will bind to all IPv4 and IPv6 addresses |
+|`IPv4_ONLY` | Envoy's DNS resolver will only use IPv4  |We will only use the IPv4 address returned by CloudMap |The endpoint created for the local app will use an IPv4 address |The Envoy will bind to all IPv4 and IPv6 addresses |
+|`IPv6_ONLY` | Envoy's DNS resolver will only use IPv6  |We will only use the IPv6 address returned by CloudMap |The endpoint created for the local app will use an IPv6 address |The Envoy will bind to all IPv4 and IPv6 addresses |
+[Code snippet TBD]()
 
 ## Setup
-For this walkthrough there are two setups that can be created. One setup utilizes an NLB to forward traffic to a virtual gateway. The virtual gateway will then forward the traffic to virtual nodes in the mesh via gateway routes. The other setup utilizes an ALB to forward traffic to a virtual node. The virtual node will then forward traffic to backend virtual nodes.
+For this walkthrough there are two setups that can be created. One setup utilizes an NLB to forward traffic to a virtual gateway. The virtual gateway will then forward the traffic to virtual nodes in the mesh via gateway routes. The other setup utilizes an ALB to forward traffic to a virtual node. The virtual node will then forward traffic to backend virtual nodes.   
+[Images TBD]()
+
+**Traffic flow**:   
+Among six virtual nodes, we have different combinations of two variables:
+1. **Service Discovery**: whether the service could be discovered by IPv4 only or IPv6 only or both. This helps us test the `Service Discovery` behavior from table above.
+2. **Application compatibility**: application only listens for IPv4 only or IPv6 only or both types of traffic. This helps us test `Envoy Cluster Configuration: Local Application Address` behavior from the table above
+
+Based on these two settings, request would fail with following cases:
+1. Virtual gateway looks for specific type of IP address of the service depending on the IP preference in Mesh/Virtual nodes, but the service doesn't have that type of IP registered.  
+For example, if colorteller-yellow-vn set IP preference as IPv6_ONLY but only has IPv4 address registered for the service, then virtual gateway would fail to connect to this virtual nodes.
+2. After the traffic reaches the envoy from the virtual node,  the connection still can fail if envoy sends traffic to the local application by using the type application doesn't listen for.   
+For example, if colorteller-green-vn has application only listens for IPv4 but has IP preference set as IPv6_PREFERRED, the request would fail because envoy would use IPv6 address to connect to application but application won't accept it.  
+Note that even with IPv6_Preferred is used, it won't fall back to IPv4 automatically when envoy tries to connect to local application so error still occurs.
+
+The following table describes how we set these two variables for all six virtual nodes and expected result after making curl requests.
+
+<table>
+    <thead>
+        <tr>
+            <th>IP Preference Setting</th>
+            <th colspan="2">red-vn</th>
+            <th colspan="2">orange-vn</th>
+            <th colspan="2">yellow-vn</th>
+            <th colspan="2">green-vn</th>
+            <th colspan="2">blue-vn</th>
+            <th colspan="2">purple-vn</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td></td>
+            <td>Service Discovery</td>
+            <td>Application Compatibility</td>
+            <td>Service Discovery</td>
+            <td>Application Compatibility</td>
+            <td>Service Discovery</td>
+            <td>Application Compatibility</td>
+            <td>Service Discovery</td>
+            <td>Application Compatibility</td>
+            <td>Service Discovery</td>
+            <td>Application Compatibility</td>
+            <td>Service Discovery</td>
+            <td>Application Compatibility</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>IPv4</td>
+            <td>IPv4</td>
+            <td>IPv4</td>
+            <td>IPv4 / IPv6</td>
+            <td>IPv4</td>
+            <td>IPv6</td>
+            <td>IPv4 / IPv6</td>
+            <td>IPv4</td>
+            <td>IPv4 / IPv6</td>
+            <td>IPv4 / IPv6</td>
+            <td>IPv4 / IPv6</td>
+            <td>IPv6</td>
+        </tr>
+        <tr>
+            <td>IPv4_ONLY</td>
+            <td colspan="2">red</td>
+            <td colspan="2">orange</td>
+            <td colspan="2">error due to application compatibility</td>
+            <td colspan="2">green</td>
+            <td colspan="2">blue</td>
+            <td colspan="2">error due to application compatibility</td>
+        </tr>
+        <tr>
+            <td>IPv4_PREFERRED</td>
+            <td colspan="2">red</td>
+            <td colspan="2">orange</td>
+            <td colspan="2">error due to application compatibility</td>
+            <td colspan="2">green</td>
+            <td colspan="2">blue</td>
+            <td colspan="2">error due to application compatibility</td>
+        </tr>
+        <tr>
+            <td>IPv6_ONLY</td>
+            <td colspan="2">error due to service discovery and application compatibility</td>
+            <td colspan="2">error due to service discovery</td>
+            <td colspan="2">error due to service discovery</td>
+            <td colspan="2">error due to application compatibility</td>
+            <td colspan="2">blue</td>
+            <td colspan="2">purple</td>
+        </tr>
+        <tr>
+            <td>IPv6_PREFERRED</td>
+            <td colspan="2">error due to application compatibility</td>
+            <td colspan="2">orange</td>
+            <td colspan="2">yellow</td>
+            <td colspan="2">error due to application compatibility</td>
+            <td colspan="2">blue</td>
+            <td colspan="2">purple</td>
+        </tr>
+    </tbody>
+</table>
 
 ## Step 1: Prerequisites
 
