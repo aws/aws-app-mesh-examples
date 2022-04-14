@@ -190,7 +190,7 @@ This command creates an Amazon EC2 Key Pair with name `app-mesh-ip` and saves th
 4. Your AWS account will need to enable dual stack IPv6 tasks for ECS. Without enabling this ECS tasks will not be given IPv6 addresses when they are created. Enabling the setting can be done by running the following command. This command applies to the entire AWS account and only needs to be run once to enable this setting for all regions.
 
 ```bash
-aws ecs put-account-setting-default --name dualStackIPv6 --value enabled
+aws ecs put-account-setting-default --name dualStackIPv6 --value enabled --region us-west-2
 ```
 
 See [ECS Account Settings](https://docs.aws.amazon.com/AmazonECS/latest/userguide/ecs-account-settings.html) for further information about this setting.
@@ -304,7 +304,7 @@ You can also try all of the following colors as well and get these results
 
 ## Step 6: Test out a Different Mesh IP Preference
 
-Let us now change the IP preference set on the mesh to `IPv6_ONLY`. The IP preference can be changed in the `mesh.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using. After making the change, the `mesh.json` should look like:
+Let us now change the IP preference set on the mesh to `IPv6_ONLY`. The IP preference can be changed in the `mesh.json` file in either the `cloud/mesh` or `dns/mesh` folders depending on which setup you are using. After making the change, the `mesh.json` should look like:
 
 ```
 {
@@ -371,7 +371,7 @@ You can also try all of the following colors as well and get these results
 ## Step 7: Override Mesh IP Preference
 Currently a mesh IP preference of `IPv6_ONLY` had been set causing the red, orange, and yellow services unable to respond to traffic. In order to address this we can override the mesh IP preference by setting an IP preference at the virtual node level.
 
-Let's change the preference to `IPv4_PREFERRED` for the red service first by modifying the `red-vn.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using.
+Let's change the preference to `IPv4_PREFERRED` for the red service first by modifying the `red-vn.json` file in either the `cloud/mesh` or `dns/mesh` folders depending on which setup you are using.
 
 Once this has been done let us execute the change.
 
