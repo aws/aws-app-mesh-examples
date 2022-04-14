@@ -361,6 +361,34 @@ curl "${COLORAPP_ENDPOINT}/red"
  and see if the service correctly gives you the color red back.
 
 ## Step 8: Sending IPv6 Traffic to the Virtual Gateway
+Up until this point, when traffic has been sent to the services IPv4 has been used to communicate between the load balancer and the virtual gateway. This is due to the load balancer target group that has been used when sending traffic with the commands such as below.
+```bash
+curl "${COLORAPP_ENDPOINT}/red"
+```
+
+An IPv6 target group has been already created on the load balancer which can facilitate using IPv6 to communicate between the load balancer and virtual gateway. However, this will require some additional configuration before this IPv6 target group can be used.
+
+First we will need to get the IPv6 address of the virtual gateway task. This can by following the following steps in the [ECS console](https://console.aws.amazon.com/ecs).
+
+1. Find and click on the ECS cluster named `app-mesh-ipv6` in the list of clusters.
+2. Find and click on the virtual gateway service in the list of services. The name of the service will either be `app-mesh-ipv6-cloud-ecs-service-ColorGatewayService-ECS_SERVICE_SUFFIX` or `app-mesh-ipv6-dns-ecs-service-ColorGatewayService-ECS_SERVICE_SUFFIX` depending on which setup you have. 
+3. Click on the Tasks tab and click on the single task running for the service.
+4. Under the network section find the IPv6 address field and copy that address down. If there is no address present then make sure you have completed step 4 in the prequisites section of this walkthrough. If you redeploy the gateway service and this task still does not have an IPv6 address then there might be other issues. For troubleshooting this you can take a look at the following which outlines the requirements for Fargate tasks to be assigned IPv6 addresses: https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-networking.html#fargate-task-networking-vpc-dual-stack
+
+Now that we have the IPv6 address of the virtual gateway we can now register this address with the load balancer's IPv6 target group. Navigate to the [EC2 Console](https://us-west-2.console.aws.amazon.com/ec2) and follow these steps.
+
+1. Find and click on Target Groups under the Load Balancing.
+2. Find and click on the IPv6 target group. Depending on which setup you are using it will either be named `app-mesh-ipv6-web-cloud-ipv6` or `app-mesh-ipv6-web-dns-ipv6`.
+3. There should be no registered targets for this target group. Let us now register a target for the virtual gateway. Click on `Register targets` to do so.
+4. Under the Step 2 there will be a field to fill out for `IPv6 address`. Put the IPv6 address saved earlier here. Now change the `Ports` field from `81` to `9080`. Once this is done click on `Including as pending below`. Finally click on `Register pending targets` to complete the target registration.
+
+With the target registered we can now send traffic to this target group. This can be done by specifying the port 81 which is being used for the IPv6 target group for this load balancer. 
+
+Send traffic to this port using this command
+```bash
+curl "${COLORAPP_ENDPOINT}:81/red"
+```
+The response will be the color red assuming that nothing has changed with the mesh and virtual nodes since the previous step.
 
 ## Step 9: Experiment with Different Preferences
 Now that we have made changes to the mesh and virtual node IP preferences it is time to experiment. Updating the mesh and virtual node preferences you can test and see how the preferences impact the traffic being sent to each service.
