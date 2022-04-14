@@ -71,7 +71,7 @@ This field is not a required setting for mesh/virtual nodes. Users could have `N
 
 ## Setup
 For this walkthrough there are two setups that can be created. One setup utilizes an NLB to forward traffic to a virtual gateway. The virtual gateway will then forward the traffic to virtual nodes in the mesh via gateway routes. The other setup utilizes an ALB to forward traffic to a virtual node. The virtual node will then forward traffic to backend virtual nodes.   
-![Images](images/setup_graph.png)
+![Images](setup_graph.png)
 
 **Traffic flow**:   
 Among six virtual nodes, we have different combinations of two variables:
