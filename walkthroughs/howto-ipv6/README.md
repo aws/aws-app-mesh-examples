@@ -296,7 +296,22 @@ You can also try all of the following colors as well and get these results
 
 ## Step 6: Test out a Different Mesh IP Preference
 
-Let us now change the IP preference set on the mesh to `IPv6_ONLY`. The IP preference can be changed in the `mesh.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using. Then running the mesh update script for the respective setup
+Let us now change the IP preference set on the mesh to `IPv6_ONLY`. The IP preference can be changed in the `mesh.json` file in either the `/cloud/mesh` or `dns/mesh` folders depending on which setup you are using. After making the change, the `mesh.json` should look like:
+
+```
+{
+    "spec": {
+        "serviceDiscovery": {
+            "ipPreference": "IPv6_ONLY"
+        },
+        "egressFilter": {
+            "type": "ALLOW_ALL"
+        }
+    }
+}
+```
+
+Then running the mesh update script for the respective setup
 
 CloudMap Service Discovery
 ```bash
