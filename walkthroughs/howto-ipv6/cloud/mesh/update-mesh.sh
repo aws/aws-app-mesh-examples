@@ -5,20 +5,20 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 update_mesh() {
-    aws appmesh-ipv6 update-mesh --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/mesh.json
+    aws appmesh-ipv6 update-mesh --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/mesh.json
 }
 
 update_virtual_nodes() {
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/red-vn.json
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/orange-vn.json
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/yellow-vn.json
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/green-vn.json
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/blue-vn.json
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/purple-vn.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/red-vn.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/orange-vn.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/yellow-vn.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/green-vn.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/blue-vn.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/purple-vn.json
 }
 
 update_virtual_node() {
-    aws appmesh-ipv6 update-virtual-node --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/${1}.json
+    aws appmesh-ipv6 update-virtual-node --region ${AWS_DEFAULT_REGION} --mesh-name "${MESH_NAME}-cloud-mesh" --cli-input-json file://${DIR}/${1}.json
 }
 
 action=${1:-"mesh"}
