@@ -45,7 +45,7 @@ deploy_images() {
     echo "Deploying Color Client and Color Server images to ECR..."
     ecr_login
     for app in color_client color_server_v4 color_server_dual color_server_v6; do
-        aws ecr describe-repositories --repository-name ${PROJECT_NAME}/${app} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${PROJECT_NAME}/${app} >/dev/null
+        aws ecr describe-repositories --region ${AWS_DEFAULT_REGION} --repository-name ${PROJECT_NAME}/${app} >/dev/null 2>&1 || aws ecr create-repository --region ${AWS_DEFAULT_REGION} --repository-name ${PROJECT_NAME}/${app} >/dev/null
         docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
         docker push ${ECR_IMAGE_PREFIX}/${app}
     done
@@ -111,6 +111,7 @@ deploy_cloud_mesh() {
     echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-cloud-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
+        --region "${AWS_DEFAULT_REGION}" \        
         --stack-name "${PROJECT_NAME}-cloud-mesh" \
         --template-file "${DIR}/cloud/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
@@ -124,6 +125,7 @@ deploy_dns_mesh() {
     echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-dns-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
+        --region "${AWS_DEFAULT_REGION}" \        
         --stack-name "${PROJECT_NAME}-dns-mesh" \
         --template-file "${DIR}/dns/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
@@ -137,6 +139,7 @@ print_bastion() {
     echo "Bastion endpoint:"
     ip=$(aws cloudformation describe-stacks \
         --stack-name="${PROJECT_NAME}-ecs-cluster" \
+        --region ${AWS_DEFAULT_REGION} \
         --query="Stacks[0].Outputs[?OutputKey=='BastionIP'].OutputValue" \
         --output=text)
     echo "${ip}"
@@ -146,6 +149,7 @@ print_endpoint() {
     echo "Public endpoint:"
     prefix=$(aws cloudformation describe-stacks \
         --stack-name="${PROJECT_NAME}-$1-ecs-service" \
+        --region ${AWS_DEFAULT_REGION} \
         --query="Stacks[0].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" \
         --output=text)
     echo "${prefix}"
@@ -176,9 +180,9 @@ deploy_dns() {
 delete_cfn_stack() {
     stack_name=$1
     echo "Deleting Cloud Formation stack: \"${stack_name}\"..."
-    aws cloudformation delete-stack --stack-name $stack_name
+    aws cloudformation delete-stack --stack-name $stack_name --region ${AWS_DEFAULT_REGION}
     echo 'Waiting for the stack to be deleted, this may take a few minutes...'
-    aws cloudformation wait stack-delete-complete --stack-name $stack_name
+    aws cloudformation wait stack-delete-complete --stack-name $stack_name --region ${AWS_DEFAULT_REGION}
     echo 'Done'
 }
 
@@ -187,6 +191,7 @@ delete_images() {
         echo "deleting repository \"${app}\"..."
         aws ecr delete-repository \
            --repository-name $PROJECT_NAME/$app \
+           --region ${AWS_DEFAULT_REGION} \
            --force >/dev/null
     done
 }
