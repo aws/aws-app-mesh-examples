@@ -110,8 +110,10 @@ Resources:
       Name: !Sub "${ECSServicesDomain}.dns"
 
   ECSServiceDiscoveryNamespaceCloud:
-    Type: AWS::ServiceDiscovery::HttpNamespace
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
     Properties:
+      Vpc:
+        'Fn::ImportValue': !Sub "${ProjectName}:VPC"    
       Name: !Sub "${ECSServicesDomain}.cloud"
 
   BastionSecurityGroup:

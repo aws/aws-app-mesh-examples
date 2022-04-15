@@ -180,7 +180,7 @@ The following table describes how we set these two variables for all six virtual
 3. You'll need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
-aws ec2 create-key-pair --key-name app-mesh-ip | jq -r .KeyMaterial > ~/.ssh/app-mesh-ip.pem
+aws ec2 create-key-pair --region eu-central-1 --key-name app-mesh-ip | jq -r .KeyMaterial > ~/.ssh/app-mesh-ip.pem
 chmod 400 ~/.ssh/app-mesh-ip.pem
 ```
 
@@ -190,7 +190,7 @@ This command creates an Amazon EC2 Key Pair with name `app-mesh-ip` and saves th
 4. Your AWS account will need to enable dual stack IPv6 tasks for ECS. Without enabling this ECS tasks will not be given IPv6 addresses when they are created. Enabling the setting can be done by running the following command. This command applies to the entire AWS account and only needs to be run once to enable this setting for all regions.
 
 ```bash
-aws ecs put-account-setting-default --name dualStackIPv6 --value enabled --region us-west-2
+aws ecs put-account-setting-default --name dualStackIPv6 --value enabled --region eu-central-1
 ```
 
 See [ECS Account Settings](https://docs.aws.amazon.com/AmazonECS/latest/userguide/ecs-account-settings.html) for further information about this setting.

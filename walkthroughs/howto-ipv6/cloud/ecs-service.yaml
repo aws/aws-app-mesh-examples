@@ -30,10 +30,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller-red"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud" 
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1       
+        FailureThreshold: 1     
 
   ColorTellerRedTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -173,10 +177,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller-orange"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"  
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1      
+        FailureThreshold: 1     
 
   ColorTellerOrangeTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -316,10 +324,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller-yellow"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1  
+        FailureThreshold: 1   
 
   ColorTellerYellowTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -459,10 +471,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller-green"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1  
+        FailureThreshold: 1   
 
   ColorTellerGreenTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -602,10 +618,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller-blue"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1  
+        FailureThreshold: 1   
 
   ColorTellerBlueTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -745,10 +765,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorteller-purple"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1  
+        FailureThreshold: 1   
 
   ColorTellerPurpleTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -888,10 +912,14 @@ Resources:
     Type: 'AWS::ServiceDiscovery::Service'
     Properties:
       Name: "colorgateway"
-      NamespaceId:
-        'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+      DnsConfig:
+        NamespaceId:
+          'Fn::ImportValue': !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"
+        DnsRecords:
+          - Type: A
+            TTL: 300              
       HealthCheckCustomConfig:
-        FailureThreshold: 1  
+        FailureThreshold: 1   
 
   ColorGatewayTaskDefinition:
     Type: AWS::ECS::TaskDefinition
