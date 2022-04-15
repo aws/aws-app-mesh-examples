@@ -208,7 +208,7 @@ export KEY_PAIR_NAME=<app-mesh-ip or your key pair stored in AWS>
 Set the following environment variables specific to the walkthrough:
 
 ```bash
-export AWS_DEFAULT_REGION=us-west-2
+export AWS_DEFAULT_REGION=eu-central-1
 export PROJECT_NAME=app-mesh-ipv6
 export MESH_NAME=app-mesh-ipv6
 export SERVICES_DOMAIN="default.svc.cluster.local"
