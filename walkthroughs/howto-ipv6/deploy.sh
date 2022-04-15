@@ -70,7 +70,7 @@ deploy_vpc() {
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-vpc"\
+        --stack-name "${PROJECT_NAME}-vpc" \
         --template-file "${DIR}/infra/vpc.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
@@ -82,7 +82,7 @@ deploy_cloud_service() {
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-cloud-ecs-service"\
+        --stack-name "${PROJECT_NAME}-cloud-ecs-service" \
         --template-file "${DIR}/cloud/ecs-service.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
@@ -111,7 +111,7 @@ deploy_cloud_mesh() {
     echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-cloud-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
-        --region "${AWS_DEFAULT_REGION}" \        
+        --region "${AWS_DEFAULT_REGION}" \
         --stack-name "${PROJECT_NAME}-cloud-mesh" \
         --template-file "${DIR}/cloud/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
@@ -125,7 +125,7 @@ deploy_dns_mesh() {
     echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-dns-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
-        --region "${AWS_DEFAULT_REGION}" \        
+        --region "${AWS_DEFAULT_REGION}" \
         --stack-name "${PROJECT_NAME}-dns-mesh" \
         --template-file "${DIR}/dns/mesh.yaml" \
         --capabilities CAPABILITY_IAM \
