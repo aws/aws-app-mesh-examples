@@ -21,4 +21,4 @@ unset PASSPHRASE
 unset PASSPHRASE_B64
 
 # Start Envoy
-/usr/bin/envoy-wrapper
+/usr/bin/agent

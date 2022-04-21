@@ -24,4 +24,4 @@ getCertificates() {
 # Get the appropriate certificates
 getCertificates
 # Start Envoy
-/usr/bin/envoy-wrapper
+/usr/bin/agent
