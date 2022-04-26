@@ -1,0 +1,32 @@
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: appmeshtestipv6
+  region: us-west-2
+  version: "1.21"
+
+kubernetesNetworkConfig:
+  ipFamily: IPv6
+
+addons:
+  - name: vpc-cni
+    version: latest
+  - name: coredns
+    version: latest
+  - name: kube-proxy
+    version: latest
+
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+- name: ng-1
+  instanceType: m5.large
+  iam:
+    withAddonPolicies:
+      appMesh: true
+      imageBuilder: true
+
+

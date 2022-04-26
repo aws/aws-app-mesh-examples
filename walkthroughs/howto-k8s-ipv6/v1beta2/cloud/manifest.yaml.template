@@ -1,0 +1,334 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${APP_NAMESPACE}
+  labels:
+    mesh: ${MESH_NAME}
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: ${MESH_NAME}
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: ${MESH_NAME}
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: client
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: client
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: color
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: client
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: red
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: red
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http2
+      healthCheck:
+        port: 8080
+        protocol: http2
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 3
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: color-red
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: blue
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http2
+      healthCheck:
+        port: 8080
+        protocol: http2
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 3
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: color-blue
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: green
+  namespace: ${APP_NAMESPACE}
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: green
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http2
+      healthCheck:
+        port: 8080
+        protocol: http2
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 3
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    awsCloudMap:
+      namespaceName: ${CLOUDMAP_NAMESPACE}
+      serviceName: color-green
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color
+  namespace: ${APP_NAMESPACE}
+spec:
+  awsName: color.${APP_NAMESPACE}.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: color
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: ${APP_NAMESPACE}
+  name: color
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http2
+  routes:
+    - name: color-route
+      http2Route:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: red
+              weight: 1
+            - virtualNodeRef:
+                name: blue
+              weight: 1
+            - virtualNodeRef:
+                name: green
+              weight: 1
+---
+# Service per VirtualNode is a no-op when using CloudMap
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http2
+  selector:
+    app: client
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+        - name: app
+          image: ${FRONT_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR_HOST"
+              value: "color.${APP_NAMESPACE}.svc.cluster.local:8080"
+            - name: "PORT"
+              value: "8080"
+---
+# Service per VirtualNode is a no-op when using CloudMap
+apiVersion: v1
+kind: Service
+metadata:
+  name: red
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http2
+  selector:
+    app: color
+    version: red
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: red
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: red
+  template:
+    metadata:
+      labels:
+        app: color
+        version: red
+    spec:
+      containers:
+        - name: app
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "red"
+            - name: "PORT"
+              value: "8080"
+---
+# Service per VirtualNode is a no-op when using CloudMap
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http2
+  selector:
+    app: color
+    version: blue
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: color
+        version: blue
+    spec:
+      containers:
+        - name: app
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "blue"
+            - name: "PORT"
+              value: "8080"
+---
+# Service per VirtualNode is a no-op when using CloudMap
+apiVersion: v1
+kind: Service
+metadata:
+  name: green
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http2
+  selector:
+    app: color
+    version: green
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green
+  namespace: ${APP_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+      version: green
+  template:
+    metadata:
+      labels:
+        app: color
+        version: green
+    spec:
+      containers:
+        - name: app
+          image: ${COLOR_APP_IMAGE}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "green"
+            - name: "PORT"
+              value: "8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color
+  namespace: ${APP_NAMESPACE}
+spec:
+  ports:
+    - port: 8080
+      name: http2
