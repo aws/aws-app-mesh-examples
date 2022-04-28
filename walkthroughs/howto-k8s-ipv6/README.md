@@ -24,7 +24,8 @@ Meshes: Adding an IP preference to a mesh impacts how Envoy configuration will b
 ```
 
 ## Prerequisites
-1. Install appmesh-controller.
+1. To use the IPv6 feature create EKS cluster with ipFamily as IPv6. Sample IPv6 yaml file: [IPv6 EKS cluster](ipv6-cluster.yaml)
+2. Install appmesh-controller.
 
 Note: Run the following to check that cluster name is set.
 
@@ -44,7 +45,6 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 ```
 2. Install Docker. It is needed to build the demo application images.
 
-3. To use the IPv6 feature create EKS cluster with ipFamily as IPv6. To create [IPv6 EKS cluster](ipv6-cluster.yaml) 
 
 ## Setup
 
@@ -83,6 +83,11 @@ kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest
 ```
 curl client.howto-k8s-ipv6.svc.cluster.local:8080/color; echo;
 ```
+4. To clean example with CloudMap service discovery:
+
+```
+kubectl delete -f _output/cloud/manifest.yaml
+```
 
 ## DNS Service Discovery
 1. Run the following command
@@ -98,17 +103,8 @@ kubectl run -i --tty curler --image=public.ecr.aws/k8m1l3p1/alpine/curler:latest
 ```
 curl front.howto-k8s-ipv6.svc.cluster.local:8080/color; echo;
 ```
-
-## Clean up
-
-To clean example with DNS service discovery:
+4. To clean example with DNS service discovery:
 
 ```
 kubectl delete -f _output/dns/manifest.yaml
-```
-
-To clean example with CloudMap service discovery:
-
-```
-kubectl delete -f _output/cloud/manifest.yaml
 ```
