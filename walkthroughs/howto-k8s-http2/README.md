@@ -29,6 +29,10 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
     ```
     helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set sidecar.image.repository=840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy --set sidecar.image.tag=<VERSION>
     ```
+1. **VPC_ID** environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use aws eks describe-cluster.
+    ```
+    export VPC_ID=...
+    ```
 1. Deploy
     ```.
     ./deploy.sh
