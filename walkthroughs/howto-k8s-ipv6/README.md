@@ -37,7 +37,7 @@ Note: Run the following to check that cluster name is set.
 
    If cluster-name is not set, update the App Mesh controller to set it by running:
 
-       helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set clusterName=<name-of-you-cluster>
+       helm upgrade -i appmesh-controller eks/appmesh-controller --namespace appmesh-system --set clusterName=<name-of-your-cluster>
 
 2. v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
@@ -60,7 +60,7 @@ $ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".
 4. **(Optional) Specify Envoy Image version** If you'd like to use a different Envoy image version than the [default](https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller#configuration), run `helm upgrade` to override the `sidecar.image.repository` and `sidecar.image.tag` fields.
 5. VPC_ID environment variable is set to the VPC where Kubernetes pods are launched. VPC will be used to setup private DNS namespace in AWS using create-private-dns-namespace API. To find out VPC of EKS cluster you can use aws eks describe-cluster.
 ```
-aws eks describe-cluster --name appmeshipv6 | grep vpcId
+aws eks describe-cluster --name <name-of-you-cluster> | grep vpcId
 ```
 
 ```
