@@ -12,6 +12,9 @@ Resources:
     Type: AWS::AppMesh::Mesh
     Properties:
       MeshName: !Sub '${AppMeshMeshName}'
+      Spec:
+        ServiceDiscovery:
+          IpPreference: "IPv6_ONLY"
   ColorGateway:
     Type: AWS::AppMesh::VirtualGateway
     Properties:

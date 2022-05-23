@@ -107,32 +107,19 @@ deploy_dns_service() {
         EnvoyImage="${ENVOY_IMAGE}"
 }
 
-deploy_cloud_mesh() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-cloud-mesh\"..."
+deploy_mesh() {
+    deployment_type=$1
+    template=$2
+    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-${deployment_type}-mesh\"..."
     aws cloudformation deploy \
         --no-fail-on-empty-changeset \
         --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-cloud-mesh" \
-        --template-file "${DIR}/cloud/mesh.yaml" \
+        --stack-name "${PROJECT_NAME}-${deployment_type}-mesh" \
+        --template-file "${DIR}/${deployment_type}/mesh/${template}.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
-        AppMeshMeshName="${MESH_NAME}-cloud-mesh" \
-        ProjectName="${PROJECT_NAME}"
-    ${DIR}/cloud/mesh/update-mesh.sh mesh    
-}
-
-deploy_dns_mesh() {
-    echo "Deploying Cloud Formation stack: \"${PROJECT_NAME}-dns-mesh\"..."
-    aws cloudformation deploy \
-        --no-fail-on-empty-changeset \
-        --region "${AWS_DEFAULT_REGION}" \
-        --stack-name "${PROJECT_NAME}-dns-mesh" \
-        --template-file "${DIR}/dns/mesh.yaml" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides \
-        AppMeshMeshName="${MESH_NAME}-dns-mesh" \
-        ProjectName="${PROJECT_NAME}"
-    ${DIR}/dns/mesh/update-mesh.sh mesh
+        AppMeshMeshName="${MESH_NAME}-${deployment_type}-mesh" \
+        ProjectName="${PROJECT_NAME}"    
 }
 
 print_bastion() {
@@ -164,17 +151,43 @@ deploy_infra() {
 }
 
 deploy_cloud() {
-    deploy_cloud_mesh
+    deploy_mesh "cloud" "mesh-v4-only"
     deploy_cloud_service
 
     print_endpoint "cloud"
 }
 
 deploy_dns() {
-    deploy_dns_mesh
+    deploy_mesh "dns" "mesh-v4-only"
     deploy_dns_service
 
     print_endpoint "dns"
+}
+
+update_mesh() {
+    deployment_type=$1
+    case $2 in
+        v6_preferred)
+            template="mesh-v6-preferred"
+            ;;
+        v4_preferred)
+            template="mesh-v4-preferred"
+            ;;
+        v6_only)
+            template="mesh-v6-only"
+            ;;
+        override)
+            template="override-mesh-preference"
+            ;;
+        custom)
+            template="custom-preference"
+            ;;
+        *)
+            template="mesh-v4-only"  
+            ;;                                  
+    esac
+
+    deploy_mesh ${deployment_type} ${template}
 }
 
 delete_cfn_stack() {
@@ -218,7 +231,7 @@ delete_infra() {
     echo "all resources from this tutorial have been removed"
 }
 
-action=${1:-"deploy"}
+action=${1:-"infra"}
 
 if [ "$action" == "infra" ]; then
     deploy_infra
@@ -232,6 +245,11 @@ fi
 
 if [ "$action" == "dns-service" ]; then
     deploy_dns
+    exit 0
+fi
+
+if [ "$action" == "update-mesh" ]; then
+    update_mesh $2 $3
     exit 0
 fi
 

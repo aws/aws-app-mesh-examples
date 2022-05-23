@@ -12,6 +12,9 @@ Resources:
     Type: AWS::AppMesh::Mesh
     Properties:
       MeshName: !Sub '${AppMeshMeshName}'
+      Spec:
+        ServiceDiscovery:
+          IpPreference: "IPv6_ONLY"
   ColorGateway:
     Type: AWS::AppMesh::VirtualGateway
     Properties:
@@ -149,9 +152,9 @@ Resources:
             Path: '/ping'
             Protocol: http
         ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: 'default.svc.cluster.local.cloud'
-            ServiceName: colorteller-red
+          DNS:
+            Hostname: 'colorteller-red.default.svc.cluster.local.dns'
+            IpPreference: "IPv4_PREFERRED"                
 
   ColorServerOrangeNode:
     Type: AWS::AppMesh::VirtualNode
@@ -171,9 +174,9 @@ Resources:
             Path: '/ping'
             Protocol: http
         ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: 'default.svc.cluster.local.cloud'
-            ServiceName: colorteller-orange
+          DNS:
+            Hostname: 'colorteller-orange.default.svc.cluster.local.dns'
+            IpPreference: "IPv4_PREFERRED"              
 
   ColorServerYellowNode:
     Type: AWS::AppMesh::VirtualNode
@@ -193,9 +196,9 @@ Resources:
             Path: '/ping'
             Protocol: http
         ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: 'default.svc.cluster.local.cloud'
-            ServiceName: colorteller-yellow                    
+          DNS:
+            Hostname: 'colorteller-yellow.default.svc.cluster.local.dns' 
+            IpPreference: "IPv6_PREFERRED"                                           
 
   ColorServerGreenNode:
     Type: AWS::AppMesh::VirtualNode
@@ -215,9 +218,8 @@ Resources:
             Path: '/ping'
             Protocol: http
         ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: 'default.svc.cluster.local.cloud'
-            ServiceName: colorteller-green                 
+          DNS:
+            Hostname: 'colorteller-green.default.svc.cluster.local.dns'                                
 
   ColorServerBlueNode:
     Type: AWS::AppMesh::VirtualNode
@@ -237,9 +239,8 @@ Resources:
             Path: '/ping'
             Protocol: http
         ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: 'default.svc.cluster.local.cloud'
-            ServiceName: colorteller-blue                   
+          DNS:
+            Hostname: 'colorteller-blue.default.svc.cluster.local.dns'                    
 
   ColorServerPurpleNode: 
     Type: AWS::AppMesh::VirtualNode
@@ -259,9 +260,8 @@ Resources:
             Path: '/ping'
             Protocol: http
         ServiceDiscovery:
-          AWSCloudMap:
-            NamespaceName: 'default.svc.cluster.local.cloud'
-            ServiceName: colorteller-purple                    
+          DNS:
+            Hostname: 'colorteller-purple.default.svc.cluster.local.dns'                
 
   VirtualServiceRed:
     DependsOn:

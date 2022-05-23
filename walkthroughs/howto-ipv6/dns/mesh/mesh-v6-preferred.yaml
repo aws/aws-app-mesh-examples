@@ -1,0 +1,333 @@
+Parameters:
+  AppMeshMeshName:
+    Type: String
+    Description: Mesh name
+
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+
+Resources:
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Sub '${AppMeshMeshName}'
+      Spec:
+        ServiceDiscovery:
+          IpPreference: "IPv6_PREFERRED"
+  ColorGateway:
+    Type: AWS::AppMesh::VirtualGateway
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+      VirtualGatewayName: colorgateway-vg
+
+  RedGatewayRoute:
+    DependsOn:
+    - ColorGateway
+    - VirtualServiceRed
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: colorgateway-route-red
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute: 
+          Match: 
+            Prefix: "/red"
+          Action: 
+            Target: 
+              VirtualService:
+                VirtualServiceName: 'colorteller-1.default.svc.cluster.local'
+      VirtualGatewayName: !GetAtt ColorGateway.VirtualGatewayName       
+
+  OrangeGatewayRoute:
+    DependsOn:
+    - ColorGateway
+    - VirtualServiceOrange 
+    Type: AWS::AppMesh::GatewayRoute  
+    Properties: 
+      GatewayRouteName: colorgateway-route-orange
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute: 
+          Match: 
+            Prefix: "/orange"
+          Action: 
+            Target: 
+              VirtualService:
+                VirtualServiceName: 'colorteller-2.default.svc.cluster.local'
+      VirtualGatewayName: !GetAtt ColorGateway.VirtualGatewayName
+
+  YellowGatewayRoute:
+    DependsOn:
+    - ColorGateway
+    - VirtualServiceYellow  
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: colorgateway-route-yellow 
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute: 
+          Match: 
+            Prefix: "/yellow"
+          Action: 
+            Target: 
+              VirtualService:
+                VirtualServiceName: 'colorteller-3.default.svc.cluster.local'
+      VirtualGatewayName: !GetAtt ColorGateway.VirtualGatewayName          
+
+  GreenGatewayRoute:
+    DependsOn:
+    - ColorGateway
+    - VirtualServiceGreen
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: colorgateway-route-green
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute: 
+          Match: 
+            Prefix: "/green"
+          Action: 
+            Target: 
+              VirtualService:
+                VirtualServiceName: 'colorteller-4.default.svc.cluster.local'
+      VirtualGatewayName: !GetAtt ColorGateway.VirtualGatewayName 
+
+  BlueGatewayRoute:
+    DependsOn:
+    - ColorGateway
+    - VirtualServiceBlue 
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: colorgateway-route-blue
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute: 
+          Match: 
+            Prefix: "/blue"
+          Action: 
+            Target: 
+              VirtualService:
+                VirtualServiceName: 'colorteller-5.default.svc.cluster.local'
+      VirtualGatewayName: !GetAtt ColorGateway.VirtualGatewayName    
+
+  PurpleGatewayRoute:
+    DependsOn:
+    - ColorGateway
+    - VirtualServicePurple  
+    Type: AWS::AppMesh::GatewayRoute
+    Properties: 
+      GatewayRouteName: colorgateway-route-purple
+      MeshName: !GetAtt Mesh.MeshName
+      Spec: 
+        HttpRoute: 
+          Match: 
+            Prefix: "/purple"
+          Action: 
+            Target: 
+              VirtualService:
+                VirtualServiceName: 'colorteller-6.default.svc.cluster.local'
+      VirtualGatewayName: !GetAtt ColorGateway.VirtualGatewayName          
+
+  ColorServerRedNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-red-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 2
+            Path: '/ping'
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: 'colorteller-red.default.svc.cluster.local.dns'
+
+  ColorServerOrangeNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-orange-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 2
+            Path: '/ping'
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: 'colorteller-orange.default.svc.cluster.local.dns'
+
+  ColorServerYellowNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-yellow-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 2
+            Path: '/ping'
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: 'colorteller-yellow.default.svc.cluster.local.dns'                    
+
+  ColorServerGreenNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-green-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 2
+            Path: '/ping'
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: 'colorteller-green.default.svc.cluster.local.dns'                    
+
+  ColorServerBlueNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-blue-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 2
+            Path: '/ping'
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: 'colorteller-blue.default.svc.cluster.local.dns'                    
+
+  ColorServerPurpleNode: 
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: colorteller-purple-vn
+      Spec:
+        Listeners:
+        - PortMapping:
+            Port: 9080
+            Protocol: http
+          HealthCheck:
+            HealthyThreshold: 2
+            IntervalMillis: 5000
+            TimeoutMillis: 2000
+            UnhealthyThreshold: 2
+            Path: '/ping'
+            Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: 'colorteller-purple.default.svc.cluster.local.dns'                    
+
+  VirtualServiceRed:
+    DependsOn:
+     - ColorServerRedNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: 'colorteller-1.default.svc.cluster.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: colorteller-red-vn
+
+  VirtualServiceOrange:
+    DependsOn:
+     - ColorServerOrangeNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: 'colorteller-2.default.svc.cluster.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: colorteller-orange-vn
+
+  VirtualServiceYellow:
+    DependsOn:
+     - ColorServerYellowNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: 'colorteller-3.default.svc.cluster.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: colorteller-yellow-vn         
+
+  VirtualServiceGreen:
+    DependsOn:
+     - ColorServerGreenNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: 'colorteller-4.default.svc.cluster.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: colorteller-green-vn         
+
+  VirtualServiceBlue:
+    DependsOn:
+     - ColorServerBlueNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: 'colorteller-5.default.svc.cluster.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: colorteller-blue-vn         
+
+  VirtualServicePurple:
+    DependsOn:
+     - ColorServerPurpleNode
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: 'colorteller-6.default.svc.cluster.local'
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: colorteller-purple-vn         
