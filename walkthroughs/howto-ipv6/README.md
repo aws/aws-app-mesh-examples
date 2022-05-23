@@ -308,7 +308,7 @@ You can also try all of the following colors as well and get these results
 
 Additionally we can check that the Envoy has identified the services that it can send traffic to as healthy. We can do this by logging into the bastion host and checking the virtual gateway's admin interface. 
 
-First let's log into the bastion host. If you used an already existing key pair or stored you key pair from `Prequisites` step 4 in a different location then change the command below to reflect this.
+First let's log into the bastion host. If you used an already existing key pair or stored you key pair from [Prerequisites](#step-1-prerequisites) step 4 in a different location then change the command below to reflect this.
 ```bash
 ssh -i ~/.ssh/app-mesh-ip.pem ec2-user@$BASTION_IP
 ```
