@@ -306,17 +306,47 @@ You can also try all of the following colors as well and get these results
 * blue - get back blue
 * purple - upstream connection error
 
+Additionally we can check that the Envoy has identified the services that it can send traffic to as healthy. We can do this by logging into the bastion host and checking the virtual gateway's admin interface. 
+
+First let's log into the bastion host. If you used an already existing key pair or stored you key pair from `Prequisites` step 4 in a different location then change the command below to reflect this.
+```bash
+ssh -i ~/.ssh/app-mesh-ip.pem ec2-user@$BASTION_IP
+```
+
+Now that we are logged into the bastion host. We can use the admin interface to check which services have been identified as healthy using one of the commands below depending on which setup you are using.
+
+CloudMap Service Discovery
+```bash
+curl -s http://colorgateway.default.svc.cluster.local.cloud:9901/stats | grep health_check.healthy
+```
+
+DNS Service Discovery
+```bash
+curl -s http://colorgateway.default.svc.cluster.local.dns:9901/stats | grep health_check.healthy
+```
+
+After running this command you should see output similar to the one seen below. A value of `1` indicates healthy and a value of `0` indicates unhealthy. The services that are healthy and unhealthy should line up with which services you can get responses from when using curl.
+
+```
+cluster.cds_egress_app-mesh-ipv6-cloud-mesh_colorteller-blue-vn_http_9080.health_check.healthy: 1
+cluster.cds_egress_app-mesh-ipv6-cloud-mesh_colorteller-green-vn_http_9080.health_check.healthy: 1
+cluster.cds_egress_app-mesh-ipv6-cloud-mesh_colorteller-orange-vn_http_9080.health_check.healthy: 1
+cluster.cds_egress_app-mesh-ipv6-cloud-mesh_colorteller-purple-vn_http_9080.health_check.healthy: 0
+cluster.cds_egress_app-mesh-ipv6-cloud-mesh_colorteller-red-vn_http_9080.health_check.healthy: 1
+cluster.cds_egress_app-mesh-ipv6-cloud-mesh_colorteller-yellow-vn_http_9080.health_check.healthy: 0
+```
+
 ## Step 6: Test out a Different Mesh IP Preference
 
 Let us now change the IP preference set on the mesh to `IPv6_ONLY`. Running the following command for your respective setup will update the CloudFormation stack deployed and update the mesh IP preference from `IPv4_ONLY` to `IPv6_ONLY`.
 
 CloudMap Service Discovery
-```
+```bash
 ./deploy.sh update-mesh cloud v6_only
 ```
 
 DNS Service Discovery
-```
+```bash
 ./deploy.sh update-mesh dns v6_only
 ```
 
@@ -363,12 +393,12 @@ Currently a mesh IP preference of `IPv6_ONLY` has been set causing the red, oran
 Let's change the preference to `IPv4_PREFERRED` for the red and orange services and `IPv6_PREFERRED` for the yellow service by running the one of the following commands depending on your setup.
 
 CloudMap Service Discovery
-```
+```bash
 ./deploy.sh update-mesh cloud override
 ```
 
 DNS Service Discovery
-```
+```bash
 ./deploy.sh update-mesh dns override
 ```
 
@@ -409,12 +439,12 @@ Like in previous steps, we will deploy updates to the mesh using CloudFormation.
 Once you are finished making changes to your App Mesh resources we can deploy these changes using the following command.
 
 CloudMap Service Discovery
-```
+```bash
 ./deploy.sh update-mesh cloud custom
 ```
 
 DNS Service Discovery
-```
+```bash
 ./deploy.sh update-mesh dns custom
 ```
 
