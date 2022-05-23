@@ -6,7 +6,7 @@ In this walkthrough we'll be setting up applications with different IP version c
 
 ### IP Preferences in Meshes and Virtual Nodes
 
-With the introduction of IPv6 support in App Mesh a new IP preference field has been added to meshes and virtual nodes. IP preferences will impact how Envoy configuration gets generated. There are four possible values for the IP preference field which can be set both on meshes and virtual nodes and they are the following.
+With the introduction of IPv6 support in App Mesh a new IP preference field has been added to meshes and virtual nodes. IP preferences impact how Envoy configuration gets generated with repsect to how the Envoy handles traffic for different IP versions. There are four possible values for the IP preference field which can be set both on meshes and virtual nodes and they are the following.
 
   * `IPv4_ONLY`: only use IPv4
   * `IPv4_PREFERRED`:  prefer IPv4 and fall back to IPv6
@@ -57,8 +57,8 @@ This field is not required to be present for both meshes and virtual nodes. User
 ### How IP Preferences Impact Envoy Configuration
 
 - **Service Discovery**: If a user configures **Service Discovery** on a virtual node (**DNS** or **AWS Cloud Map**), then the different IP preference settings will affect each service discovery option differently. For AWS Cloud Map service discovery, the IP address returned by Cloud Map that is used within Envoy configuration will change. For DNS service discovery, how the DNS resolver is configured for Envoy will change based on IP preferences.     
-- **Envoy Listener Configuration Binding Address**:  Envoy will only accept and handle traffic for the addresses that its listeners are told to bind to. If an IP preference is set either on the mesh or virtual node itself, then the resulting listener generated within a virtual node's Envoy listener configuration will bind to all IPv4 and IPv6 addresses for both ingress and egress traffic. Otherwise, without any IP prefernce set the Envoy listeners will only bind to all IPv4 addresses.  
-- **Envoy Cluster Configuration Local Application Address**: Envoys that are running as a sidercar to an application are configured to send traffic to the application by defining an endpoint that uses a loopback address as the application’s IP address. Only a single address can be defined for this purpose and it will be either the IPv4 loopback address (127.0.0.1) or IPv6 loopback address (::1).
+- **Envoy Listener Configuration Binding Address**:  Envoy will only accept and handle traffic for the addresses that its listeners are told to bind to. If an IP preference is set either on the mesh or virtual node itself, then the resulting listener generated within a virtual node's Envoy listener configuration will bind to all IPv4 and IPv6 addresses for both ingress and egress traffic. Otherwise, without any IP preference set the Envoy listeners will only bind to all IPv4 addresses.  
+- **Envoy Cluster Configuration Local Application Address**: Envoys that are running as a sidecar to an application are configured to send traffic to the application by defining an endpoint that uses a loopback address as the application’s IP address. Only a single address can be defined for this purpose and it will be either the IPv4 loopback address (127.0.0.1) or IPv6 loopback address (::1).
 
 |	|Service Discovery: DNS |Service Discovery: AWS Cloud Map |Envoy Cluster Configuration: Local Application Address	| Envoy Listener Configuration Binding Address (Ingress/Egress) |
 |---	|---	|---	|---	|---  |
@@ -68,22 +68,23 @@ This field is not required to be present for both meshes and virtual nodes. User
 |`IPv4_ONLY` | Envoy's DNS resolver will only use IPv4  |We will only use the IPv4 address returned by CloudMap |The endpoint created for the local app will use an IPv4 address |The Envoy will bind to all IPv4 and IPv6 addresses |
 |`IPv6_ONLY` | Envoy's DNS resolver will only use IPv6  |We will only use the IPv6 address returned by CloudMap |The endpoint created for the local app will use an IPv6 address |The Envoy will bind to all IPv4 and IPv6 addresses |
 
-[Related Envoy Configuration in Appendix](#appendix)
+[Related Envoy Configuration Examples in Appendix](#appendix)
 
 ## Setup
 For this walkthrough a variation of the Color App setup is being used as the application. An Application Load Balancer (ALB) is being used to forward traffic to a virtual gateway which then forwards the traffic to various virtual nodes in the mesh via gateway routes. In this walkthrough there are two possible setups that can be used. The primary difference between these setups is the service discovery that is being used for the virtual nodes within the setup. One of the setups uses DNS service discovery and the other uses AWS Cloud Map service discovery.
+
 ![Images](setup_graph.png)
 
 In each setup there are six different virtual nodes which have different combinations of the following two variables:
-1. **Service Discovery**: whether the service could be discovered by IPv4 only, IPv6 only or both. This helps with testing the behavior of the `Service Discovery` columns from table above.
+1. **Service Discovery**: whether the service cab be discovered by IPv4 only, IPv6 only or both. This helps with testing the behavior of the `Service Discovery` columns from table above.
 2. **Application compatibility**: the application only will listen for only IPv4, only IPv6 or both types of traffic. This helps with testing the behavior of `Envoy Cluster Configuration: Local Application Address` from the table above.
 
 With a combination of these two settings the request can fail for two general cases outlined in the following examples based on the setup in this walkthrough:
 1. The virtual gateway Envoy will use different IP versions to forward traffic depending on the IP preference set on the mesh and virtual nodes. If the virtual gateway Envoy should route traffic to an ECS task that not discoverable then the Envoy will not be able to forward the traffic.
-For example, if traffic is being forwarded to the colorteller-yellow-vn with the IP preference IPv6_ONLY being applied then a failure will occur since the task for the yellow service is only discoverable via IPv4. With an IP preference of IPv6_ONLY the Envoy will not fall back to using IPv4 when it can't find the task using IPv6. For Cloud Map, not being discoverable via IPv6 would mean that no IPv6 addresses for the task have been registered in Cloud Map. For DNS service discovery, not being discoverable via IPv6 would mean that no valid AAAA records for the domain name being used can be found by Envoy's DNS resolver. 
+For example, if traffic is being forwarded to the `colorteller-yellow-vn` with the IP preference `IPv6_ONLY` being applied then a failure will occur since the task for the yellow service is only discoverable via IPv4. With an IP preference of `IPv6_ONLY` the Envoy will not fall back to using IPv4 when it can't find the task using IPv6. For Cloud Map, not being discoverable via IPv6 would mean that no IPv6 addresses for the task have been registered in Cloud Map. For DNS service discovery, not being discoverable via IPv6 would mean that no valid AAAA records for the domain name being used can be found by Envoy's DNS resolver. 
 2. After the traffic is forwarded to any of the virtual nodes' Envoys, the connection can still fail if the Envoy sends traffic to the local application using an IP version that the application doesn't support.   
-For example, if colorteller-green-vn is using an application which only supports IPv4 traffic but has IP preference set as IPv6_PREFERRED, the request will fail because the Envoy will use an IPv6 address to connect to application causing the application to reject the request.  
-Note that even when an IP preference of IPv6_PREFERRED is used, the Envoy won't fall back to using IPv4 automatically. The Envoy will only try using a single address to connect to the local application and the error will still occur regardless of using a `PREFERRED` or `ONLY` preference.
+For example, `colorteller-green-vn` is using an application which only supports IPv4 traffic. If an IP preference of `IPv6_PREFERRED` is being applied to this virtual node, then the request will fail because the Envoy will use an IPv6 address to connect to application causing the application to reject the request.  
+Note that even when an IP preference of `IPv6_PREFERRED` is used, the Envoy won't fall back to using IPv4 automatically. The Envoy will only try using a single address to connect to the local application and the error will still occur regardless of using a `PREFERRED` or `ONLY` preference.
 
 The following table describes how we set these two variables for all six virtual nodes and expected result after making curl requests.
 
@@ -276,7 +277,7 @@ If you are deploying both setups then you will want to save each endpoint separa
 ```
 
 ## Step 5: Test Sending Traffic in the Initial Setup
-The initial setup is using a mesh preference of V4_ONLY. This will apply a V4_ONLY preference to all virtual nodes. Let us see how this impacts traffic being sent to applications.
+The initial setup is using a mesh preference of `IPv4_ONLY`. This will apply a `IPv4_ONLY` preference to all virtual nodes. Let us see how this impacts traffic being sent to applications.
 
 **Note: If you execute the following commands after recently deploying then it may not work and time out. The load balancer will need some time to initialize the target group that is pointing to the virtual gateway. While the target group is initializing all requests will fail.**
 
@@ -357,7 +358,7 @@ You can also try all of the following colors as well and get these results
 * blue - get back blue
 
 ## Step 7: Override Mesh IP Preference
-Currently a mesh IP preference of `IPv6_ONLY` had been set causing the red, orange, and yellow services unable to respond to traffic. In order to address this we can override the mesh IP preference by setting an IP preference at the virtual node level.
+Currently a mesh IP preference of `IPv6_ONLY` has been set causing the red, orange, and yellow services unable to respond to traffic. In order to address this we can override the mesh IP preference by setting an IP preference at the virtual node level.
 
 Let's change the preference to `IPv4_PREFERRED` for the red and orange services and `IPv6_PREFERRED` for the yellow service by running the one of the following commands depending on your setup.
 
@@ -398,7 +399,7 @@ curl "${COLORAPP_ENDPOINT}/yellow"
  and see if the service correctly gives you the color yellow back.
 
 **Why did this request succeed?**
-The red service is discoverable via IPv4 and the virtual gateway can send it traffic given the virtual node preference of `IPv6_PREFERRED` overrides the mesh preference making it this virtual node discoverable. Once the Envoy recieves the request it will send the request to the application via an IPv6 address. This address is compatible with the application because it can recieve IPv6 traffic.
+The yellow service is discoverable via IPv4 and the virtual gateway can send it traffic given the virtual node preference of `IPv6_PREFERRED` overrides the mesh preference making it this virtual node discoverable. Once the Envoy recieves the request it will send the request to the application via an IPv6 address. This address is compatible with the application because it can recieve IPv6 traffic.
 
 ## Step 8: Experiment with Different Preferences
 Now that we have made changes to both the mesh and virtual node IP preferences it is time to experiment. Updating the mesh and virtual node preferences you can test and see how the preferences impact the traffic being sent to each service.
@@ -506,7 +507,7 @@ load_assignment:
               port_value: 8020
 ```
 **Service Discovery: AWS Cloud Map**:   
-Example: An IPv6 address will be used if IP preference is set as IPv6_PREFERRED and an IPv6 address is registered in Cloud Map.
+Example: An IPv6 address will be used if IP preference is set as `IPv6_PREFERRED` and an IPv6 address is registered in Cloud Map.
 
 ```
 # ClouMap IP Preference*     
@@ -534,8 +535,8 @@ address:
     port_value: 15000/15001 
 ```
 
-**Envoy Cluster Configuration: Local Application Address**: Envoy will use 0:0:0:0:0:0:0:1 as the address for the endpoint representing the local application if IP preference is set as IPv6_ONLY or IPv6_PREFERRED. Otherwise it will be 127.0.0.1 for IPv4_ONLY, IPv4_PREFERRED, and no preference.
-``````
+**Envoy Cluster Configuration: Local Application Address**: Envoy will use 0:0:0:0:0:0:0:1 as the address for the endpoint representing the local application if IP preference is set as `IPv6_ONLY` or `IPv6_PREFERRED`. Otherwise it will be 127.0.0.1 for `IPv4_ONLY`, `IPv4_PREFERRED`, and no preference.
+```
 type: STATIC
 connect_timeout: 0.25s
 load_assignment:
