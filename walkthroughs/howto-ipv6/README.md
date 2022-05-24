@@ -306,14 +306,14 @@ You can also try all of the following colors as well and get these results
 * blue - get back blue
 * purple - upstream connection error
 
-Additionally we can check that the Envoy has identified the services that it can send traffic to as healthy. We can do this by logging into the bastion host and checking the virtual gateway's admin interface. 
+Additionally we can check that the Envoy has identified the services that it can send traffic to as healthy. We can do this by logging into the bastion host and checking the virtual gateway Envoy's admin interface. 
 
 First let's log into the bastion host. If you used an already existing key pair or stored you key pair from [Prerequisites](#step-1-prerequisites) step 4 in a different location then change the command below to reflect this.
 ```bash
 ssh -i ~/.ssh/app-mesh-ip.pem ec2-user@$BASTION_IP
 ```
 
-Now that we are logged into the bastion host. We can use the admin interface to check which services have been identified as healthy using one of the commands below depending on which setup you are using.
+Now that we are logged into the bastion host. We can use the Envoy admin interface to check which services have been identified as healthy using one of the commands below depending on which setup you are using.
 
 CloudMap Service Discovery
 ```bash
