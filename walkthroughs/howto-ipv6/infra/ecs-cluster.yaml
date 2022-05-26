@@ -1,0 +1,193 @@
+Description: >
+  This template deploys an ECS cluster to the provided VPC and subnets
+  using an Auto Scaling Group
+
+Parameters:
+
+  ProjectName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  InstanceType:
+    Description: Which instance type should we use to build the ECS cluster?
+    Type: String
+    Default: c4.large
+
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+
+  ECSServiceLogGroupRetentionInDays:
+    Type: Number
+    Default: 30
+
+  ECSServicesDomain:
+    Type: String
+    Description: "Domain name registerd under Route-53 that will be used for Service Discovery"
+
+  EC2Ami:
+    Description: EC2 AMI ID
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+
+Resources:
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ProjectName
+
+  ECSInstancesSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for the instances"
+      VpcId:
+        'Fn::ImportValue': !Sub "${ProjectName}:VPC"
+      SecurityGroupIngress:
+        - CidrIp:
+            'Fn::ImportValue': !Sub "${ProjectName}:VpcCIDR"
+          IpProtocol: -1
+        - CidrIpv6: ::/0
+          IpProtocol: -1          
+
+  ECSServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for the service"
+      VpcId:
+        'Fn::ImportValue': !Sub "${ProjectName}:VPC"
+      SecurityGroupIngress:
+        - CidrIp:
+            'Fn::ImportValue': !Sub "${ProjectName}:VpcCIDR"
+          IpProtocol: -1
+        - CidrIpv6: ::/0
+          IpProtocol: -1
+
+  TaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+
+  TaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  ECSServiceLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays:
+        Ref: ECSServiceLogGroupRetentionInDays
+
+  ECSServiceDiscoveryNamespaceDns:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Vpc:
+        'Fn::ImportValue': !Sub "${ProjectName}:VPC"
+      Name: !Sub "${ECSServicesDomain}.dns"
+
+  ECSServiceDiscoveryNamespaceCloud:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Vpc:
+        'Fn::ImportValue': !Sub "${ProjectName}:VPC"    
+      Name: !Sub "${ECSServicesDomain}.cloud"
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId: 
+        'Fn::ImportValue': !Sub "${ProjectName}:VPC"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: !Ref EC2Ami
+      KeyName: !Ref KeyName
+      InstanceType: t2.micro
+      SecurityGroupIds:
+      - !Ref BastionSecurityGroup
+      SubnetId:
+        'Fn::ImportValue': !Sub "${ProjectName}:PublicSubnet1"
+      Tags:
+        - Key: Name
+          Value: bastion-host
+
+Outputs:
+
+  Cluster:
+    Description: A reference to the ECS cluster
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub "${ProjectName}:ECSCluster"
+
+  ECSServiceDiscoveryNamespaceDns:
+    Description: A SDS namespace that will be used by all services in this cluster
+    Value: !Ref ECSServiceDiscoveryNamespaceDns
+    Export:
+      Name: !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceDns"
+
+  ECSServiceDiscoveryNamespaceCloud:
+    Description: A SDS namespace that will be used by all services in this cluster
+    Value: !Ref ECSServiceDiscoveryNamespaceCloud
+    Export:
+      Name: !Sub "${ProjectName}:ECSServiceDiscoveryNamespaceCloud"      
+
+  ECSServiceLogGroup:
+    Description: Log group for services to publish logs
+    Value: !Ref ECSServiceLogGroup
+    Export:
+      Name: !Sub "${ProjectName}:ECSServiceLogGroup"
+
+  ECSServiceSecurityGroup:
+    Description: Security group to be used by all services in the cluster
+    Value: !Ref ECSServiceSecurityGroup
+    Export:
+      Name: !Sub "${ProjectName}:ECSServiceSecurityGroup"
+
+  TaskExecutionIamRoleArn:
+    Description: Task Executin IAM role used by ECS tasks
+    Value: { "Fn::GetAtt": TaskExecutionIamRole.Arn }
+    Export:
+      Name: !Sub "${ProjectName}:TaskExecutionIamRoleArn"
+
+  TaskIamRoleArn:
+    Description: IAM role to be used by ECS task
+    Value: { "Fn::GetAtt": TaskIamRole.Arn }
+    Export:
+      Name: !Sub "${ProjectName}:TaskIamRoleArn"
+
+  BastionIP:
+    Description: Public IP for ssh access to bastion host
+    Value:
+      'Fn::GetAtt': [ BastionHost, PublicIp ]
+
