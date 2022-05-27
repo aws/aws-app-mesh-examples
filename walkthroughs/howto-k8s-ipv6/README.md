@@ -33,7 +33,7 @@ Note: Run the following to check that cluster name is set.
 
    You should get as output:
 
-   *--cluster-name=<name-of-your-cluster>*
+   *--cluster-name=&lt;name-of-your-cluster&gt;*
 
    If cluster-name is not set, update the App Mesh controller to set it by running:
 
