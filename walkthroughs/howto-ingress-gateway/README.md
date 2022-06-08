@@ -1,6 +1,6 @@
 # Configuring Ingress Gateway
 
-In this walkthrough we'll configure an Ingress Gateway in our existing [ColorApp](https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp) example but with a VirtualGateway resource to configure the ColorGateway instead of a VirtualNode.
+In this walkthrough we'll configure an Ingress Gateway in our existing [ColorApp](https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorapp) example but with a VirtualGateway resource to configure the ColorGateway instead of a VirtualNode.
 
 ## Introduction
 
@@ -122,7 +122,7 @@ export COLOR_TELLER_IMAGE_NAME="howto-ingress/colorteller"
 
 Before we can encrypt traffic between NLB --> VirtualGateway and VirtualGateway --> VirtualNodes, we need to generate a certificate. App Mesh currently supports certificates issued by an ACM Private Certificate Authority, which we'll setup in this step. We'll use this ACM certificate to terminate TLS at the NLB, the VirtualGateway and the target VirtualNodes.
 
-Refer [Configuring TLS with AWS Certificate Manager](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/tls-with-acm) walkthrough for information about what permissions does the IAM role used by Envoy need in order to retrieve a certificate and private key from ACM and retrieve a Certificate Authority Certificate.
+Refer [Configuring TLS with AWS Certificate Manager](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/tls-with-acm) walkthrough for information about what permissions does the IAM role used by Envoy need in order to retrieve a certificate and private key from ACM and retrieve a Certificate Authority Certificate.
 
 Start by creating a root certificate authority (CA) in ACM.
 

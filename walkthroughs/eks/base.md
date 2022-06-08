@@ -82,7 +82,7 @@ kubectl api-resources --api-group=appmesh.k8s.aws
 
 ## The application
 
-We use the [howto-k8s-http2](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-http2) to demonstrate the usage of App Mesh with EKS.
+We use the [howto-k8s-http2](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/howto-k8s-http2) to demonstrate the usage of App Mesh with EKS.
 
 Make sure all resources have been created, using the following command:
 
