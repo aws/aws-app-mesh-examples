@@ -1,10 +1,10 @@
 # Configuring Request Timeouts
 
-In this walkthrough we'll set timeouts to support increasing and decreasing the default request timeout of 15 secs. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorapp).
+In this walkthrough we'll set timeouts to support increasing and decreasing the default request timeout of 15 secs. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorapp).
 
 ## Introduction
 
-In preview, app mesh supports specifying timeout(request and idle) at Route and Virtual Node Listener.
+App mesh supports specifying timeout(request and idle) at Route and Virtual Node Listener.
 When set at route that timeout is applicable to all the requests passing that channel.
 
 When set at Virtual Node listener, that timeout is applicable to all the requests originating from and arriving to the task group pointed by that Virtual Node.
@@ -15,15 +15,7 @@ However to increase the timeout (>15secs), it needs to be set at the route and a
 
 ## Step 1: Prerequisites
 
-1. We will need the latest version of the App Mesh Preview CLI for this walkthrough. You can download and use the latest version using the command below.
-
-```bash
-aws configure add-model \
-        --service-name appmesh-preview \
-        --service-model https://raw.githubusercontent.com/aws/aws-app-mesh-roadmap/master/appmesh-preview/service-model.json
-```
-
-2. We'll also need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+1. We'll also need a keypair stored in AWS to access a bastion host. You can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ```bash
 aws ec2 create-key-pair --key-name color-app | jq -r .KeyMaterial > ~/.ssh/color-app.pem
@@ -157,7 +149,7 @@ Lets try to update the route with request timeout as 5 secs, with below input.
 }
 ```
 ```bash
-aws appmesh-preview update-route --mesh-name $MESH_NAME --cli-input-json file://mesh/colorteller-route-timeout5s.json
+aws appmesh update-route --mesh-name $MESH_NAME --cli-input-json file://mesh/colorteller-route-timeout5s.json
 ```
 
 Confirm that we see request timeout as 5sec in the response
@@ -181,7 +173,7 @@ Next we will set up the route to allow timeouts greater than 15 secs, we will se
 First update the route with timeout as 20 secs
 
 ```bash
-aws appmesh-preview update-route --mesh-name $MESH_NAME --cli-input-json file://mesh/colorteller-route-timeout20s.json
+aws appmesh update-route --mesh-name $MESH_NAME --cli-input-json file://mesh/colorteller-route-timeout20s.json
 ```
 
 Confirm that we see request timeout as 20sec in the response
@@ -234,8 +226,6 @@ curl --header "Latency:17" $COLORAPP_ENDPOINT/color
 
 ### Timeouts at Virtual Gateway and Gateway Routes
 
-Virtual Gateway and Gateway Routes are new App Mesh resources that are in preview currently. [Refer](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-ingress-gateway) here for more details. Feel free to move to next step if you are not looking for Virtual Gateways.
-
 Timeouts at Virtual Gateways are calculated implicitly based on the timeouts of the routes present in the Virtual Service that the Gateway Route points to. Currently there is no API to define the timeouts for gateways explicitly. In case you need any such feature, please request it using [App Mesh Github roadmap](https://github.com/aws/aws-app-mesh-roadmap/issues).
 
 Lets create a Virtual Gateway(VG) and route the requests through it (basically replacing ColorGateway Virtual Node with public gateway VG) to verify that the timeout works well with VG too.
@@ -278,12 +268,12 @@ The timeouts at the publicgateway-vg are implicitly calculated as the max of the
 Lets set timeout for colorteller-route and ColorTellerWhite VN listener to 18s and the timeout for colorteller-route2 to 10s.
 
 ```bash
-aws appmesh-preview update-route --mesh-name $MESH_NAME \
+aws appmesh update-route --mesh-name $MESH_NAME \
 --cli-input-json file://mesh/colorteller-route1-timeout18s.json
 
 ./mesh/mesh.sh update_colorteller-white-vn mesh/colorteller-vn-timeout18s.json
 
-aws appmesh-preview update-route --mesh-name $MESH_NAME \
+aws appmesh update-route --mesh-name $MESH_NAME \
 --cli-input-json file://mesh/colorteller-route2-timeout10s.json
 ```
 >Note: Wait for few seconds for envoy config to get updated before hitting the endpoints

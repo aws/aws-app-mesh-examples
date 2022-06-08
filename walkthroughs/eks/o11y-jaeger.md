@@ -4,7 +4,7 @@ NOTE: Before you start with this part, make sure you've gone through the [base d
 
 Jaeger is an end to end distributed tracing system, that allows users to monitor and troubleshoot transactions in complex distributed systems. 
 
-This guide uses [Colorteller example application with HTTP header bases routing](https://github.com/aws/aws-app-mesh-examples/tree/master/walkthroughs/howto-k8s-http-headers) to showcase distributed tracing using Jaeger.
+This guide uses [Colorteller example application with HTTP header bases routing](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/howto-k8s-http-headers) to showcase distributed tracing using Jaeger.
 
 
 ### Installation

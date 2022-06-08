@@ -219,7 +219,7 @@ In this walkthrough, we rolled out an update from version 1 (blue) of our colort
 [AWS App Mesh Documentation]: https://aws.amazon.com/app-mesh/getting-started/
 [AWS App Mesh]: https://aws.amazon.com/app-mesh/
 [AWS CLI]: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
-[Color App]: https://github.com/aws/aws-app-mesh-examples/tree/master/examples/apps/colorap
+[Color App]: https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorap
 [Currently available AWS regions for App Mesh]: https://docs.aws.amazon.com/general/latest/gr/rande.html#appmesh_region
 [Deploy Images]: https://medium.com/p/de3452846e9d#0d56
 [Envoy documentation]: https://www.envoyproxy.io/docs/envoy/latest
