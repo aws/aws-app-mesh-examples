@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation template to launch an EC2 instance in the default VPC
+
+Parameters:
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Description: "The ID of the AMI."
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+  KeyPairName:
+    Type: String
+    Description: The name of an existing Amazon EC2 key pair in this region to use to SSH into the Amazon EC2 instances.
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: Allow ssh access
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: t2.nano
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+
+Outputs:
+  EC2InstanceId:
+    Value: !Ref Instance
+    Description: Instance Id of the EC2 instance.
+  EC2PublicDNS:
+    Description: Public DNS of the EC2 instance.
+    Value: !GetAtt Instance.PublicDnsName
