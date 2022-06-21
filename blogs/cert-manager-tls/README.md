@@ -1,6 +1,6 @@
 # Securing Kubernetes applications with AWS App Mesh and cert-manager
 
-Full configuration files for blog post [Securing Kubernetes applications with AWS App Mesh and cert-manager]()
+Full configuration files for blog post [Securing Kubernetes applications with AWS App Mesh and cert-manager](https://aws.amazon.com/blogs/containers/securing-kubernetes-applications-with-aws-app-mesh-and-cert-manager/)
 
 ## 0. Deploy base yelb with App Mesh
 
@@ -17,7 +17,7 @@ helm repo update
 helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v0.16.1 \
+  --version v1.8.1 \
   --set installCRDs=true
 ```
 
