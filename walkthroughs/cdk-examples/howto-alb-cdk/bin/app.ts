@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { MeshStack } from '../lib/mesh';
-import { BaseStack } from '../lib/base';
-import { ServiceDiscoveryStack } from '../lib/service-discovery';
-import { ECSServicesStack } from '../lib/ecs-services';
+import { MeshStack } from '../lib/stacks/mesh-components';
+import { BaseStack } from '../lib/stacks/base';
+import { ServiceDiscoveryStack } from '../lib/stacks/service-discovery';
+import { ECSServicesStack } from '../lib/stacks/ecs-services';
 
 const app = new cdk.App();
 
