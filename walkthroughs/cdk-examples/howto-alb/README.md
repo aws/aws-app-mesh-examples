@@ -70,6 +70,10 @@ _Note - The CDK provisions a `CDKToolkit` Stack automatically to deploy AWS CDK 
 3. `MeshStack` - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual service.
 4. `ECSServicesStack` - defines 3 Constructs that contain resources to provision the Task Definitions and Fargate services for `backend-v1`, `backend-v2` and `frontend`.
 
+<p align="center">
+  <img width="600" height="350" src="assets/stacks.jpg">
+</p>
+
 The order mentioned above also represents the dependency these Stacks have on eachother. In this case, since we are deploying the Envoy sidecar containers along with our application code, it is necessary for the mesh components to be provisioned before the services are running, so the Envoy proxy can locate them using the `APPMESH_VIRTUAL_NODE_NAME` environment variable.
 
 ## CDK Project Structure
