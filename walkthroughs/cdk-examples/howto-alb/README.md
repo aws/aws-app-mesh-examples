@@ -20,6 +20,10 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 - Run  `cdk boostrap`
 - Run `cdk deploy --all --require-approval never`
 
+
+### _Note - Standard AWS costs may apply when provisioning infrastructure._
+
+
 - Once the entire infrastructure has been provisioned, you will see the following message on your terminal.
 ```
   ✅  BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack)
@@ -39,6 +43,13 @@ arn:aws:cloudformation:us-east-1:644796087233:stack/ECSServicesStack/xxxxxxxxxx-
 BLUE 🔵%
 ➜  howto-alb git:(feature-cdk) ✗ curl frontend-1998638777.us-east-1.elb.amazonaws.com/color
 GREEN 🟢%
+```
+- To cleanup the resources run `cdk destroy --all` and hit `y` when the prompt appears.
+
+```
+➜  howto-alb git:(feature-cdk) cdk destroy --all
+Are you sure you want to delete: BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack, BaseStack/ServiceDiscoveryStack/MeshStack, BaseStack/ServiceDiscoveryStack, BaseStack (y/n)? y
+BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack): destroying...
 ```
 
 # Application Architecture
@@ -74,9 +85,30 @@ _Note - The CDK provisions a `CDKToolkit` Stack automatically to deploy AWS CDK 
   <img width="600" height="350" src="assets/stacks.jpg">
 </p>
 
+```
+// Dependencies
+serviceDiscoveryStack.addDependency(baseStack);
+meshStack.addDependency(serviceDiscoveryStack);
+ecsServicesStack.addDependency(meshStack);
+```
+
 The order mentioned above also represents the dependency these Stacks have on eachother. In this case, since we are deploying the Envoy sidecar containers along with our application code, it is necessary for the mesh components to be provisioned before the services are running, so the Envoy proxy can locate them using the `APPMESH_VIRTUAL_NODE_NAME` environment variable.
 
-## CDK Project Structure
+```
+const envoyContainer = this.taskDefinition.addContainer(
+      `${this.constructIdentifier}_EnvoyContainer`,
+      {
+        image: ms.sd.base.envoyImage,
+        containerName: "envoy",
+        environment: {
+          ENVOY_LOG_LEVEL: "debug",
+          ENABLE_ENVOY_XRAY_TRACING: "1",
+          ENABLE_ENVOY_STATS_TAGS: "1",
+          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
+        },
+```
+
+## Project Structure
 The skeleton of the project is generated using the `cdk init sample-app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder. In the `cdk.json` file, we define two enviroment variables: `PROJECT_NAME` and `CONTAINER_PORT` that refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers.
 
 Using the `DockerImageAsset` construct, you can push your application image to an ECR repository when the infrastucture is being provisioned by simply pointing it to the directory of your application's `Dockerfile`.
