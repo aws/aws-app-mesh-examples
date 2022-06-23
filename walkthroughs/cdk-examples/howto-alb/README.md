@@ -1,16 +1,16 @@
 # About
 
 This example shows how services behind an Application Load Balancer (ALB) can be accessed by clients with the help of the Envoy Proxy provisioned using AWS App Mesh. Each service also contains an AWS XRay Daemon that allows us to view the request traces and other metrics. 
-The entire infrastructure is provisioned using the AWS Cloud Development Kit (CDK) V2, a non CDK version of this example is available here - https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/howto-alb.
+The entire infrastructure is provisioned using the AWS Cloud Development Kit (CDK) V2, a non CDK version of this example is available [here](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/howto-alb).
 
 # Prerequisites
 - An active AWS account
 - `node`
 - `npm`
-- AWS CLI
-- AWS CDK (V2)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [AWS CDK (V2)](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
 - TypeScript
-- Docker
+- [Docker](https://docs.docker.com/get-docker/)
 
 # Setup & Deployment
 
@@ -25,7 +25,7 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 
 
 - Once the entire infrastructure has been provisioned, you will see the following message on your terminal.
-```
+```c
   ✅  BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack)
 
 ✨  Deployment time: 24.01s
@@ -33,20 +33,20 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 Outputs:
 BaseStackServiceDiscoveryStackMeshStackECSServicesStack8E43077C.PublicEndpoint = frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com
 Stack ARN:
-arn:aws:cloudformation:us-east-1:644796087233:stack/ECSServicesStack/xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+arn:aws:cloudformation:us-east-1:xxxxxxxxxx:stack/ECSServicesStack/xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ✨  Total time: 26.74s
 ```
 - Copy the `PublicEndpoint` URL and `curl`  the `/color` endpoint it to get the response.
-```
-➜  howto-alb git:(feature-cdk) ✗ curl frontend-1998638777.us-east-1.elb.amazonaws.com/color
+```c
+➜  howto-alb git:(feature-cdk) ✗ curl frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com/color
 BLUE 🔵%
-➜  howto-alb git:(feature-cdk) ✗ curl frontend-1998638777.us-east-1.elb.amazonaws.com/color
+➜  howto-alb git:(feature-cdk) ✗ curl frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com/color
 GREEN 🟢%
 ```
 - To cleanup the resources run `cdk destroy --all` and hit `y` when the prompt appears.
 
-```
+```c
 ➜  howto-alb git:(feature-cdk) cdk destroy --all
 Are you sure you want to delete: BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack, BaseStack/ServiceDiscoveryStack/MeshStack, BaseStack/ServiceDiscoveryStack, BaseStack (y/n)? y
 BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack): destroying...
@@ -71,6 +71,8 @@ The frontend and backend services are simple Flask applications bundled in the `
 </p>
 
 # CDK Architecture
+<details open>
+
 ## Stacks and Constructs
 There are a total of 4 Stacks that provision all the infrastructure for the example. 
 
@@ -85,16 +87,25 @@ _Note - The CDK provisions a `CDKToolkit` Stack automatically to deploy AWS CDK 
   <img width="600" height="350" src="assets/stacks.jpg">
 </p>
 
-```
-// Dependencies
-serviceDiscoveryStack.addDependency(baseStack);
-meshStack.addDependency(serviceDiscoveryStack);
-ecsServicesStack.addDependency(meshStack);
+These dependencies are propagated by passing the Stack objects in the `constructor` of their referencing Stack.
+
+
+```c
+const baseStack = new BaseStack(app, 'BaseStack',{
+    stackName: 'BaseStack',
+    description: "Provisions the network infrastructure and container images."
+});
+// Pass baseStack as a constructor argument
+const serviceDiscoveryStack = new ServiceDiscoveryStack(baseStack, 'ServiceDiscoveryStack', {
+    stackName: 'ServiceDiscoveryStack',
+    description: "Provisions the application load balancers and the CloudMap service."
+});
 ```
 
 The order mentioned above also represents the dependency these Stacks have on eachother. In this case, since we are deploying the Envoy sidecar containers along with our application code, it is necessary for the mesh components to be provisioned before the services are running, so the Envoy proxy can locate them using the `APPMESH_VIRTUAL_NODE_NAME` environment variable.
 
-```
+```c
+// The BackendV1Constructor fetches the container port from the BaseStack and the virtual node name from the MeshStack
 const envoyContainer = this.taskDefinition.addContainer(
       `${this.constructIdentifier}_EnvoyContainer`,
       {
@@ -108,7 +119,72 @@ const envoyContainer = this.taskDefinition.addContainer(
         },
 ```
 
+The frontend Envoy sidecar also acts as a proxy, this can be configured easily using the `AppMeshProxyConfiguration` construct and then adding it to the `proxyConfiguration` prop of the Fargate Task Definition.
+
+```c
+// Define the envoy proxy configuration
+const appMeshProxyConfig = new ecs.AppMeshProxyConfiguration({
+      containerName: "envoy",
+      properties: {
+        proxyIngressPort: 15000,
+        proxyEgressPort: 15001,
+        appPorts: [ms.sd.base.containerPort],
+        ignoredUID: 1337,
+        egressIgnoredIPs: ["169.254.170.2", "169.254.169.254"],
+      },
+    });
+// Assign it to the task definiton
+this.taskDefinition = new ecs.FargateTaskDefinition(
+  this,
+  `${this.constructIdentifier}_TaskDefinition`,
+  {
+    cpu: 256,
+    memoryLimitMiB: 512,
+    proxyConfiguration: appMeshProxyConfig,
+    executionRole: ms.sd.base.executionRole,
+    taskRole: ms.sd.base.taskRole,
+    family: "front",
+  }
+);
+```
+
+The crux of the mesh infrastrcute lies in the `MeshStack`. As with other constructs, defining mesh components in the CDK is really easy. Since we deploy the `appmesh.Mesh` construct in the `BaseStack`, we can reference it in the `MeshStack` through parent Stacks and add virtual nodes and routers. 
+
+For example, in the code snippet below, we create a new `VirtualNode` and assign it the `mesh` from the `BaseStack`, and set it's service discovery to the internal ALB defined in the `ServiceDiscoveryStack`.
+
+```c
+// Virtual node with DNS service discovery
+this.backendV1VirtualNode = new appmesh.VirtualNode(
+      this,
+      `${this.stackIdentifier}_BackendV1VirtualNode`,
+      {
+        mesh: this.sd.base.mesh,
+        virtualNodeName: `${this.sd.base.projectName}-backend-v1-node`,
+        listeners: [this.virtualNodeListender],
+        serviceDiscovery: appmesh.ServiceDiscovery.dns(
+          sd.backendV1LoadBalancer.loadBalancerDnsName
+        ),
+      }
+    );
+```
+
+
 ## Project Structure
-The skeleton of the project is generated using the `cdk init sample-app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder. In the `cdk.json` file, we define two enviroment variables: `PROJECT_NAME` and `CONTAINER_PORT` that refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers.
+The skeleton of the project is generated using the `cdk init sample-app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder. 
+
+In the `cdk.json` file, we define two enviroment variables: `PROJECT_NAME` and `CONTAINER_PORT` that refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers. These variables can be fetched within the application using a Construct's `node.tryGetContext` method. 
+
+```c
+this.projectName = this.node.tryGetContext("PROJECT_NAME");
+this.containerPort = this.node.tryGetContext("CONTAINER_PORT");
+```
 
 Using the `DockerImageAsset` construct, you can push your application image to an ECR repository when the infrastucture is being provisioned by simply pointing it to the directory of your application's `Dockerfile`.
+
+```c
+this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIdentifier}_FrontendAppImageAsset`, {
+      directory: ".././howto-alb/feapp",
+      platform: assets.Platform.LINUX_AMD64,
+    });
+```
+</details>
