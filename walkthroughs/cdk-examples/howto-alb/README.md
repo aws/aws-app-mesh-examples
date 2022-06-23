@@ -15,13 +15,13 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 
 # Setup & Deployment
 
+### _Note - Standard AWS costs may apply when provisioning infrastructure._
+
 - Open your terminal
 - Clone the repository `git clone https://github.com/aws/aws-app-mesh-examples.git`
 - Navigate to `aws-app-mesh-examples/walkthroughs/cdk-examples/howto-alb/`
 - Run  `cdk boostrap`
 - Run `cdk deploy --all --require-approval never`
-
-### _Note - Standard AWS costs may apply when provisioning infrastructure._
 
 - Once the entire infrastructure has been provisioned, you will see the following message on your terminal.
 
@@ -67,9 +67,7 @@ BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack): d
 
 ## Traffic routing using AWS App Mesh
 
-Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual service** `backend.howto-alb.hosted.local` which is registered as a backend to the `frontend` virtual node. A **virtual router** is responsible for routing traffic to the **virtual service**. This router can be configured with weights that determine what % of the traffic should be split between `backend-v1` and `backend-v2`. For this example the weights are split equally (50/50).
-
-The frontend and backend services are simple Flask applications bundled in the `feapp` and `colorapp` directories respectively. `backend-v1` returns the response 'BLUE 🔵' and `backend-v2` returns 'GREEN 🟢'. You can change the route weights on the AWS console and see the difference in the responses.
+Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual service** `backend.howto-alb.hosted.local` which is registered as a backend to the `frontend` virtual node. This virtual service is provided by a **virtual router** that splits the traffic between the two backend virtual nodes based on configurable weights (for this example, the weights are split equally - 50/50). The frontend and backend services are simple Flask applications bundled in the `feapp` and `colorapp` directories respectively. When queried by `frontend`, `backend-v1` returns the response 'BLUE 🔵' and `backend-v2` returns 'GREEN 🟢'.
 
 <p align="center">
   <img width="550" height="600" src="assets/app-arch.jpg">
@@ -79,7 +77,6 @@ The frontend and backend services are simple Flask applications bundled in the `
 
 <details>
 <summary>Expand</summary>
-
 
 ## Stacks and Constructs
 
@@ -112,7 +109,7 @@ const serviceDiscoveryStack = new ServiceDiscoveryStack(baseStack, 'ServiceDisco
 });
 ```
 
-## App Mesh Resources
+## App Mesh CDK Constructs
 
 The frontend Envoy sidecar also acts as a proxy, this can be configured easily using the `AppMeshProxyConfiguration` construct and then adding it to the `proxyConfiguration` prop of the Fargate task definition.
 
@@ -128,19 +125,6 @@ const appMeshProxyConfig = new ecs.AppMeshProxyConfiguration({
         egressIgnoredIPs: ["169.254.170.2", "169.254.169.254"],
       },
     });
-// Assign it to the task definiton
-this.taskDefinition = new ecs.FargateTaskDefinition(
-  this,
-  `${this.constructIdentifier}_TaskDefinition`,
-  {
-    cpu: 256,
-    memoryLimitMiB: 512,
-    proxyConfiguration: appMeshProxyConfig,
-    executionRole: ms.sd.base.executionRole,
-    taskRole: ms.sd.base.taskRole,
-    family: "front",
-  }
-);
 ```
 
 Both `backend-v2` and `frontend` add the Envoy image as a sidecar container, the Envoy App Mesh image (along with other images) is defined in the `BaseStack`. This is then added as a container to the task definitions of these Fargate services.
@@ -152,7 +136,6 @@ this.envoyImage = ecs.ContainerImage.fromRegistry(
 ```
 
 ```c
-// The BackendV1Constructor fetches the container port from the BaseStack and the virtual node name from the MeshStack
 const envoyContainer = this.taskDefinition.addContainer(
       `${this.constructIdentifier}_EnvoyContainer`,
       {
@@ -162,9 +145,9 @@ const envoyContainer = this.taskDefinition.addContainer(
           ENVOY_LOG_LEVEL: "debug",
           ENABLE_ENVOY_XRAY_TRACING: "1",
           ENABLE_ENVOY_STATS_TAGS: "1",
-          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
-      },
-    );
+          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.mesh.meshName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
+        },
+      ...
 ```
 
 The crux of the mesh infrastructure lies in the `MeshStack`. For example, in the code snippet below, we create a new `aws-appmesh.VirtualNode` for `backend-v1`, assign it to the mesh and set the service discovery to the internal ALB's DNS defined in the `ServiceDiscoveryStack`.
@@ -185,7 +168,7 @@ this.backendV1VirtualNode = new appmesh.VirtualNode(
     );
 ```
 
-Once we define the virtual nodes, the routing logic of the mesh can be defined using the `aws-appmesh.RouteSpec` and `aws-appmesh.Route` constructs. The `RouteSpec` registers virtual nodes as weighted targets to route traffic to.
+Once we define the virtual nodes, the routing logic of the mesh can be defined using the `aws-appmesh.RouteSpec` and `aws-appmesh.Route` constructs. The `aws-appmesh.RouteSpec` registers virtual nodes as weighted targets to route traffic to.
 
 ```c
 const routeSpec = appmesh.RouteSpec.http({
@@ -235,6 +218,7 @@ this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIden
 </details>
 
 # Learn more about App Mesh
+
 - [Product Page](https://aws.amazon.com/app-mesh/?nc2=h_ql_prod_nt_appm&aws-app-mesh-blogs.sort-by=item.additionalFields.createdDate&aws-app-mesh-blogs.sort-order=desc&whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc)
 - [App Mesh under the hood](https://www.youtube.com/watch?v=h3syq1vbplE)
 - [App Mesh CDK API Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_appmesh-readme.html)
