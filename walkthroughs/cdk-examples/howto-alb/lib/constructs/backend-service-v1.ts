@@ -33,7 +33,6 @@ export class BackendServiceV1Construct extends Construct {
     );
 
     // Add the colorApp container
-    // https://github.com/aws/aws-cdk/issues/12371
     const colorAppContainer = this.taskDefinition.addContainer(
       `${this.constructIdentifier}_ColorAppContainer`,
       {
@@ -42,7 +41,7 @@ export class BackendServiceV1Construct extends Construct {
         environment: {
           COLOR: "blue",
           PORT: ms.sd.base.containerPort.toString(),
-          XRAY_APP_NAME: `${ms.sd.base.mesh.meshName}/${ms.backendV1VirtualNode.virtualNodeName}`,
+          XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV1VirtualNode.virtualNodeName}`,
         },
         logging: ecs.LogDriver.awsLogs({
           logGroup: ms.sd.base.logGroup,

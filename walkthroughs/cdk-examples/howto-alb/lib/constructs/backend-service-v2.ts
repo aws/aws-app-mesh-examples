@@ -18,7 +18,7 @@ export class BackendServiceV2Construct extends Construct {
     });
     this.taskSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
 
-    // // Task Definition
+    // Task Definition
     this.taskDefinition = new ecs.FargateTaskDefinition(
       this,
       `${this.constructIdentifier}_TaskDefinition`,
@@ -41,7 +41,7 @@ export class BackendServiceV2Construct extends Construct {
           ENVOY_LOG_LEVEL: "debug",
           ENABLE_ENVOY_XRAY_TRACING: "1",
           ENABLE_ENVOY_STATS_TAGS: "1",
-          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
+          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.mesh.meshName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
         },
         user: "1337",
         healthCheck: {
@@ -109,7 +109,7 @@ export class BackendServiceV2Construct extends Construct {
         environment: {
           COLOR: "green",
           PORT: ms.sd.base.containerPort.toString(),
-          XRAY_APP_NAME: `${ms.sd.base.mesh.meshName}/${ms.backendV2VirtualNode.virtualNodeName}`,
+          XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV2VirtualNode.virtualNodeName}`,
         },
         logging: ecs.LogDriver.awsLogs({
           logGroup: ms.sd.base.logGroup,

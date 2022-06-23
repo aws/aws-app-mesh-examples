@@ -4,6 +4,7 @@ import { ServiceDiscoveryStack } from "./service-discovery";
 
 export class MeshStack extends Stack {
 
+  mesh: appmesh.Mesh;
   virtualNodeListender: appmesh.VirtualNodeListener;
   
   backendV1VirtualNode: appmesh.VirtualNode;
@@ -22,6 +23,8 @@ export class MeshStack extends Stack {
     super(sd, id, props);
 
     this.sd = sd;
+    
+    this.mesh = new appmesh.Mesh(this, `${this.stackIdentifier}_Mesh`, { meshName: sd.base.projectName });
 
     this.virtualNodeListender = appmesh.VirtualNodeListener.http({
       port: this.sd.base.containerPort,
@@ -31,7 +34,7 @@ export class MeshStack extends Stack {
       this,
       `${this.stackIdentifier}_BackendV1VirtualNode`,
       {
-        mesh: this.sd.base.mesh,
+        mesh: this.mesh,
         virtualNodeName: `${this.sd.base.projectName}-backend-v1-node`,
         listeners: [this.virtualNodeListender],
         serviceDiscovery: appmesh.ServiceDiscovery.dns(
@@ -44,7 +47,7 @@ export class MeshStack extends Stack {
       this,
       `${this.stackIdentifier}_BackendV2VirtualNode`,
       {
-        mesh: this.sd.base.mesh,
+        mesh: this.mesh,
         virtualNodeName: `${this.sd.base.projectName}-backend-v2-node`,
         listeners: [this.virtualNodeListender],
         serviceDiscovery: appmesh.ServiceDiscovery.cloudMap(sd.backendV2CloudMapService, {
@@ -57,7 +60,7 @@ export class MeshStack extends Stack {
       this,
       `${this.stackIdentifier}_BackendVirtualRouter`,
       {
-        mesh: this.sd.base.mesh,
+        mesh: this.mesh,
         virtualRouterName: `${this.sd.base.projectName}-backend-router`,
         listeners: [this.virtualNodeListender],
       }
@@ -91,7 +94,7 @@ export class MeshStack extends Stack {
     });
 
     this.backendRoute = new appmesh.Route(this, `${this.stackIdentifier}_BackendRoute`, {
-      mesh: this.sd.base.mesh,
+      mesh: this.mesh,
       virtualRouter: this.backendVirtualRouter,
       routeName: `${this.sd.base.projectName}-backend-route`,
       routeSpec: routeSpec,
@@ -104,7 +107,7 @@ export class MeshStack extends Stack {
       this,
       `${this.stackIdentifier}_FrontendVirtualNode`,
       {
-        mesh: this.sd.base.mesh,
+        mesh: this.mesh,
         virtualNodeName: `${this.sd.base.projectName}-front-node`,
         listeners: [this.virtualNodeListender],
         serviceDiscovery: appmesh.ServiceDiscovery.dns(

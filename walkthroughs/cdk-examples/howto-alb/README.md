@@ -62,7 +62,7 @@ BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack): d
 #### There are three AWS Fargate services
 
  1. `frontend` - which is registered behind public ALB and has an Envoy proxy sidecar attached to it. This service is discoverable  via the `PublicEndpoint` mentioned above, which uses the ALB's DNS. `frontend` is also an App Mesh **virtual node** that routes data to the two backend services.
- 2. `backend-v1` - which is registered behind an internal ALB. This service is registered as a **virtual node** that is discoverable to `frontend` using the ALB's DNS `backend.howto-alb.hosted.local`(configured as a AWS Route53 hosted zone).
+ 2. `backend-v1` - which is registered behind an internal ALB. This service is registered as a **virtual node** that is discoverable to `frontend` using the ALB's DNS `backend.howto-alb.hosted.local` (configured as a AWS Route53 hosted zone).
  3. `backend-v2` - which uses AWS CloudMap service discovery using a private DNS namespace `backend-v2.howto-alb.pvt.local` and represents another **virtual node** .
 
 ## Traffic routing using AWS App Mesh
@@ -110,21 +110,7 @@ const serviceDiscoveryStack = new ServiceDiscoveryStack(baseStack, 'ServiceDisco
 });
 ```
 
-```c
-// The BackendV1Constructor fetches the container port from the BaseStack and the virtual node name from the MeshStack
-const envoyContainer = this.taskDefinition.addContainer(
-      `${this.constructIdentifier}_EnvoyContainer`,
-      {
-        image: ms.sd.base.envoyImage,
-        containerName: "envoy",
-        environment: {
-          ENVOY_LOG_LEVEL: "debug",
-          ENABLE_ENVOY_XRAY_TRACING: "1",
-          ENABLE_ENVOY_STATS_TAGS: "1",
-          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
-      },
-    );
-```
+## App Mesh Resources
 
 The frontend Envoy sidecar also acts as a proxy, this can be configured easily using the `AppMeshProxyConfiguration` construct and then adding it to the `proxyConfiguration` prop of the Fargate task definition.
 
@@ -155,7 +141,31 @@ this.taskDefinition = new ecs.FargateTaskDefinition(
 );
 ```
 
-The crux of the mesh infrastrcute lies in the `MeshStack`. For example, in the code snippet below, we create a new `VirtualNode` and assign it the `mesh` prop, and set the service discovery to the internal ALB defined in the `ServiceDiscoveryStack`.
+Both `backend-v2` and `frontend` add the Envoy image as a sidecar container, the Envoy App Mesh image (along with other images) is defined in the `BaseStack`. This is then added as a container to the task definitions of these Fargate services.
+
+```c
+this.envoyImage = ecs.ContainerImage.fromRegistry(
+      "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.21.2.0-prod"
+    );
+```
+
+```c
+// The BackendV1Constructor fetches the container port from the BaseStack and the virtual node name from the MeshStack
+const envoyContainer = this.taskDefinition.addContainer(
+      `${this.constructIdentifier}_EnvoyContainer`,
+      {
+        image: ms.sd.base.envoyImage,
+        containerName: "envoy",
+        environment: {
+          ENVOY_LOG_LEVEL: "debug",
+          ENABLE_ENVOY_XRAY_TRACING: "1",
+          ENABLE_ENVOY_STATS_TAGS: "1",
+          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
+      },
+    );
+```
+
+The crux of the mesh infrastructure lies in the `MeshStack`. For example, in the code snippet below, we create a new `aws-appmesh.VirtualNode` for `backend-v1`, assign it to the mesh and set the service discovery to the internal ALB's DNS defined in the `ServiceDiscoveryStack`.
 
 ```c
 // Virtual node with DNS service discovery
@@ -190,12 +200,12 @@ const routeSpec = appmesh.RouteSpec.http({
       ],
     });
 
-    this.backendRoute = new appmesh.Route(this, `${this.stackIdentifier}_BackendRoute`, {
-      mesh: this.mesh,
-      virtualRouter: this.backendVirtualRouter,
-      routeName: `${this.sd.base.projectName}-backend-route`,
-      routeSpec: routeSpec,
-    });
+this.backendRoute = new appmesh.Route(this, `${this.stackIdentifier}_BackendRoute`, {
+  mesh: this.mesh,
+  virtualRouter: this.backendVirtualRouter,
+  routeName: `${this.sd.base.projectName}-backend-route`,
+  routeSpec: routeSpec,
+});
 ```
 
 ## Project Structure
@@ -205,6 +215,7 @@ The skeleton of the project is generated using the `cdk init sample-app --langua
 In the `cdk.json` file, we define two enviroment variables: `PROJECT_NAME` and `CONTAINER_PORT` that refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers. These variables can be fetched within the application using a Construct's `node.tryGetContext` method.
 
 ```c
+// BaseStack
 this.projectName = this.node.tryGetContext("PROJECT_NAME");
 this.containerPort = this.node.tryGetContext("CONTAINER_PORT");
 ```
@@ -212,6 +223,7 @@ this.containerPort = this.node.tryGetContext("CONTAINER_PORT");
 Using the `aws-ecr-assets.DockerImageAsset` construct, you can push your application image to an ECR repository when the infrastucture is being provisioned by simply pointing it to the directory of your application's `Dockerfile`.
 
 ```c
+// BaseStack
 this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIdentifier}_FrontendAppImageAsset`, {
       directory: ".././howto-alb/feapp",
       platform: assets.Platform.LINUX_AMD64,

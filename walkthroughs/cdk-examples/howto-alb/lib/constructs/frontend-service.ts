@@ -59,7 +59,7 @@ export class FrontEndServiceConstruct extends Construct {
           ENVOY_LOG_LEVEL: "debug",
           ENABLE_ENVOY_XRAY_TRACING: "1",
           ENABLE_ENVOY_STATS_TAGS: "1",
-          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.frontendVirtualNode.virtualNodeName}`,
+          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.mesh.meshName}/virtualNode/${ms.frontendVirtualNode.virtualNodeName}`,
         },
         user: "1337",
         healthCheck: {
@@ -126,7 +126,7 @@ export class FrontEndServiceConstruct extends Construct {
       environment: {
         PORT: ms.sd.base.containerPort.toString(),
         COLOR_HOST: `${ms.backendVirtualService.virtualServiceName}:${ms.sd.base.containerPort}`,
-        XRAY_APP_NAME: `${ms.sd.base.mesh.meshName}/${ms.frontendVirtualNode.virtualNodeName}`,
+        XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.frontendVirtualNode.virtualNodeName}`,
       },
     });
     appContainer.addPortMappings({

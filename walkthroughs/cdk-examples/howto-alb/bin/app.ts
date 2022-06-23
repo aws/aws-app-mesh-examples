@@ -21,7 +21,7 @@ const meshStack = new MeshStack(serviceDiscoveryStack, 'MeshStack', {
 });
 const ecsServicesStack = new ECSServicesStack(meshStack, 'ECSServicesStack', {
     stackName: 'ECSServicesStack',
-    description: "Provisions the Fargate services using their Task Definitons."
+    description: "Provisions the Fargate services using their task definitons."
 });
 
 // Dependencies

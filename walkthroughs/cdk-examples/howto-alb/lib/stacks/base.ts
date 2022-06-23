@@ -12,10 +12,9 @@ import { Stack, StackProps, RemovalPolicy } from "aws-cdk-lib";
 export class BaseStack extends Stack {
   readonly vpc: ec2.Vpc;
   readonly cluster: ecs.Cluster;
-  // readonly taskSecGroup: ec2.SecurityGroup;
   readonly dnsHostedZone: route53.HostedZone;
   readonly dnsNameSpace: service_discovery.PrivateDnsNamespace;
-  readonly mesh: appmesh.Mesh;
+  // readonly mesh: appmesh.Mesh;
   
   readonly backendAppImageAsset: assets.DockerImageAsset;
   readonly frontendAppImageAsset: assets.DockerImageAsset;
@@ -102,7 +101,7 @@ export class BaseStack extends Stack {
         removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    this.mesh = new appmesh.Mesh(this, `${this.stackIdentifier}_Mesh`, { meshName: this.projectName });
+    //this.mesh = new appmesh.Mesh(this, `${this.stackIdentifier}_Mesh`, { meshName: this.projectName });
 
     this.backendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIdentifier}_ColorAppImageAsset`, {
       directory: ".././howto-alb/colorapp",
