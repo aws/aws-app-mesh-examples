@@ -78,6 +78,8 @@ The frontend and backend services are simple Flask applications bundled in the `
 # CDK Code
 
 <details>
+<summary>Expand</summary>
+
 
 ## Stacks and Constructs
 
@@ -231,3 +233,8 @@ this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIden
 ```
 
 </details>
+
+# Learn more about App Mesh
+- [Product Page](https://aws.amazon.com/app-mesh/?nc2=h_ql_prod_nt_appm&aws-app-mesh-blogs.sort-by=item.additionalFields.createdDate&aws-app-mesh-blogs.sort-order=desc&whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc)
+- [App Mesh under the hood](https://www.youtube.com/watch?v=h3syq1vbplE)
+- [App Mesh CDK API Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_appmesh-readme.html)
