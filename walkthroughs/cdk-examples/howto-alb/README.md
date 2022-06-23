@@ -72,7 +72,7 @@ Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual
 The frontend and backend services are simple Flask applications bundled in the `feapp` and `colorapp` directories respectively. `backend-v1` returns the response 'BLUE 🔵' and `backend-v2` returns 'GREEN 🟢'. You can change the route weights on the AWS console and see the difference in the responses.
 
 <p align="center">
-  <img width="500" height="600" src="assets/app-arch.jpg">
+  <img width="550" height="600" src="assets/app-arch.jpg">
 </p>
 
 # CDK Code
