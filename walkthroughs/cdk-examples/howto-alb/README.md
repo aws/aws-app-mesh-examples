@@ -70,8 +70,8 @@ The frontend and backend services are simple Flask applications bundled in the `
   <img width="460" height="500" src="assets/app-arch.jpg">
 </p>
 
-# CDK Architecture
-<details open>
+# CDK Code
+<details>
 
 ## Stacks and Constructs
 There are a total of 4 Stacks that provision all the infrastructure for the example. 
@@ -116,7 +116,8 @@ const envoyContainer = this.taskDefinition.addContainer(
           ENABLE_ENVOY_XRAY_TRACING: "1",
           ENABLE_ENVOY_STATS_TAGS: "1",
           APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
-        },
+      },
+    );
 ```
 
 The frontend Envoy sidecar also acts as a proxy, this can be configured easily using the `AppMeshProxyConfiguration` construct and then adding it to the `proxyConfiguration` prop of the Fargate Task Definition.
