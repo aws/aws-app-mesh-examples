@@ -52,13 +52,15 @@ GREEN 🟢%
 ## Traffic routing using AWS App Mesh
 Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual service** `backend.howto-alb.hosted.local`. A **virtual router** which sits behind `frontend` is responsible for routing traffic to the **virtual service**. This router can be configured with weights that determine what % of the traffic should be split between `backend-v1` and `backend-v2`. For this example the weights are split equally (50/50).
 
-The frontend and backend services are simple Flask applications bundled in the `feapp` and `colorapp` directories respectively. `backend-v1` returns the response 'BLUE 🔵' and `backend-v2` returns 'GREEN 🟢'. 
+The frontend and backend services are simple Flask applications bundled in the `feapp` and `colorapp` directories respectively. `backend-v1` returns the response 'BLUE 🔵' and `backend-v2` returns 'GREEN 🟢'. You can change the route weights on the AWS console and see the difference in the responses.
+
+![Design](assets/app-arch.jpg)
 
 # CDK Architecture
 ## Stacks and Constructs
 There are a total of 4 Stacks that provision all the infrastructure for the example. 
 
-_Note - The CDK provisions a `CDKToolkit` Stack automatically to deploy AWS CDK apps into your cloud enviroment_
+_Note - The CDK provisions a `CDKToolkit` Stack automatically to deploy AWS CDK apps into your cloud enviroment._
 
 1. `BaseStack` - provisions the network infrastructure like the VPC, ECS Cluster and DNS Hosted Zone, along with the Docker images that are pushed to the ECR Repository.
 2. `ServiceDiscoveryStack` - provisions the 2 ALBs used by `frontend` and `backend-v1` and the CloudMap service used by `backend-v2`.
@@ -70,4 +72,4 @@ The order mentioned above also represents the dependency these Stacks have on ea
 ## CDK Project Structure
 The skeleton of the project is generated using the `cdk init sample-app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder. In the `cdk.json` file, we define two enviroment variables: `PROJECT_NAME` and `CONTAINER_PORT` that refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers.
 
-Using the `DockerImageAsset` construct, you can push your application image to an ECR repository when the infrastucture is being provisioned.
+Using the `DockerImageAsset` construct, you can push your application image to an ECR repository when the infrastucture is being provisioned by simply pointing it to the directory of your application's `Dockerfile`.
