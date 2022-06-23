@@ -105,12 +105,12 @@ export class BaseStack extends Stack {
     this.mesh = new appmesh.Mesh(this, `${this.stackIdentifier}_Mesh`, { meshName: this.projectName });
 
     this.backendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIdentifier}_ColorAppImageAsset`, {
-      directory: ".././howto-alb-cdk/colorapp",
+      directory: ".././howto-alb/colorapp",
       platform: assets.Platform.LINUX_AMD64,
     });
 
     this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIdentifier}_FrontendAppImageAsset`, {
-      directory: ".././howto-alb-cdk/feapp",
+      directory: ".././howto-alb/feapp",
       platform: assets.Platform.LINUX_AMD64,
     });
 

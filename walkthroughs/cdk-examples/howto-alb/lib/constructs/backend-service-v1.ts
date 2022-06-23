@@ -9,12 +9,12 @@ export class BackendServiceV1Construct extends Construct {
   taskDefinition: ecs.TaskDefinition;
   taskSecGroup: ec2.SecurityGroup
   service: ecs.FargateService;
-  prefix: string = "BackendServiceV1";
+  constructIdentifier: string = "BackendServiceV1";
 
   constructor(ms: MeshStack, id: string) {
     super(ms, id);
 
-    this.taskSecGroup = new ec2.SecurityGroup(this, `BV1TaskSecGroup`, {
+    this.taskSecGroup = new ec2.SecurityGroup(this, `${this.constructIdentifier}_TaskSecurityGroup`, {
       vpc: ms.sd.base.vpc,
     });
     this.taskSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
@@ -22,7 +22,7 @@ export class BackendServiceV1Construct extends Construct {
     // Task Definition
     this.taskDefinition = new ecs.FargateTaskDefinition(
       this,
-      `${this.prefix}TaskDefinition`,
+      `${this.constructIdentifier}_TaskDefinition`,
       {
         cpu: 256,
         memoryLimitMiB: 512,
@@ -35,7 +35,7 @@ export class BackendServiceV1Construct extends Construct {
     // Add the colorApp container
     // https://github.com/aws/aws-cdk/issues/12371
     const colorAppContainer = this.taskDefinition.addContainer(
-      `${this.prefix}ColorContainer`,
+      `${this.constructIdentifier}_ColorAppContainer`,
       {
         containerName: "app",
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
@@ -59,7 +59,7 @@ export class BackendServiceV1Construct extends Construct {
 
     // Add the Xray container
     const xrayContainer = this.taskDefinition.addContainer(
-      `${this.prefix}XrayContainer`,
+      `${this.constructIdentifier}_XrayContainer`,
       {
         image: ms.sd.base.xrayDaemonImage,
         containerName: "xray",
@@ -83,13 +83,13 @@ export class BackendServiceV1Construct extends Construct {
     });
 
     // Condfigure load balancer listener
-    const listener = ms.sd.backendV1LoadBalancer.addListener("BackendV1LBListener", {
+    const listener = ms.sd.backendV1LoadBalancer.addListener(`${this.constructIdentifier}_Listener`, {
       port: ms.sd.base.containerPort,
       open: true,
     });
 
     // Define the fargate service and register it to the ALB
-    this.service = new ecs.FargateService(this, "BackendV1FargateService", {
+    this.service = new ecs.FargateService(this, `${this.constructIdentifier}_Service`, {
       serviceName: "backend-v1",
       cluster: ms.sd.base.cluster,
       taskDefinition: this.taskDefinition,

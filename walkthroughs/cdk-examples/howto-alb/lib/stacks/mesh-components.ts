@@ -3,8 +3,9 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
 
 export class MeshStack extends Stack {
-  //readonly mesh: appmesh.Mesh;
+
   virtualNodeListender: appmesh.VirtualNodeListener;
+  
   backendV1VirtualNode: appmesh.VirtualNode;
   backendV2VirtualNode: appmesh.VirtualNode;
   backendVirtualRouter: appmesh.VirtualRouter;
@@ -15,7 +16,7 @@ export class MeshStack extends Stack {
   frontendVirtualService: appmesh.VirtualService;
 
   sd: ServiceDiscoveryStack;
-  prefix: string = "Mesh";
+  readonly stackIdentifier: string = "MeshStack";
 
   constructor(sd: ServiceDiscoveryStack, id: string, props?: StackProps) {
     super(sd, id, props);
@@ -28,7 +29,7 @@ export class MeshStack extends Stack {
 
     this.backendV1VirtualNode = new appmesh.VirtualNode(
       this,
-      `${this.prefix}BackendV1VirtualNode`,
+      `${this.stackIdentifier}_BackendV1VirtualNode`,
       {
         mesh: this.sd.base.mesh,
         virtualNodeName: `${this.sd.base.projectName}-backend-v1-node`,
@@ -41,7 +42,7 @@ export class MeshStack extends Stack {
 
     this.backendV2VirtualNode = new appmesh.VirtualNode(
       this,
-      `${this.prefix}BackendV2VirtualNode`,
+      `${this.stackIdentifier}_BackendV2VirtualNode`,
       {
         mesh: this.sd.base.mesh,
         virtualNodeName: `${this.sd.base.projectName}-backend-v2-node`,
@@ -54,7 +55,7 @@ export class MeshStack extends Stack {
 
     this.backendVirtualRouter = new appmesh.VirtualRouter(
       this,
-      `${this.prefix}BackendVirtualRouter`,
+      `${this.stackIdentifier}_BackendVirtualRouter`,
       {
         mesh: this.sd.base.mesh,
         virtualRouterName: `${this.sd.base.projectName}-backend-router`,
@@ -64,7 +65,7 @@ export class MeshStack extends Stack {
 
     this.backendVirtualService = new appmesh.VirtualService(
       this,
-      `${this.prefix}BackendVirtualService`,
+      `${this.stackIdentifier}_BackendVirtualService`,
       {
         virtualServiceProvider: appmesh.VirtualServiceProvider.virtualRouter(
           this.backendVirtualRouter
@@ -89,7 +90,7 @@ export class MeshStack extends Stack {
       ],
     });
 
-    this.backendRoute = new appmesh.Route(this, `${this.prefix}BackendRoute`, {
+    this.backendRoute = new appmesh.Route(this, `${this.stackIdentifier}_BackendRoute`, {
       mesh: this.sd.base.mesh,
       virtualRouter: this.backendVirtualRouter,
       routeName: `${this.sd.base.projectName}-backend-route`,
@@ -101,7 +102,7 @@ export class MeshStack extends Stack {
 
     this.frontendVirtualNode = new appmesh.VirtualNode(
       this,
-      `${this.prefix}FrontendVirtualNode`,
+      `${this.stackIdentifier}_FrontendVirtualNode`,
       {
         mesh: this.sd.base.mesh,
         virtualNodeName: `${this.sd.base.projectName}-front-node`,

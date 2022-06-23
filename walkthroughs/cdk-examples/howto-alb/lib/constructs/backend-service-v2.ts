@@ -1,64 +1,47 @@
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import * as ec2 from "aws-cdk-lib/aws-ec2"
-import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Duration } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { MeshStack } from "../stacks/mesh-components";
 
-export class FrontEndServiceConstruct extends Construct {
+export class BackendServiceV2Construct extends Construct {
   taskDefinition: ecs.FargateTaskDefinition;
   service: ecs.FargateService;
   taskSecGroup: ec2.SecurityGroup;
-  prefix: string = "FrontendService";
+  readonly constructIdentifier: string = "BackendServiceV2";
 
   constructor(ms: MeshStack, id: string) {
     super(ms, id);
 
-    this.taskSecGroup = new ec2.SecurityGroup(this, `FrontendTaskSecGroup`, {
+    this.taskSecGroup = new ec2.SecurityGroup(this, `${this.constructIdentifier}_TaskSecurityGroup`, {
       vpc: ms.sd.base.vpc,
     });
     this.taskSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
 
-    // App Mesh Proxy Config.
-    const appMeshProxyConfig = new ecs.AppMeshProxyConfiguration({
-      containerName: "envoy",
-      properties: {
-        proxyIngressPort: 15000,
-        proxyEgressPort: 15001,
-        appPorts: [ms.sd.base.containerPort],
-        ignoredUID: 1337,
-        egressIgnoredIPs: ["169.254.170.2", "169.254.169.254"],
-      },
-    });
-
+    // // Task Definition
     this.taskDefinition = new ecs.FargateTaskDefinition(
       this,
-      `${this.prefix}TaskDefinition`,
+      `${this.constructIdentifier}_TaskDefinition`,
       {
         cpu: 256,
         memoryLimitMiB: 512,
-        proxyConfiguration: appMeshProxyConfig,
         executionRole: ms.sd.base.executionRole,
         taskRole: ms.sd.base.taskRole,
-        family: "front",
+        family: "green",
       }
     );
 
-    // Add the Envoy Image to the task def.
+    // Add the Envoy container
     const envoyContainer = this.taskDefinition.addContainer(
-      `${this.prefix}EnvoyContainer`,
+      `${this.constructIdentifier}_EnvoyContainer`,
       {
         image: ms.sd.base.envoyImage,
         containerName: "envoy",
-        logging: ecs.LogDriver.awsLogs({
-          logGroup: ms.sd.base.logGroup,
-          streamPrefix: "front-envoy",
-        }),
         environment: {
           ENVOY_LOG_LEVEL: "debug",
           ENABLE_ENVOY_XRAY_TRACING: "1",
           ENABLE_ENVOY_STATS_TAGS: "1",
-          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.frontendVirtualNode.virtualNodeName}`,
+          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.sd.base.projectName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
         },
         user: "1337",
         healthCheck: {
@@ -70,6 +53,10 @@ export class FrontEndServiceConstruct extends Construct {
             "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE",
           ],
         },
+        logging: ecs.LogDriver.awsLogs({
+          logGroup: ms.sd.base.logGroup,
+          streamPrefix: "backend-v2-envoy",
+        }),
       }
     );
     envoyContainer.addPortMappings({
@@ -90,20 +77,19 @@ export class FrontEndServiceConstruct extends Construct {
       softLimit: 15000,
     });
 
-    // Add the Xray Image to the task def.
+    //Add the Xray container
     const xrayContainer = this.taskDefinition.addContainer(
-      `${this.prefix}XrayContainer`,
+      `${this.constructIdentifier}_XrayContainer`,
       {
         image: ms.sd.base.xrayDaemonImage,
         containerName: "xray",
         logging: ecs.LogDriver.awsLogs({
           logGroup: ms.sd.base.logGroup,
-          streamPrefix: "front-xray",
+          streamPrefix: "backend-v2-xray",
         }),
         user: "1337",
       }
     );
-
     xrayContainer.addPortMappings({
       containerPort: 2000,
       protocol: ecs.Protocol.UDP,
@@ -114,42 +100,44 @@ export class FrontEndServiceConstruct extends Construct {
       condition: ecs.ContainerDependencyCondition.START,
     });
 
-    // Add the Frontend Image to the task def.
-    const appContainer = this.taskDefinition.addContainer(`${this.prefix}Container`, {
-      containerName: "app",
-      image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.frontendAppImageAsset),
-      logging: ecs.LogDriver.awsLogs({
-        logGroup: ms.sd.base.logGroup,
-        streamPrefix: "front-app",
-      }),
-      environment: {
-        PORT: ms.sd.base.containerPort.toString(),
-        COLOR_HOST: `${ms.backendVirtualService.virtualServiceName}:${ms.sd.base.containerPort}`,
-        XRAY_APP_NAME: `${ms.sd.base.mesh.meshName}/${ms.frontendVirtualNode.virtualNodeName}`,
-      },
-    });
-    appContainer.addPortMappings({
+    // Add the colorApp Container
+    const colorAppContainer = this.taskDefinition.addContainer(
+      `${this.constructIdentifier}_ColorAppContainer`,
+      {
+        image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
+        containerName: "app",
+        environment: {
+          COLOR: "green",
+          PORT: ms.sd.base.containerPort.toString(),
+          XRAY_APP_NAME: `${ms.sd.base.mesh.meshName}/${ms.backendV2VirtualNode.virtualNodeName}`,
+        },
+        logging: ecs.LogDriver.awsLogs({
+          logGroup: ms.sd.base.logGroup,
+          streamPrefix: "backend-v2-app",
+        }),
+      }
+    );
+    colorAppContainer.addPortMappings({
       containerPort: ms.sd.base.containerPort,
+      hostPort: ms.sd.base.containerPort,
       protocol: ecs.Protocol.TCP,
     });
-    appContainer.addContainerDependencies({
+
+    colorAppContainer.addContainerDependencies({
       container: xrayContainer,
       condition: ecs.ContainerDependencyCondition.START,
     });
-    appContainer.addContainerDependencies({
+    colorAppContainer.addContainerDependencies({
       container: envoyContainer,
       condition: ecs.ContainerDependencyCondition.HEALTHY,
     });
 
-    const listener = ms.sd.frontendLoadBalancer.addListener("FrontendLBListener", {
-      port: 80,
-      open: true,
-    });
-
-    this.service = new ecs.FargateService(this, "FrontendFargateService", {
-      serviceName: "frontend",
+    // Define the Fargate Service and link it to CloudMap service discovery
+    this.service = new ecs.FargateService(this, `${this.constructIdentifier}_Service`, {
       cluster: ms.sd.base.cluster,
+      serviceName: ms.sd.backendV2CloudMapService.serviceName,
       taskDefinition: this.taskDefinition,
+      assignPublicIp: false,
       desiredCount: 1,
       maxHealthyPercent: 200,
       minHealthyPercent: 100,
@@ -157,19 +145,10 @@ export class FrontEndServiceConstruct extends Construct {
       securityGroups: [this.taskSecGroup],
     });
 
-    this.service.registerLoadBalancerTargets({
-      containerName: "app",
+    this.service.associateCloudMapService({
+      container: colorAppContainer,
       containerPort: ms.sd.base.containerPort,
-      newTargetGroupId: "FrontendApp",
-      listener: ecs.ListenerConfig.applicationListener(listener, {
-        protocol: elbv2.ApplicationProtocol.HTTP,
-        healthCheck: {
-          path: "/ping",
-          port: ms.sd.base.containerPort.toString(),
-          timeout: Duration.seconds(5),
-          interval: Duration.seconds(60),
-        },
-      }),
+      service: ms.sd.backendV2CloudMapService,
     });
   }
 }

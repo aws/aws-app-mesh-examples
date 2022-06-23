@@ -6,11 +6,14 @@ import { Stack, StackProps, Duration } from "aws-cdk-lib";
 import { BaseStack } from "./base";
 
 export class ServiceDiscoveryStack extends Stack {
+  
   base: BaseStack;
   frontendLoadBalancer: elbv2.ApplicationLoadBalancer;
   backendV1LoadBalancer: elbv2.ApplicationLoadBalancer;
   backendRecordSet: route53.RecordSet;
   backendV2CloudMapService: service_discovery.Service;
+
+  readonly stackIdentifier: string = "ServiceDiscoveryStack"
 
   constructor(base: BaseStack, id: string, props?: StackProps) {
     super(base, id, props);
@@ -20,7 +23,7 @@ export class ServiceDiscoveryStack extends Stack {
     // Internal Load balancer for backend service v1
     this.backendV1LoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      "BackendV1LoadBalancer",
+      `${this.stackIdentifier}_BackendV1LoadBalancer`,
       {
         loadBalancerName: "backend-v1",
         vpc: this.base.vpc,
@@ -28,7 +31,7 @@ export class ServiceDiscoveryStack extends Stack {
       }
     );
 
-    this.backendRecordSet = new route53.RecordSet(this, "BackendRecordSet", {
+    this.backendRecordSet = new route53.RecordSet(this, `${this.stackIdentifier}_BackendRecordSet`, {
       recordType: route53.RecordType.A,
       zone: this.base.dnsHostedZone,
       target: route53.RecordTarget.fromAlias(
@@ -39,7 +42,7 @@ export class ServiceDiscoveryStack extends Stack {
 
     // CloudMap registry for backend service v2
     this.backendV2CloudMapService = this.base.dnsNameSpace.createService(
-      `BackendV2CloudMapService`,
+      `${this.stackIdentifier}_BackendV2CloudMapService`,
       {
         name: "backend-v2",
         dnsRecordType: service_discovery.DnsRecordType.A,
@@ -53,7 +56,7 @@ export class ServiceDiscoveryStack extends Stack {
     // Public Load balancer for front end service
     this.frontendLoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      "FrontendLoadBalancer",
+      `${this.stackIdentifier}_FrontendLoadBalancer`,
       {
         loadBalancerName: "frontend",
         vpc: this.base.vpc,

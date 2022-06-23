@@ -1,7 +1,6 @@
-import os
 import config
-from flask import Flask, request
-import json
+from flask import Flask, request, make_response
+import emoji
 from aws_xray_sdk.core import patch_all, xray_recorder
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
@@ -26,7 +25,13 @@ def color():
     print('----------------')
     print(request.headers)
     print('----------------')
-    return config.COLOR
+    color_circle = ''
+    try:
+        color_circle = emoji.emojize(f':{config.COLOR.lower()}_circle:')
+    except Exception:
+        pass
+
+    return make_response(f'{config.COLOR.upper()} {color_circle}')
 
 
 if __name__ == '__main__':
