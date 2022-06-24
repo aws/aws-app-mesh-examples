@@ -78,7 +78,7 @@ Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual
 # CDK Code
 
 <details>
-<summary>Expand</summary>
+<summary><b>Click here to learn more about provisioning App Mesh resources using CDK constructs</b></summary>
 
 ## Stacks and Constructs
 
