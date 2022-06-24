@@ -46,8 +46,10 @@ BLUE 🔵%
 ➜  howto-alb git:(feature-cdk) ✗ curl frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com/color
 GREEN 🟢%
 ```
+# Cleanup
 
-- To cleanup the resources run `cdk destroy --all` and hit `y` when the prompt appears.
+- Navigate to your project directory
+- Run `cdk destroy --all` and hit `y` when the prompt appears.
 
 ```c
 ➜  howto-alb git:(feature-cdk) cdk destroy --all
@@ -82,7 +84,7 @@ Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual
 
 There are a total of 4 Stacks that provision all the infrastructure for the example.
 
-_Note - The CDK provisions a `CDKToolkit` Stack automatically to deploy AWS CDK apps into your cloud enviroment._
+_Note - The `cdk boostrap` provisions a `CDKToolkit` Stack to deploy AWS CDK apps into your cloud enviroment._
 
 1. `BaseStack` - provisions the network infrastructure like the VPC, ECS Cluster and DNS Hosted Zone, along with the Docker images that are pushed to the ECR Repository.
 2. `ServiceDiscoveryStack` - provisions the 2 ALBs used by `frontend` and `backend-v1` and the CloudMap service used by `backend-v2`.
