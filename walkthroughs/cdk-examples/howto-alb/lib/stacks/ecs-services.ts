@@ -16,8 +16,8 @@ export class ECSServicesStack extends Stack {
     // frontend.service.node.addDependency(backendV2.service);
     // frontend.service.node.addDependency(backendV1.service);
 
-    frontend.taskDefinition.node.addDependency(ms.frontendVirtualNode);
-    frontend.taskDefinition.node.addDependency(ms.backendVirtualService);
+    // frontend.taskDefinition.node.addDependency(ms.frontendVirtualNode);
+    // frontend.taskDefinition.node.addDependency(ms.backendVirtualService);
 
     new CfnOutput(this, 'PublicEndpoint', { value: ms.sd.frontendLoadBalancer.loadBalancerDnsName, 
     description: 'Public endpoint to query the frontend load balancer', exportName: 'PublicEndpoint' });

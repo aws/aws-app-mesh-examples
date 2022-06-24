@@ -9,19 +9,19 @@ const app = new cdk.App();
 
 const baseStack = new BaseStack(app, 'BaseStack',{
     stackName: 'BaseStack',
-    description: "Provisions the network infrastructure and container images."
+    description: "Defines the network infrastructure, container images and ECS Cluster."
 });
 const serviceDiscoveryStack = new ServiceDiscoveryStack(baseStack, 'ServiceDiscoveryStack', {
     stackName: 'ServiceDiscoveryStack',
-    description: "Provisions the application load balancers and the CloudMap service."
+    description: "Defines the application load balancers and the CloudMap service."
 });
 const meshStack = new MeshStack(serviceDiscoveryStack, 'MeshStack', {
     stackName: 'MeshStack',
-    description: "Provisions mesh components like the virtual nodes, routers and services."
+    description: "Defines mesh components like the virtual nodes, routers and services."
 });
 const ecsServicesStack = new ECSServicesStack(meshStack, 'ECSServicesStack', {
     stackName: 'ECSServicesStack',
-    description: "Provisions the Fargate services using their task definitons."
+    description: "Defines the Fargate services and their task definitions."
 });
 
 // Dependencies
