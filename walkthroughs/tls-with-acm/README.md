@@ -294,7 +294,6 @@ aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-mesh
 aws ecr delete-repository --force --repository-name colorteller
-aws ecr delete-repository --force --repository-name gateway
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 ```
