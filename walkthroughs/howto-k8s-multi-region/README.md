@@ -174,9 +174,9 @@ Create a Cloud Formation stack using the template `ec2_cfn.yaml` included in the
 Execute the following command to create ec2 instances in both regions. Please change parameter value of `KeyPairName` parameter to a valid value before executing the command.
 
 ```
-aws –-region us-east-2 cloudformation create-stack –-stack-name test-ec2-stack –-template-body file://ec2_cfn.yaml –-parameters ParamaterKey=KeyPairName,ParamaterValue=test-key-pair
+aws --region us-east-2 cloudformation create-stack --stack-name test-ec2-stack --template-body file://ec2_cfn.yaml --parameters ParameterKey=KeyPairName,ParameterValue=test-key-pair
 
-aws –-region us-west-2 cloudformation create-stack –-stack-name test-ec2-stack –-template-body file://ec2_cfn.yaml –-parameters ParamaterKey=KeyPairName,ParamaterValue=test-key-pair
+aws --region us-west-2 cloudformation create-stack --stack-name test-ec2-stack --template-body file://ec2_cfn.yaml --parameters ParameterKey=KeyPairName,ParameterValue=test-key-pair
 ```
 
 Connect to the ec2 instances using SSH and test the application using curl.
@@ -257,17 +257,17 @@ eksctl delete cluster --region=us-west-2 --name=clusterB
 3. Delete the EC2 instances that were launched in both the regions to test the application.
 
 ```
-aws –-region us-east-2 cloudformation delete-stack –-stack-name test-ec2-stack
+aws --region us-east-2 cloudformation delete-stack --stack-name test-ec2-stack
 
-aws –-region us-west-2 cloudformation delete-stack –-stack-name test-ec2-stack
+aws --region us-west-2 cloudformation delete-stack --stack-name test-ec2-stack
 ```
 
 4. Delete the ECR repository `howto-k8s-multi-region/colorapp` in both the regions.
 
 ```
-aws –-region us-east-2 ecr delete-repository –-repository-name howto-k8s-multi-region/colorapp --force
+aws --region us-east-2 ecr delete-repository --repository-name howto-k8s-multi-region/colorapp --force
 
-aws –-region us-west-2 ecr delete-repository –-repository-name howto-k8s-multi-region/colorapp --force
+aws --region us-west-2 ecr delete-repository --repository-name howto-k8s-multi-region/colorapp --force
 ```
 
 6. Delete the envoy IAM policies created for clusters in both the regions.
