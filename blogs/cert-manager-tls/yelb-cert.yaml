@@ -1,5 +1,5 @@
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: yelb-cert-ui
@@ -11,7 +11,7 @@ spec:
   issuerRef:
     name: ca-issuer  
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: yelb-cert-app
@@ -23,7 +23,7 @@ spec:
   issuerRef:
     name: ca-issuer
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: yelb-cert-db
@@ -35,7 +35,7 @@ spec:
   issuerRef:
     name: ca-issuer
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: yelb-cert-redis
@@ -47,7 +47,7 @@ spec:
   issuerRef:
     name: ca-issuer
 ---      
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: yelb-cert-gw
