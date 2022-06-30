@@ -105,7 +105,7 @@ Note that if you are using AWS CLI version 2, you will need to pass the CSR data
 
 ```bash
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
-[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CSR="$(echo ${ROOT_CA_CSR} | base64)"
+[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CSR=$(echo "${ROOT_CA_CSR}" | base64)
 ```
 
 ```bash
@@ -130,7 +130,7 @@ ROOT_CA_CERT=`aws acm-pca get-certificate \
 Note again with AWS CLI version 2, you will need to pass the certificate data through encoding.
 
 ```bash
-[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CERT="$(echo ${ROOT_CA_CERT} | base64)"
+[[ ${AWS_CLI_VERSION} -gt 1 ]] && ROOT_CA_CERT=$(echo "${ROOT_CA_CERT}" | base64)
 ```
 
 Import the certificate:
@@ -227,16 +227,16 @@ ColorGatewayRoute:
     - ColorGatewayVirtualGateway
     - ColorTellerVirtualService
   Type: AWS::AppMesh::GatewayRoute
-  Properties: 
+  Properties:
     GatewayRouteName: ColorGatewayRoute
     MeshName: !GetAtt Mesh.MeshName
-    Spec: 
+    Spec:
       HttpRoute:
-        Action: 
+        Action:
           Target:
             VirtualService:
               VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
-        Match: 
+        Match:
           Prefix: /
     VirtualGatewayName: ColorGateway
 ```
@@ -294,7 +294,6 @@ aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-cluster
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-mesh
 aws ecr delete-repository --force --repository-name colorteller
-aws ecr delete-repository --force --repository-name gateway
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 ```
