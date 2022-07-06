@@ -4,10 +4,11 @@ import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { MeshStack } from "../stacks/mesh-components";
 import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
+import { XrayContainer } from "./xray-container";
 
 export class BackendServiceV1Construct extends Construct {
   taskDefinition: ecs.TaskDefinition;
-  taskSecGroup: ec2.SecurityGroup
+  taskSecGroup: ec2.SecurityGroup;
   service: ecs.FargateService;
   constructIdentifier: string = "BackendServiceV1";
 
@@ -20,17 +21,13 @@ export class BackendServiceV1Construct extends Construct {
     this.taskSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
 
     // Task Definition
-    this.taskDefinition = new ecs.FargateTaskDefinition(
-      this,
-      `${this.constructIdentifier}_TaskDefinition`,
-      {
-        cpu: 256,
-        memoryLimitMiB: 512,
-        executionRole: ms.sd.base.executionRole,
-        taskRole: ms.sd.base.taskRole,
-        family: "blue",
-      }
-    );
+    this.taskDefinition = new ecs.FargateTaskDefinition(this, `${this.constructIdentifier}_TaskDefinition`, {
+      cpu: 256,
+      memoryLimitMiB: 512,
+      executionRole: ms.sd.base.executionRole,
+      taskRole: ms.sd.base.taskRole,
+      family: "blue",
+    });
 
     // Add the colorApp container
     const colorAppContainer = this.taskDefinition.addContainer(
@@ -47,41 +44,27 @@ export class BackendServiceV1Construct extends Construct {
           logGroup: ms.sd.base.logGroup,
           streamPrefix: "backend-v1-app",
         }),
+        portMappings: [
+          {
+            containerPort: ms.sd.base.containerPort,
+            hostPort: ms.sd.base.containerPort,
+            protocol: ecs.Protocol.TCP,
+          },
+        ],
       }
     );
 
-    colorAppContainer.addPortMappings({
-      containerPort: ms.sd.base.containerPort,
-      hostPort: ms.sd.base.containerPort,
-      protocol: ecs.Protocol.TCP,
-    });
-
-    // Add the Xray container
     const xrayContainer = this.taskDefinition.addContainer(
       `${this.constructIdentifier}_XrayContainer`,
-      {
-        image: ms.sd.base.xrayDaemonImage,
-        containerName: "xray",
-        logging: ecs.LogDriver.awsLogs({
-          logGroup: ms.sd.base.logGroup,
-          streamPrefix: "backend-v1-xray",
-        }),
-        user: "1337",
-      }
+      new XrayContainer(ms, `${this.constructIdentifier}_XrayHelper`, { logStreamPrefix: "backend-v1-xray" })
+        .options
     );
 
-    xrayContainer.addPortMappings({
-      containerPort: 2000,
-      protocol: ecs.Protocol.UDP,
-    });
-
-    // Define container dependencies
     colorAppContainer.addContainerDependencies({
       container: xrayContainer,
       condition: ecs.ContainerDependencyCondition.START,
     });
 
-    // Condfigure load balancer listener
     const listener = ms.sd.backendV1LoadBalancer.addListener(`${this.constructIdentifier}_Listener`, {
       port: ms.sd.base.containerPort,
       open: true,

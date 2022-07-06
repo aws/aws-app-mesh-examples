@@ -2,33 +2,28 @@ import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53_targets from "aws-cdk-lib/aws-route53-targets";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as service_discovery from "aws-cdk-lib/aws-servicediscovery";
+import * as appmesh from "aws-cdk-lib/aws-appmesh";
 import { Stack, StackProps, Duration } from "aws-cdk-lib";
 import { BaseStack } from "./base";
 
 export class ServiceDiscoveryStack extends Stack {
-  
   base: BaseStack;
   frontendLoadBalancer: elbv2.ApplicationLoadBalancer;
   backendV1LoadBalancer: elbv2.ApplicationLoadBalancer;
   backendRecordSet: route53.RecordSet;
   backendV2CloudMapService: service_discovery.Service;
 
-  readonly stackIdentifier: string = "ServiceDiscoveryStack"
+  readonly stackIdentifier: string = "ServiceDiscoveryStack";
 
   constructor(base: BaseStack, id: string, props?: StackProps) {
     super(base, id, props);
 
     this.base = base;
 
-    // Internal Load balancer for backend service v1
     this.backendV1LoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
       `${this.stackIdentifier}_BackendV1LoadBalancer`,
-      {
-        loadBalancerName: "backend-v1",
-        vpc: this.base.vpc,
-        internetFacing: false,
-      }
+      this.buildAlbProps(this.base.SERVICE_BACKEND_V1, false)
     );
 
     this.backendRecordSet = new route53.RecordSet(this, `${this.stackIdentifier}_BackendRecordSet`, {
@@ -40,11 +35,10 @@ export class ServiceDiscoveryStack extends Stack {
       recordName: `backend.${this.base.dnsHostedZone.zoneName}`,
     });
 
-    // CloudMap registry for backend service v2
     this.backendV2CloudMapService = this.base.dnsNameSpace.createService(
       `${this.stackIdentifier}_BackendV2CloudMapService`,
       {
-        name: "backend-v2",
+        name: this.base.SERVICE_BACKEND_V2,
         dnsRecordType: service_discovery.DnsRecordType.A,
         dnsTtl: Duration.seconds(300),
         customHealthCheck: {
@@ -53,15 +47,31 @@ export class ServiceDiscoveryStack extends Stack {
       }
     );
 
-    // Public Load balancer for front end service
     this.frontendLoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
       `${this.stackIdentifier}_FrontendLoadBalancer`,
-      {
-        loadBalancerName: "frontend",
-        vpc: this.base.vpc,
-        internetFacing: true,
-      }
+      this.buildAlbProps(this.base.SERVICE_FRONTEND, true)
     );
+  }
+
+  private buildAlbProps = (name: string, isInternetFacing: boolean): elbv2.ApplicationLoadBalancerProps => {
+    return {
+      loadBalancerName: name,
+      vpc: this.base.vpc,
+      internetFacing: isInternetFacing,
+    };
+  };
+
+  public getServiceDiscovery(serviceName: string): appmesh.ServiceDiscovery {
+    switch (serviceName) {
+      case this.base.SERVICE_BACKEND_V1:
+        return appmesh.ServiceDiscovery.dns(this.backendV1LoadBalancer.loadBalancerDnsName);
+      case this.base.SERVICE_BACKEND_V2:
+        return appmesh.ServiceDiscovery.cloudMap(this.backendV2CloudMapService);
+      case this.base.SERVICE_FRONTEND:
+        return appmesh.ServiceDiscovery.dns(this.frontendLoadBalancer.loadBalancerDnsName);
+      default:
+        return appmesh.ServiceDiscovery.dns(this.backendV1LoadBalancer.loadBalancerDnsName);
+    }
   }
 }
