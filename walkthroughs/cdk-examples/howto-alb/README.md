@@ -20,7 +20,7 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 - Open your terminal
 - Clone the repository `git clone https://github.com/aws/aws-app-mesh-examples.git`
 - Navigate to `aws-app-mesh-examples/walkthroughs/cdk-examples/howto-alb/`
-- Run  `cdk boostrap`
+- Run `cdk boostrap`
 - Run `cdk deploy --all --require-approval never`
 
 - Once the entire infrastructure has been provisioned, you will see the following message on your terminal.
@@ -38,7 +38,7 @@ arn:aws:cloudformation:us-east-1:xxxxxxxxxx:stack/ECSServicesStack/xxxxxxxxxx-xx
 ✨  Total time: 26.74s
 ```
 
-- Copy the `PublicEndpoint` URL and `curl`  the `/color` endpoint it to get the response.
+- Copy the `PublicEndpoint` URL and `curl` the `/color` endpoint it to get the response.
 
 ```c
 ➜  howto-alb git:(feature-cdk) ✗ curl frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com/color
@@ -46,6 +46,7 @@ BLUE 🔵%
 ➜  howto-alb git:(feature-cdk) ✗ curl frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com/color
 GREEN 🟢%
 ```
+
 # Cleanup
 
 - Navigate to your project directory
@@ -63,9 +64,9 @@ BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack): d
 
 #### There are three AWS Fargate services
 
- 1. `frontend` - which is registered behind public ALB and has an Envoy proxy sidecar attached to it. This service is discoverable  via the `PublicEndpoint` mentioned above, which uses the ALB's DNS. `frontend` is also an App Mesh **virtual node** that routes data to the two backend services.
- 2. `backend-v1` - which is registered behind an internal ALB. This service is registered as a **virtual node** that is discoverable to `frontend` using the ALB's DNS `backend.howto-alb.hosted.local` (configured as a AWS Route53 hosted zone).
- 3. `backend-v2` - which uses AWS CloudMap service discovery using a private DNS namespace `backend-v2.howto-alb.pvt.local` and represents another **virtual node** .
+1.  `frontend` - which is registered behind public ALB and has an Envoy proxy sidecar attached to it. This service is discoverable via the `PublicEndpoint` mentioned above, which uses the ALB's DNS. `frontend` is also an App Mesh **virtual node** that routes data to the two backend services.
+2.  `backend-v1` - which is registered behind an internal ALB. This service is registered as a **virtual node** that is discoverable to `frontend` using the ALB's DNS `backend.howto-alb.hosted.local` (configured as a AWS Route53 hosted zone).
+3.  `backend-v2` - which uses AWS CloudMap service discovery using a private DNS namespace `backend-v2.howto-alb.pvt.local` and represents another **virtual node** .
 
 ## Traffic routing using AWS App Mesh
 
@@ -78,18 +79,18 @@ Both `backend-v1` and `backend-v2` are exposed in App Mesh as a single **virtual
 # CDK Code
 
 <details>
-<summary><b>Click here to learn more about provisioning App Mesh resources using CDK constructs</b></summary>
+<summary><b>Expand this section to learn more about provisioning App Mesh resources using custom CDK constructs</b></summary>
 
 ## Stacks and Constructs
 
 There are a total of 4 Stacks that provision all the infrastructure for the example.
 
-_Note - The `cdk boostrap` provisions a `CDKToolkit` Stack to deploy AWS CDK apps into your cloud enviroment._
+_Note - The `cdk boostrap` command provisions a `CDKToolkit` Stack to deploy AWS CDK apps into your cloud enviroment._
 
 1. `BaseStack` - provisions the network infrastructure like the VPC, ECS Cluster and DNS Hosted Zone, along with the Docker images that are pushed to the ECR Repository.
 2. `ServiceDiscoveryStack` - provisions the 2 ALBs used by `frontend` and `backend-v1` and the CloudMap service used by `backend-v2`.
 3. `MeshStack` - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual service.
-4. `ECSServicesStack` - defines 3 Constructs that contain resources to provision the task definitions and Fargate services for `backend-v1`, `backend-v2` and `frontend`.
+4. `ECSServicesStack` - this stack provisions the 3 Fargate services using a custom construct `AppMeshFargateService` which encapsulates the application container, Envoy sidecar/proxy and the Xray container into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
 
 <p align="center">
   <img width="600" height="350" src="assets/stacks.jpg">
@@ -101,55 +102,44 @@ These dependencies are propagated by passing the Stack objects in the `construct
 
 ```c
 const baseStack = new BaseStack(app, 'BaseStack',{
-    stackName: 'BaseStack',
+    stackName: 'base',
     description: "Provisions the network infrastructure and container images."
 });
 // Pass baseStack as a constructor argument
 const serviceDiscoveryStack = new ServiceDiscoveryStack(baseStack, 'ServiceDiscoveryStack', {
-    stackName: 'ServiceDiscoveryStack',
+    stackName: 'service-discovery',
     description: "Provisions the application load balancers and the CloudMap service."
 });
 ```
 
 ## App Mesh CDK Constructs
 
-The frontend Envoy sidecar also acts as a proxy, this can be configured easily using the `AppMeshProxyConfiguration` construct and then adding it to the `proxyConfiguration` prop of the Fargate task definition.
+To easily define Fargate services with Envoy proxies, we make use of the `AppMeshFargateService` construct mentioned above. The main purpose of this construct is to bundle the application containers with the Envoy sidecar and proxy. To do so, we define a set of custom props in `lib/utils.ts` called `AppMeshFargateServiceProps`.
 
 ```c
-// Define the envoy proxy configuration
-const appMeshProxyConfig = new ecs.AppMeshProxyConfiguration({
-      containerName: "envoy",
-      properties: {
-        proxyIngressPort: 15000,
-        proxyEgressPort: 15001,
-        appPorts: [ms.sd.base.containerPort],
-        ignoredUID: 1337,
-        egressIgnoredIPs: ["169.254.170.2", "169.254.169.254"],
-      },
-    });
+export interface AppMeshFargateServiceProps {
+  serviceName: string;
+  taskDefinitionFamily: string;
+  serviceDiscoveryType: ServiceDiscoveryType;
+  applicationContainer: ApplicationContainer;
+  envoySidecar?: EnvoySidecar;
+  xrayContainer?: XrayContainer;
+  proxyConfiguration?: ecs.AppMeshProxyConfiguration;
+}
 ```
 
-Both `backend-v2` and `frontend` add the Envoy image as a sidecar container, the Envoy App Mesh image (along with other images) is defined in the `BaseStack`. This is then added as a container to the task definitions of these Fargate services.
+These props are passed to instantiate Fargate Services in the ECSServicesStack. Note that `backend-v1` only defines the `xrayContainer` and `applicationContainer` whereas `backend-v2` and `frontend` define all attributes.
+
+Once the attributes are passed to the construct, simple conditional checks can be used to add container dependencies and appropriate service discovery mechanisms for the different services.
 
 ```c
-this.envoyImage = ecs.ContainerImage.fromRegistry(
-      "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.21.2.0-prod"
-    );
-```
-
-```c
-const envoyContainer = this.taskDefinition.addContainer(
-      `${this.constructIdentifier}_EnvoyContainer`,
-      {
-        image: ms.sd.base.envoyImage,
-        containerName: "envoy",
-        environment: {
-          ENVOY_LOG_LEVEL: "debug",
-          ENABLE_ENVOY_XRAY_TRACING: "1",
-          ENABLE_ENVOY_STATS_TAGS: "1",
-          APPMESH_VIRTUAL_NODE_NAME: `mesh/${ms.mesh.meshName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
-        },
-      ...
+if (props.serviceDiscoveryType == ServiceDiscoveryType.DNS) {
+      const loadBalancer = ms.sd.getAlbForService(props.serviceName);
+      // Provision DNS service discovery using Application Load Balancers...
+    } else if (props.serviceDiscoveryType == ServiceDiscoveryType.CLOUDMAP) {
+      // Provision CloudMap service discovery
+    }
+  }
 ```
 
 The crux of the mesh infrastructure lies in the `MeshStack`. For example, in the code snippet below, we create a new `aws-appmesh.VirtualNode` for `backend-v1`, assign it to the mesh and set the service discovery to the internal ALB's DNS defined in the `ServiceDiscoveryStack`.
@@ -158,15 +148,8 @@ The crux of the mesh infrastructure lies in the `MeshStack`. For example, in the
 // Virtual node with DNS service discovery
 this.backendV1VirtualNode = new appmesh.VirtualNode(
       this,
-      `${this.stackIdentifier}_BackendV1VirtualNode`,
-      {
-        mesh: this.mesh,
-        virtualNodeName: `${this.sd.base.projectName}-backend-v1-node`,
-        listeners: [this.virtualNodeListender],
-        serviceDiscovery: appmesh.ServiceDiscovery.dns(
-          sd.backendV1LoadBalancer.loadBalancerDnsName
-        ),
-      }
+      `${this.stackName}BackendV1VirtualNode`,
+      this.buildVirtualNodeProps(this.sd.base.SERVICE_BACKEND_V1)
     );
 ```
 
@@ -199,12 +182,12 @@ this.backendRoute = new appmesh.Route(this, `${this.stackIdentifier}_BackendRout
 
 The skeleton of the project is generated using the `cdk init sample-app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder.
 
-In the `cdk.json` file, we define two enviroment variables: `PROJECT_NAME` and `CONTAINER_PORT` that refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers. These variables can be fetched within the application using a Construct's `node.tryGetContext` method.
+In the `cdk.json` file, we define enviroment variables: For example: `PROJECT_NAME` and `CONTAINER_PORT` refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers. These variables can be fetched within the application using a Construct's `node.tryGetContext` method.
 
 ```c
 // BaseStack
-this.projectName = this.node.tryGetContext("PROJECT_NAME");
-this.containerPort = this.node.tryGetContext("CONTAINER_PORT");
+this.PROJECT_NAME = this.node.tryGetContext("PROJECT_NAME");
+this.PORT = this.node.tryGetContext("CONTAINER_PORT");
 ```
 
 Using the `aws-ecr-assets.DockerImageAsset` construct, you can push your application image to an ECR repository when the infrastucture is being provisioned by simply pointing it to the directory of your application's `Dockerfile`.
@@ -215,6 +198,14 @@ this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIden
       directory: ".././howto-alb/feapp",
       platform: assets.Platform.LINUX_AMD64,
     });
+```
+
+Similarly, container images for Envoy and Xray can also be specified here. These are fetched by the `EnvoySidecar` and `XrayContainer` constructs respectively.
+
+```c
+// EnvoySidecar
+image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_ENVOY")),
+
 ```
 
 </details>

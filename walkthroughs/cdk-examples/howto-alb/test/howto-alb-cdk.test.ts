@@ -10,11 +10,10 @@ const app = new cdk.App();
 const base = new BaseStack(app, "base");
 const serviceDiscovery = new ServiceDiscoveryStack(base, "service-discovery");
 const mesh = new MeshStack(serviceDiscovery, "mesh");
-
+// const ecs = new ECSServicesStack()
 const baseTemplate = Template.fromStack(base);
 const serviceDiscoveryTemplate = Template.fromStack(serviceDiscovery);
 const meshTemplate = Template.fromStack(mesh);
-
 // Test BaseStack
 console.log(`Running tests for ${base.stackName}`);
 test("Base Stack has 2 IAM Roles", () => {
@@ -92,3 +91,5 @@ test("The virtual route has a proper prefix match", () => {
     Spec: { HttpRoute: Match.objectLike({ Match: { Prefix: "/" } }) },
   });
 });
+
+test("");
