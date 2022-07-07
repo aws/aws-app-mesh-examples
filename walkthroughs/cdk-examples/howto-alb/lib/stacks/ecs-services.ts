@@ -5,33 +5,28 @@ import { EnvoySidecar } from "../constructs/envoy-sidecar";
 import { XrayContainer } from "../constructs/xray-container";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import { buildAppMeshProxy, ServiceDiscoveryType } from "../utils";
+import { ApplicationContainer } from "../constructs/application-container";
 
 export class ECSServicesStack extends Stack {
   constructor(ms: MeshStack, id: string, props?: StackProps) {
     super(ms, id, props);
 
-    // // Backend V1
     new AppMeshFargateService(ms, "BackendV1AppMeshFargateService", {
       serviceName: ms.sd.base.SERVICE_BACKEND_V1,
       serviceDiscoveryType: ServiceDiscoveryType.DNS,
       taskDefinitionFamily: "blue",
 
       xrayContainer: new XrayContainer(ms, "BackendV1XrayOpts", {
-        logStreamPrefix: "backend-v1-xray",
+        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V1}-xray`,
       }),
 
-      applicationContainerProps: {
-        containerName: "app",
+      applicationContainer: new ApplicationContainer(ms, "BackendV1AppOpts", {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
-        environment: {
+        env: {
           COLOR: "blue",
           PORT: ms.sd.base.PORT.toString(),
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV1VirtualNode.virtualNodeName}`,
         },
-        logging: ecs.LogDriver.awsLogs({
-          logGroup: ms.sd.base.logGroup,
-          streamPrefix: "backend-v1-app",
-        }),
         portMappings: [
           {
             containerPort: ms.sd.base.PORT,
@@ -39,36 +34,34 @@ export class ECSServicesStack extends Stack {
             protocol: ecs.Protocol.TCP,
           },
         ],
-      },
+        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V1}-app`,
+      }),
     });
 
-    // // Backend V2
     new AppMeshFargateService(ms, "BackendV2AppMeshFargateService", {
       serviceName: ms.sd.base.SERVICE_BACKEND_V2,
       serviceDiscoveryType: ServiceDiscoveryType.CLOUDMAP,
       taskDefinitionFamily: "green",
 
       envoySidecar: new EnvoySidecar(ms, "BackendV2AppMeshEnvoySidecar", {
-        logStreamPrefix: "backend-v2-envoy",
+        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V2}-envoy`,
         appMeshResourcePath: `mesh/${ms.mesh.meshName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
         enableXrayTracing: true,
       }),
+
       proxyConfiguration: buildAppMeshProxy(ms.sd.base.PORT),
+
       xrayContainer: new XrayContainer(ms, "BackendV2AppMeshXrayOpts", {
-        logStreamPrefix: "backend-v2-xray",
+        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V2}-xray`,
       }),
-      applicationContainerProps: {
+
+      applicationContainer: new ApplicationContainer(ms, "BackendV2AppOpts", {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
-        containerName: "app",
-        environment: {
+        env: {
           COLOR: "green",
           PORT: ms.sd.base.PORT.toString(),
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV2VirtualNode.virtualNodeName}`,
         },
-        logging: ecs.LogDriver.awsLogs({
-          logGroup: ms.sd.base.logGroup,
-          streamPrefix: "backend-v2-app",
-        }),
         portMappings: [
           {
             containerPort: ms.sd.base.PORT,
@@ -76,37 +69,37 @@ export class ECSServicesStack extends Stack {
             protocol: ecs.Protocol.TCP,
           },
         ],
-      },
+        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V2}-app`,
+      }),
     });
 
-    // // Frontend
     new AppMeshFargateService(ms, "FrontendAppMeshFargateService", {
       serviceName: ms.sd.base.SERVICE_FRONTEND,
       serviceDiscoveryType: ServiceDiscoveryType.DNS,
       taskDefinitionFamily: "front",
+
       envoySidecar: new EnvoySidecar(ms, "FrontendAppMeshEnvoySidecar", {
-        logStreamPrefix: "front-envoy",
+        logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-envoy`,
         appMeshResourcePath: `mesh/${ms.mesh.meshName}/virtualNode/${ms.frontendVirtualNode.virtualNodeName}`,
         enableXrayTracing: true,
       }),
+
       proxyConfiguration: buildAppMeshProxy(ms.sd.base.PORT),
+
       xrayContainer: new XrayContainer(ms, "FrontendXrayOpts", {
-        logStreamPrefix: "frontend-xray",
+        logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-xray`,
       }),
-      applicationContainerProps: {
-        containerName: "app",
+
+      applicationContainer: new ApplicationContainer(ms, "FrontendAppOpts", {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.frontendAppImageAsset),
-        logging: ecs.LogDriver.awsLogs({
-          logGroup: ms.sd.base.logGroup,
-          streamPrefix: "front-app",
-        }),
-        environment: {
+        logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-app`,
+        env: {
           PORT: ms.sd.base.PORT.toString(),
           COLOR_HOST: `${ms.backendVirtualService.virtualServiceName}:${ms.sd.base.PORT}`,
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.frontendVirtualNode.virtualNodeName}`,
         },
         portMappings: [{ containerPort: ms.sd.base.PORT, protocol: ecs.Protocol.TCP }],
-      },
+      }),
     });
 
     new CfnOutput(this, "URL", {

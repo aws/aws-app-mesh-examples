@@ -9,7 +9,7 @@ import { AppMeshFargateServiceProps, ServiceDiscoveryType } from "../utils";
 export class AppMeshFargateService extends Construct {
   taskDefinition: ecs.FargateTaskDefinition;
   service: ecs.FargateService;
-  taskSecGroup: ec2.SecurityGroup;
+  securityGroup: ec2.SecurityGroup;
   envoySidecar: ecs.ContainerDefinition;
   xrayContainer: ecs.ContainerDefinition;
   appContainer: ecs.ContainerDefinition;
@@ -17,10 +17,10 @@ export class AppMeshFargateService extends Construct {
   constructor(ms: MeshStack, id: string, props: AppMeshFargateServiceProps) {
     super(ms, id);
 
-    this.taskSecGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
+    this.securityGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
       vpc: ms.sd.base.vpc,
     });
-    this.taskSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
+    this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
 
     this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}TaskDefinition`, {
       proxyConfiguration: props.proxyConfiguration,
@@ -28,6 +28,11 @@ export class AppMeshFargateService extends Construct {
       taskRole: ms.sd.base.taskRole,
       family: props.taskDefinitionFamily,
     });
+
+    this.appContainer = this.taskDefinition.addContainer(
+      `${props.serviceName}ApplicationContainer`,
+      props.applicationContainer.options
+    );
 
     if (props.envoySidecar) {
       this.envoySidecar = this.taskDefinition.addContainer(
@@ -39,39 +44,34 @@ export class AppMeshFargateService extends Construct {
         hardLimit: 15000,
         softLimit: 15000,
       });
-    }
-
-    this.xrayContainer = this.taskDefinition.addContainer(
-      `${props.serviceName}XrayContainer`,
-      props.xrayContainer.options
-    );
-
-    this.appContainer = this.taskDefinition.addContainer(
-      `${props.serviceName}ColorAppContainer`,
-      props.applicationContainerProps
-    );
-
-    this.appContainer.addContainerDependencies({
-      container: this.xrayContainer,
-      condition: ecs.ContainerDependencyCondition.START,
-    });
-
-    if (this.envoySidecar) {
-      this.envoySidecar.addContainerDependencies({
-        container: this.xrayContainer,
-        condition: ecs.ContainerDependencyCondition.START,
-      });
       this.appContainer.addContainerDependencies({
         container: this.envoySidecar,
         condition: ecs.ContainerDependencyCondition.HEALTHY,
       });
     }
 
+    if (props.xrayContainer) {
+      this.xrayContainer = this.taskDefinition.addContainer(
+        `${props.serviceName}XrayContainer`,
+        props.xrayContainer.options
+      );
+      this.appContainer.addContainerDependencies({
+        container: this.xrayContainer,
+        condition: ecs.ContainerDependencyCondition.START,
+      });
+      if (this.envoySidecar) {
+        this.envoySidecar.addContainerDependencies({
+          container: this.xrayContainer,
+          condition: ecs.ContainerDependencyCondition.START,
+        });
+      }
+    }
+
     this.service = new ecs.FargateService(this, `${props.serviceName}Service`, {
       serviceName: props.serviceName,
       cluster: ms.sd.base.cluster,
       taskDefinition: this.taskDefinition,
-      securityGroups: [this.taskSecGroup],
+      securityGroups: [this.securityGroup],
     });
 
     if (props.serviceDiscoveryType == ServiceDiscoveryType.DNS) {
@@ -89,7 +89,6 @@ export class AppMeshFargateService extends Construct {
           healthCheck: {
             path: "/ping",
             port: ms.sd.base.PORT.toString(),
-            timeout: Duration.seconds(5),
             interval: Duration.seconds(60),
           },
         }),

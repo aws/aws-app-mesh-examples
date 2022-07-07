@@ -1,4 +1,5 @@
 import * as ecs from "aws-cdk-lib/aws-ecs";
+import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
 import { XrayContainer } from "./constructs/xray-container";
 
@@ -28,9 +29,9 @@ export interface AppMeshFargateServiceProps {
   serviceName: string;
   taskDefinitionFamily: string;
   serviceDiscoveryType: ServiceDiscoveryType;
-  applicationContainerProps: ecs.ContainerDefinitionOptions;
+  applicationContainer: ApplicationContainer;
   envoySidecar?: EnvoySidecar;
-  xrayContainer: XrayContainer;
+  xrayContainer?: XrayContainer;
   proxyConfiguration?: ecs.AppMeshProxyConfiguration;
 }
 
