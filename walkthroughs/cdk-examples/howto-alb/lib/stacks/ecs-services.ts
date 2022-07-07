@@ -1,6 +1,6 @@
 import { StackProps, Stack, CfnOutput } from "aws-cdk-lib";
 import { MeshStack } from "./mesh-components";
-import { AppMeshFargateService } from "../constructs/appmesh-fargate-serivce";
+import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
 import { EnvoySidecar } from "../constructs/envoy-sidecar";
 import { XrayContainer } from "../constructs/xray-container";
 import * as ecs from "aws-cdk-lib/aws-ecs";
