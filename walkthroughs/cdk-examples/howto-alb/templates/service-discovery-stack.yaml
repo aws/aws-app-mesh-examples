@@ -1,0 +1,282 @@
+Description: Defines the application load balancers and the CloudMap service.
+Resources:
+  servicediscoveryBackendV1LoadBalancerD27C588D:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: "false"
+      Name: backend-v1
+      Scheme: internal
+      SecurityGroups:
+        - Fn::GetAtt:
+            - servicediscoveryBackendV1LoadBalancerSecurityGroup8F833D5B
+            - GroupId
+      Subnets:
+        - Fn::ImportValue: base:ExportsOutputRefbaseVpcPrivateSubnet1Subnet17B6B51CFE21D26F
+        - Fn::ImportValue: base:ExportsOutputRefbaseVpcPrivateSubnet2Subnet27AF2E393810D0E8
+      Type: application
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryBackendV1LoadBalancer/Resource
+  servicediscoveryBackendV1LoadBalancerSecurityGroup8F833D5B:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Automatically created Security Group for ELB BaseStackServiceDiscoveryStackservicediscoveryBackendV1LoadBalancerFF41DD0C
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow from anyone on port 8080
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
+      VpcId:
+        Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryBackendV1LoadBalancer/SecurityGroup/Resource
+  servicediscoveryBackendV1LoadBalancerbackendv1Listener9A6B53E1:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn:
+            Ref: servicediscoveryBackendV1LoadBalancerbackendv1Listenerbackendv1TargetGroupGroup68598F64
+          Type: forward
+      LoadBalancerArn:
+        Ref: servicediscoveryBackendV1LoadBalancerD27C588D
+      Port: 8080
+      Protocol: HTTP
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryBackendV1LoadBalancer/backend-v1Listener/Resource
+  servicediscoveryBackendV1LoadBalancerbackendv1Listenerbackendv1TargetGroupGroup68598F64:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /ping
+      HealthCheckPort: "8080"
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: "false"
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryBackendV1LoadBalancer/backend-v1Listener/backend-v1TargetGroupGroup/Resource
+  servicediscoveryBackendRecordSetE670BF0C:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: backend.howto-alb.hosted.local.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::Join:
+            - ""
+            - - dualstack.
+              - Fn::GetAtt:
+                  - servicediscoveryBackendV1LoadBalancerD27C588D
+                  - DNSName
+        HostedZoneId:
+          Fn::GetAtt:
+            - servicediscoveryBackendV1LoadBalancerD27C588D
+            - CanonicalHostedZoneID
+      HostedZoneId:
+        Fn::ImportValue: base:ExportsOutputRefbaseDNSHostedZoneFA4265672459AD6E
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryBackendRecordSet/Resource
+  servicediscoveryFrontendLoadBalancerBF140200:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: "false"
+      Name: frontend
+      Scheme: internet-facing
+      SecurityGroups:
+        - Fn::GetAtt:
+            - servicediscoveryFrontendLoadBalancerSecurityGroup9C927B55
+            - GroupId
+      Subnets:
+        - Fn::ImportValue: base:ExportsOutputRefbaseVpcPublicSubnet1Subnet3BFD8A57038A3D23
+        - Fn::ImportValue: base:ExportsOutputRefbaseVpcPublicSubnet2Subnet6185658D75DECB3F
+      Type: application
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryFrontendLoadBalancer/Resource
+  servicediscoveryFrontendLoadBalancerSecurityGroup9C927B55:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Automatically created Security Group for ELB BaseStackServiceDiscoveryStackservicediscoveryFrontendLoadBalancerF2EAEA2C
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow from anyone on port 80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      VpcId:
+        Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryFrontendLoadBalancer/SecurityGroup/Resource
+  servicediscoveryFrontendLoadBalancerfrontendListenerE9197B12:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn:
+            Ref: servicediscoveryFrontendLoadBalancerfrontendListenerfrontendTargetGroupGroupE6F89CE2
+          Type: forward
+      LoadBalancerArn:
+        Ref: servicediscoveryFrontendLoadBalancerBF140200
+      Port: 80
+      Protocol: HTTP
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryFrontendLoadBalancer/frontendListener/Resource
+  servicediscoveryFrontendLoadBalancerfrontendListenerfrontendTargetGroupGroupE6F89CE2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /ping
+      HealthCheckPort: "8080"
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: "false"
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/service-discoveryFrontendLoadBalancer/frontendListener/frontendTargetGroupGroup/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/1WQvQ7CMAyEn4U9DdAKwQoMLEwtOwqOqVxCUiUuCFV5d1L+VBbbd/dJJzmX+VLOJuoeMtCXzNBJ9hUruIhkHXs0KjCBcUqflFEWyNa3XPbrtjUEisnZfco2rwy92J7/9ZijwGg/zPce5Qfla+Sdd107ICMZBULqrBA6T/z4IX9GFGkyLgrZlwjO6wp5gH4ixrcMrvOAw711VtNQHYV1GmUTprf5ShbpH00gynxnma4oy/d+AuwTnNYrAQAA
+    Metadata:
+      aws:cdk:path: BaseStack/ServiceDiscoveryStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+Outputs:
+  ExportsOutputFnGetAttservicediscoveryBackendV1LoadBalancerD27C588DDNSName1A02D96D:
+    Value:
+      Fn::GetAtt:
+        - servicediscoveryBackendV1LoadBalancerD27C588D
+        - DNSName
+    Export:
+      Name: service-discovery:ExportsOutputFnGetAttservicediscoveryBackendV1LoadBalancerD27C588DDNSName1A02D96D
+  ExportsOutputFnGetAttservicediscoveryFrontendLoadBalancerBF140200DNSName119C3D4C:
+    Value:
+      Fn::GetAtt:
+        - servicediscoveryFrontendLoadBalancerBF140200
+        - DNSName
+    Export:
+      Name: service-discovery:ExportsOutputFnGetAttservicediscoveryFrontendLoadBalancerBF140200DNSName119C3D4C
+  ExportsOutputFnGetAttservicediscoveryBackendV1LoadBalancerSecurityGroup8F833D5BGroupId95AF671F:
+    Value:
+      Fn::GetAtt:
+        - servicediscoveryBackendV1LoadBalancerSecurityGroup8F833D5B
+        - GroupId
+    Export:
+      Name: service-discovery:ExportsOutputFnGetAttservicediscoveryBackendV1LoadBalancerSecurityGroup8F833D5BGroupId95AF671F
+  ExportsOutputRefservicediscoveryBackendV1LoadBalancerbackendv1Listenerbackendv1TargetGroupGroup68598F6478C06AB4:
+    Value:
+      Ref: servicediscoveryBackendV1LoadBalancerbackendv1Listenerbackendv1TargetGroupGroup68598F64
+    Export:
+      Name: service-discovery:ExportsOutputRefservicediscoveryBackendV1LoadBalancerbackendv1Listenerbackendv1TargetGroupGroup68598F6478C06AB4
+  ExportsOutputFnGetAttservicediscoveryFrontendLoadBalancerSecurityGroup9C927B55GroupIdC6563029:
+    Value:
+      Fn::GetAtt:
+        - servicediscoveryFrontendLoadBalancerSecurityGroup9C927B55
+        - GroupId
+    Export:
+      Name: service-discovery:ExportsOutputFnGetAttservicediscoveryFrontendLoadBalancerSecurityGroup9C927B55GroupIdC6563029
+  ExportsOutputRefservicediscoveryFrontendLoadBalancerfrontendListenerfrontendTargetGroupGroupE6F89CE20000C600:
+    Value:
+      Ref: servicediscoveryFrontendLoadBalancerfrontendListenerfrontendTargetGroupGroupE6F89CE2
+    Export:
+      Name: service-discovery:ExportsOutputRefservicediscoveryFrontendLoadBalancerfrontendListenerfrontendTargetGroupGroupE6F89CE20000C600
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+

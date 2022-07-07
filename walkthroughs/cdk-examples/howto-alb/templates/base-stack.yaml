@@ -1,0 +1,567 @@
+Description: Defines the network infrastructure, container images and ECS Cluster.
+Resources:
+  baseTaskRole5C307D21:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+    Metadata:
+      aws:cdk:path: BaseStack/baseTaskRole/Resource
+  baseExecutionRoleCCAA3C20:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+    Metadata:
+      aws:cdk:path: BaseStack/baseExecutionRole/Resource
+  baseExecutionRoleDefaultPolicy7E3C73BD:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":ecr:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :repository/
+                  - Fn::Sub: cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}
+          - Action: ecr:GetAuthorizationToken
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - baseLogGroup444E3C74
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: baseExecutionRoleDefaultPolicy7E3C73BD
+      Roles:
+        - Ref: baseExecutionRoleCCAA3C20
+    Metadata:
+      aws:cdk:path: BaseStack/baseExecutionRole/DefaultPolicy/Resource
+  baseVpc7C0ACBA8:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/Resource
+  baseVpcPublicSubnet1Subnet3BFD8A57:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.0.0/18
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet1
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet1/Subnet
+  baseVpcPublicSubnet1RouteTableE1830FEE:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet1
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet1/RouteTable
+  baseVpcPublicSubnet1RouteTableAssociation5ADB2A63:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPublicSubnet1RouteTableE1830FEE
+      SubnetId:
+        Ref: baseVpcPublicSubnet1Subnet3BFD8A57
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet1/RouteTableAssociation
+  baseVpcPublicSubnet1DefaultRouteF3B93CD8:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPublicSubnet1RouteTableE1830FEE
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: baseVpcIGWEA2E2F8E
+    DependsOn:
+      - baseVpcVPCGW839B8E69
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet1/DefaultRoute
+  baseVpcPublicSubnet1EIPC0904451:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet1
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet1/EIP
+  baseVpcPublicSubnet1NATGateway63DAD71A:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId:
+        Ref: baseVpcPublicSubnet1Subnet3BFD8A57
+      AllocationId:
+        Fn::GetAtt:
+          - baseVpcPublicSubnet1EIPC0904451
+          - AllocationId
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet1
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet1/NATGateway
+  baseVpcPublicSubnet2Subnet6185658D:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.64.0/18
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet2
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet2/Subnet
+  baseVpcPublicSubnet2RouteTable953C2AA6:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet2
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet2/RouteTable
+  baseVpcPublicSubnet2RouteTableAssociationD06D994A:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPublicSubnet2RouteTable953C2AA6
+      SubnetId:
+        Ref: baseVpcPublicSubnet2Subnet6185658D
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet2/RouteTableAssociation
+  baseVpcPublicSubnet2DefaultRoute817C09DD:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPublicSubnet2RouteTable953C2AA6
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: baseVpcIGWEA2E2F8E
+    DependsOn:
+      - baseVpcVPCGW839B8E69
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet2/DefaultRoute
+  baseVpcPublicSubnet2EIPE12DE655:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet2
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet2/EIP
+  baseVpcPublicSubnet2NATGatewayCD0BF8E5:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId:
+        Ref: baseVpcPublicSubnet2Subnet6185658D
+      AllocationId:
+        Fn::GetAtt:
+          - baseVpcPublicSubnet2EIPE12DE655
+          - AllocationId
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PublicSubnet2
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PublicSubnet2/NATGateway
+  baseVpcPrivateSubnet1Subnet17B6B51C:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.128.0/18
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Private
+        - Key: aws-cdk:subnet-type
+          Value: Private
+        - Key: Name
+          Value: BaseStack/baseVpc/PrivateSubnet1
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet1/Subnet
+  baseVpcPrivateSubnet1RouteTable42F31E26:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PrivateSubnet1
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet1/RouteTable
+  baseVpcPrivateSubnet1RouteTableAssociationC87AEA69:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPrivateSubnet1RouteTable42F31E26
+      SubnetId:
+        Ref: baseVpcPrivateSubnet1Subnet17B6B51C
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet1/RouteTableAssociation
+  baseVpcPrivateSubnet1DefaultRoute850D3223:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPrivateSubnet1RouteTable42F31E26
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: baseVpcPublicSubnet1NATGateway63DAD71A
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet1/DefaultRoute
+  baseVpcPrivateSubnet2Subnet27AF2E39:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.192.0/18
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Private
+        - Key: aws-cdk:subnet-type
+          Value: Private
+        - Key: Name
+          Value: BaseStack/baseVpc/PrivateSubnet2
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet2/Subnet
+  baseVpcPrivateSubnet2RouteTableE6D14CB6:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc/PrivateSubnet2
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet2/RouteTable
+  baseVpcPrivateSubnet2RouteTableAssociation9A0126EA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPrivateSubnet2RouteTableE6D14CB6
+      SubnetId:
+        Ref: baseVpcPrivateSubnet2Subnet27AF2E39
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet2/RouteTableAssociation
+  baseVpcPrivateSubnet2DefaultRouteB89C4061:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: baseVpcPrivateSubnet2RouteTableE6D14CB6
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: baseVpcPublicSubnet2NATGatewayCD0BF8E5
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/PrivateSubnet2/DefaultRoute
+  baseVpcIGWEA2E2F8E:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: BaseStack/baseVpc
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/IGW
+  baseVpcVPCGW839B8E69:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: baseVpc7C0ACBA8
+      InternetGatewayId:
+        Ref: baseVpcIGWEA2E2F8E
+    Metadata:
+      aws:cdk:path: BaseStack/baseVpc/VPCGW
+  baseClusterFC5E5649:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: howto-alb
+    Metadata:
+      aws:cdk:path: BaseStack/baseCluster/Resource
+  baseDNSHostedZoneFA426567:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: howto-alb.hosted.local.
+      VPCs:
+        - VPCId:
+            Ref: baseVpc7C0ACBA8
+          VPCRegion:
+            Ref: AWS::Region
+    Metadata:
+      aws:cdk:path: BaseStack/baseDNSHostedZone/Resource
+  baseDNSNamespaceA02785F9:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: howto-alb.pvt.local
+      Vpc:
+        Ref: baseVpc7C0ACBA8
+    Metadata:
+      aws:cdk:path: BaseStack/baseDNSNamespace/Resource
+  baseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8E:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      DnsConfig:
+        DnsRecords:
+          - TTL: 300
+            Type: A
+        NamespaceId:
+          Fn::GetAtt:
+            - baseDNSNamespaceA02785F9
+            - Id
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: backend-v2
+      NamespaceId:
+        Fn::GetAtt:
+          - baseDNSNamespaceA02785F9
+          - Id
+    Metadata:
+      aws:cdk:path: BaseStack/baseDNSNamespace/service-discoveryBackendV2CloudMapService/Resource
+  baseLogGroup444E3C74:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: howto-alb-log-group
+      RetentionInDays: 1
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: BaseStack/base_LogGroup/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/21STU/DMAz9LdyzAJsQXMeGxiQ0VR3agcuUpqZka+MqTjtVUf87TrvRCyc/v+f4M3M5f5YPd+pCM52fZ6XJZNh7pc8iBcLGaRCsHYNRlQwpliBW33awCZZGd9EdUS9Az2U41Dpyh2QlkiZjYd9kFnzkJpRi4+FTZWO6kZ+4JRFqo7xB+xccwds2iWan/EZ5uKhOJM60DKfEW+vBMb4FjJ1cvaXnwX4qsD72SjKsyoY4PkZdYS9crPa0kOEdmci/0A61J68XBK41GnJDGltwnQzXPtaWdqoCqpUeHv1H78fHw9wj7EWJBXfzgcWGq9dRuuHYqDsqIvAk16jP4LaVKuKKeGDWZAo1kvHouldFnGtQ+IKFscWwvdsZ45BocxPX2guLOcgT3bePL3LBH+BExsxcY72pQKaj/QWoCxlvHAIAAA==
+    Metadata:
+      aws:cdk:path: BaseStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+Outputs:
+  ExportsOutputRefbaseVpcPrivateSubnet1Subnet17B6B51CFE21D26F:
+    Value:
+      Ref: baseVpcPrivateSubnet1Subnet17B6B51C
+    Export:
+      Name: base:ExportsOutputRefbaseVpcPrivateSubnet1Subnet17B6B51CFE21D26F
+  ExportsOutputRefbaseVpcPrivateSubnet2Subnet27AF2E393810D0E8:
+    Value:
+      Ref: baseVpcPrivateSubnet2Subnet27AF2E39
+    Export:
+      Name: base:ExportsOutputRefbaseVpcPrivateSubnet2Subnet27AF2E393810D0E8
+  ExportsOutputRefbaseVpc7C0ACBA86A216E62:
+    Value:
+      Ref: baseVpc7C0ACBA8
+    Export:
+      Name: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
+  ExportsOutputRefbaseDNSHostedZoneFA4265672459AD6E:
+    Value:
+      Ref: baseDNSHostedZoneFA426567
+    Export:
+      Name: base:ExportsOutputRefbaseDNSHostedZoneFA4265672459AD6E
+  ExportsOutputRefbaseVpcPublicSubnet1Subnet3BFD8A57038A3D23:
+    Value:
+      Ref: baseVpcPublicSubnet1Subnet3BFD8A57
+    Export:
+      Name: base:ExportsOutputRefbaseVpcPublicSubnet1Subnet3BFD8A57038A3D23
+  ExportsOutputRefbaseVpcPublicSubnet2Subnet6185658D75DECB3F:
+    Value:
+      Ref: baseVpcPublicSubnet2Subnet6185658D
+    Export:
+      Name: base:ExportsOutputRefbaseVpcPublicSubnet2Subnet6185658D75DECB3F
+  ExportsOutputFnGetAttbaseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8ENameB67B8EDA:
+    Value:
+      Fn::GetAtt:
+        - baseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8E
+        - Name
+    Export:
+      Name: base:ExportsOutputFnGetAttbaseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8ENameB67B8EDA
+  ExportsOutputRefbaseLogGroup444E3C741E44F30C:
+    Value:
+      Ref: baseLogGroup444E3C74
+    Export:
+      Name: base:ExportsOutputRefbaseLogGroup444E3C741E44F30C
+  ExportsOutputFnGetAttbaseExecutionRoleCCAA3C20Arn38BBD1AC:
+    Value:
+      Fn::GetAtt:
+        - baseExecutionRoleCCAA3C20
+        - Arn
+    Export:
+      Name: base:ExportsOutputFnGetAttbaseExecutionRoleCCAA3C20Arn38BBD1AC
+  ExportsOutputFnGetAttbaseTaskRole5C307D21ArnE5452BC8:
+    Value:
+      Fn::GetAtt:
+        - baseTaskRole5C307D21
+        - Arn
+    Export:
+      Name: base:ExportsOutputFnGetAttbaseTaskRole5C307D21ArnE5452BC8
+  ExportsOutputRefbaseClusterFC5E5649755977D5:
+    Value:
+      Ref: baseClusterFC5E5649
+    Export:
+      Name: base:ExportsOutputRefbaseClusterFC5E5649755977D5
+  ExportsOutputFnGetAttbaseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8EArn713DA80B:
+    Value:
+      Fn::GetAtt:
+        - baseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8E
+        - Arn
+    Export:
+      Name: base:ExportsOutputFnGetAttbaseDNSNamespaceservicediscoveryBackendV2CloudMapService571E6D8EArn713DA80B
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+
