@@ -12,16 +12,17 @@ export class AppMeshFargateService extends Construct {
   taskSecGroup: ec2.SecurityGroup;
   envoySidecar: ecs.ContainerDefinition;
   xrayContainer: ecs.ContainerDefinition;
+  appContainer: ecs.ContainerDefinition;
 
   constructor(ms: MeshStack, id: string, props: AppMeshFargateServiceProps) {
     super(ms, id);
 
-    this.taskSecGroup = new ec2.SecurityGroup(this, `${props.serviceName}_TaskSecurityGroup`, {
+    this.taskSecGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
       vpc: ms.sd.base.vpc,
     });
     this.taskSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
 
-    this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}_TaskDefinition`, {
+    this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}TaskDefinition`, {
       proxyConfiguration: props.proxyConfiguration,
       executionRole: ms.sd.base.executionRole,
       taskRole: ms.sd.base.taskRole,
@@ -30,7 +31,7 @@ export class AppMeshFargateService extends Construct {
 
     if (props.envoySidecar) {
       this.envoySidecar = this.taskDefinition.addContainer(
-        `${props.serviceName}_EnvoyContainer`,
+        `${props.serviceName}EnvoyContainer`,
         props.envoySidecar.options
       );
       this.envoySidecar.addUlimits({
@@ -41,22 +42,18 @@ export class AppMeshFargateService extends Construct {
     }
 
     this.xrayContainer = this.taskDefinition.addContainer(
-      `${props.serviceName}_XrayContainer`,
+      `${props.serviceName}XrayContainer`,
       props.xrayContainer.options
     );
 
-    const appContainer = this.taskDefinition.addContainer(
-      `${props.serviceName}AppContainer`,
+    this.appContainer = this.taskDefinition.addContainer(
+      `${props.serviceName}ColorAppContainer`,
       props.applicationContainerProps
     );
 
-    appContainer.addContainerDependencies({
+    this.appContainer.addContainerDependencies({
       container: this.xrayContainer,
       condition: ecs.ContainerDependencyCondition.START,
-    });
-    appContainer.addContainerDependencies({
-      container: this.envoySidecar,
-      condition: ecs.ContainerDependencyCondition.HEALTHY,
     });
 
     if (this.envoySidecar) {
@@ -64,24 +61,29 @@ export class AppMeshFargateService extends Construct {
         container: this.xrayContainer,
         condition: ecs.ContainerDependencyCondition.START,
       });
+      this.appContainer.addContainerDependencies({
+        container: this.envoySidecar,
+        condition: ecs.ContainerDependencyCondition.HEALTHY,
+      });
     }
 
-    this.service = new ecs.FargateService(this, `${props.serviceName}_Service`, {
+    this.service = new ecs.FargateService(this, `${props.serviceName}Service`, {
       serviceName: props.serviceName,
       cluster: ms.sd.base.cluster,
       taskDefinition: this.taskDefinition,
       securityGroups: [this.taskSecGroup],
     });
+
     if (props.serviceDiscoveryType == ServiceDiscoveryType.DNS) {
-      const listener = ms.sd.frontendLoadBalancer.addListener(`${props.serviceName}_Listener`, {
+      const loadBalancer = ms.sd.getAlbForService(props.serviceName);
+      const listener = loadBalancer.addListener(`${props.serviceName}Listener`, {
         port: props.serviceName == ms.sd.base.SERVICE_FRONTEND ? 80 : ms.sd.base.containerPort,
         open: true,
       });
-
       this.service.registerLoadBalancerTargets({
-        containerName: appContainer.containerName,
+        containerName: this.appContainer.containerName,
         containerPort: ms.sd.base.containerPort,
-        newTargetGroupId: `${props.serviceName}_TargetGroup`,
+        newTargetGroupId: `${props.serviceName}TargetGroup`,
         listener: ecs.ListenerConfig.applicationListener(listener, {
           protocol: elbv2.ApplicationProtocol.HTTP,
           healthCheck: {
@@ -94,7 +96,7 @@ export class AppMeshFargateService extends Construct {
       });
     } else if (props.serviceDiscoveryType == ServiceDiscoveryType.CLOUDMAP) {
       this.service.associateCloudMapService({
-        container: appContainer,
+        container: this.appContainer,
         containerPort: ms.sd.base.containerPort,
         service: ms.sd.backendV2CloudMapService,
       });

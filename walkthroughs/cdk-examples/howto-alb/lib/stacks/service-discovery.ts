@@ -62,6 +62,17 @@ export class ServiceDiscoveryStack extends Stack {
     };
   };
 
+  public getAlbForService = (serviceName: string): elbv2.ApplicationLoadBalancer => {
+    switch (serviceName) {
+      case this.base.SERVICE_BACKEND_V1:
+        return this.backendV1LoadBalancer;
+      case this.base.SERVICE_FRONTEND:
+        return this.frontendLoadBalancer;
+      default:
+        return this.backendV1LoadBalancer;
+    }
+  };
+
   public getServiceDiscovery(serviceName: string): appmesh.ServiceDiscovery {
     switch (serviceName) {
       case this.base.SERVICE_BACKEND_V1:
