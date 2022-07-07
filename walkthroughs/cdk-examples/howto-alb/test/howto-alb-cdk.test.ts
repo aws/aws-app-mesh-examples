@@ -91,5 +91,3 @@ test("The virtual route has a proper prefix match", () => {
     Spec: { HttpRoute: Match.objectLike({ Match: { Prefix: "/" } }) },
   });
 });
-
-test("");

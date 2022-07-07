@@ -31,14 +31,14 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 ✨  Deployment time: 24.01s
 
 Outputs:
-BaseStackServiceDiscoveryStackMeshStackECSServicesStack8E43077C.PublicEndpoint = frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com
+BaseStackServiceDiscoveryStackMeshStackECSServicesStack8E43077C.URL = frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com
 Stack ARN:
 arn:aws:cloudformation:us-east-1:xxxxxxxxxx:stack/ECSServicesStack/xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ✨  Total time: 26.74s
 ```
 
-- Copy the `PublicEndpoint` URL and `curl` the `/color` endpoint it to get the response.
+- Copy the `URL` URL and `curl` the `/color` endpoint it to get the response.
 
 ```c
 ➜  howto-alb git:(feature-cdk) ✗ curl frontend-xxxxxxxxxx.us-east-1.elb.amazonaws.com/color
@@ -64,7 +64,7 @@ BaseStack/ServiceDiscoveryStack/MeshStack/ECSServicesStack (ECSServicesStack): d
 
 #### There are three AWS Fargate services
 
-1.  `frontend` - which is registered behind public ALB and has an Envoy proxy sidecar attached to it. This service is discoverable via the `PublicEndpoint` mentioned above, which uses the ALB's DNS. `frontend` is also an App Mesh **virtual node** that routes data to the two backend services.
+1.  `frontend` - which is registered behind public ALB and has an Envoy proxy sidecar attached to it. This service is discoverable via the `URL` mentioned above, which uses the ALB's DNS. `frontend` is also an App Mesh **virtual node** that routes data to the two backend services.
 2.  `backend-v1` - which is registered behind an internal ALB. This service is registered as a **virtual node** that is discoverable to `frontend` using the ALB's DNS `backend.howto-alb.hosted.local` (configured as a AWS Route53 hosted zone).
 3.  `backend-v2` - which uses AWS CloudMap service discovery using a private DNS namespace `backend-v2.howto-alb.pvt.local` and represents another **virtual node** .
 
@@ -91,6 +91,8 @@ _Note - The `cdk boostrap` command provisions a `CDKToolkit` Stack to deploy AWS
 2. `ServiceDiscoveryStack` - provisions the 2 ALBs used by `frontend` and `backend-v1` and the CloudMap service used by `backend-v2`.
 3. `MeshStack` - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual service.
 4. `ECSServicesStack` - this stack provisions the 3 Fargate services using a custom construct `AppMeshFargateService` which encapsulates the application container, Envoy sidecar/proxy and the Xray container into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
+
+Three more constructs - `EnvoySidecar`, `XrayContainer` and `ApplicationContainer` bundle the common container options used by these Fargate services.
 
 <p align="center">
   <img width="600" height="350" src="assets/stacks.jpg">
@@ -180,7 +182,7 @@ this.backendRoute = new appmesh.Route(this, `${this.stackIdentifier}_BackendRout
 
 ## Project Structure
 
-The skeleton of the project is generated using the `cdk init sample-app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder.
+The skeleton of the project is generated using the `cdk init app --language typescript` command. By default, your main `node` app sits in the `bin` folder and the cloud infrastructure is provisioned in the `lib` folder.
 
 In the `cdk.json` file, we define enviroment variables: For example: `PROJECT_NAME` and `CONTAINER_PORT` refer to the name of this project and the ports at which the Flask applications (`feapp` and `colorapp`) are exposed in the containers. These variables can be fetched within the application using a Construct's `node.tryGetContext` method.
 
@@ -194,7 +196,7 @@ Using the `aws-ecr-assets.DockerImageAsset` construct, you can push your applica
 
 ```c
 // BaseStack
-this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackIdentifier}_FrontendAppImageAsset`, {
+this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackName}FrontendAppImageAsset`, {
       directory: ".././howto-alb/feapp",
       platform: assets.Platform.LINUX_AMD64,
     });
