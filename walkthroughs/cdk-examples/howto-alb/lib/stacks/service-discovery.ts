@@ -13,8 +13,6 @@ export class ServiceDiscoveryStack extends Stack {
   backendRecordSet: route53.RecordSet;
   backendV2CloudMapService: service_discovery.Service;
 
-  readonly stackIdentifier: string = "ServiceDiscoveryStack";
-
   constructor(base: BaseStack, id: string, props?: StackProps) {
     super(base, id, props);
 
@@ -22,11 +20,11 @@ export class ServiceDiscoveryStack extends Stack {
 
     this.backendV1LoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      `${this.stackIdentifier}_BackendV1LoadBalancer`,
+      `${this.stackName}BackendV1LoadBalancer`,
       this.buildAlbProps(this.base.SERVICE_BACKEND_V1, false)
     );
 
-    this.backendRecordSet = new route53.RecordSet(this, `${this.stackIdentifier}_BackendRecordSet`, {
+    this.backendRecordSet = new route53.RecordSet(this, `${this.stackName}BackendRecordSet`, {
       recordType: route53.RecordType.A,
       zone: this.base.dnsHostedZone,
       target: route53.RecordTarget.fromAlias(
@@ -36,7 +34,7 @@ export class ServiceDiscoveryStack extends Stack {
     });
 
     this.backendV2CloudMapService = this.base.dnsNameSpace.createService(
-      `${this.stackIdentifier}_BackendV2CloudMapService`,
+      `${this.stackName}BackendV2CloudMapService`,
       {
         name: this.base.SERVICE_BACKEND_V2,
         dnsRecordType: service_discovery.DnsRecordType.A,
@@ -49,7 +47,7 @@ export class ServiceDiscoveryStack extends Stack {
 
     this.frontendLoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      `${this.stackIdentifier}_FrontendLoadBalancer`,
+      `${this.stackName}FrontendLoadBalancer`,
       this.buildAlbProps(this.base.SERVICE_FRONTEND, true)
     );
   }

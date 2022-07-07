@@ -77,18 +77,18 @@ export class AppMeshFargateService extends Construct {
     if (props.serviceDiscoveryType == ServiceDiscoveryType.DNS) {
       const loadBalancer = ms.sd.getAlbForService(props.serviceName);
       const listener = loadBalancer.addListener(`${props.serviceName}Listener`, {
-        port: props.serviceName == ms.sd.base.SERVICE_FRONTEND ? 80 : ms.sd.base.containerPort,
+        port: props.serviceName == ms.sd.base.SERVICE_FRONTEND ? 80 : ms.sd.base.PORT,
         open: true,
       });
       this.service.registerLoadBalancerTargets({
         containerName: this.appContainer.containerName,
-        containerPort: ms.sd.base.containerPort,
+        containerPort: ms.sd.base.PORT,
         newTargetGroupId: `${props.serviceName}TargetGroup`,
         listener: ecs.ListenerConfig.applicationListener(listener, {
           protocol: elbv2.ApplicationProtocol.HTTP,
           healthCheck: {
             path: "/ping",
-            port: ms.sd.base.containerPort.toString(),
+            port: ms.sd.base.PORT.toString(),
             timeout: Duration.seconds(5),
             interval: Duration.seconds(60),
           },
@@ -97,7 +97,7 @@ export class AppMeshFargateService extends Construct {
     } else if (props.serviceDiscoveryType == ServiceDiscoveryType.CLOUDMAP) {
       this.service.associateCloudMapService({
         container: this.appContainer,
-        containerPort: ms.sd.base.containerPort,
+        containerPort: ms.sd.base.PORT,
         service: ms.sd.backendV2CloudMapService,
       });
     }

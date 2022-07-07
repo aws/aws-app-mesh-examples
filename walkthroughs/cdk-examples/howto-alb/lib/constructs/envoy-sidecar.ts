@@ -9,7 +9,7 @@ export class EnvoySidecar extends Construct {
     super(ms, id);
 
     this.options = {
-      image: ms.sd.base.envoyImage,
+      image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_ENVOY")),
       containerName: "envoy",
       logging: ecs.LogDriver.awsLogs({
         logGroup: ms.sd.base.logGroup,

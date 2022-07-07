@@ -16,17 +16,14 @@ export class BaseStack extends Stack {
 
   readonly backendAppImageAsset: assets.DockerImageAsset;
   readonly frontendAppImageAsset: assets.DockerImageAsset;
-  readonly envoyImage: ecs.ContainerImage;
-  readonly xrayDaemonImage: ecs.ContainerImage;
 
   readonly logGroup: logs.LogGroup;
 
   readonly executionRole: iam.Role;
   readonly taskRole: iam.Role;
 
-  readonly projectName: string;
-  readonly containerPort: number;
-  readonly stackIdentifier: string = "BaseStack";
+  readonly PROJECT_NAME: string;
+  readonly PORT: number;
 
   public readonly SERVICE_BACKEND_V1 = "backend-v1";
   public readonly SERVICE_BACKEND_V2 = "backend-v2";
@@ -35,94 +32,71 @@ export class BaseStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    this.projectName = this.node.tryGetContext("PROJECT_NAME");
-    this.containerPort = this.node.tryGetContext("CONTAINER_PORT");
+    this.PROJECT_NAME = this.node.tryGetContext("PROJECT_NAME");
+    this.PORT = this.node.tryGetContext("CONTAINER_PORT");
 
-    const cloudWatchArn = iam.ManagedPolicy.fromManagedPolicyArn(
-      this,
-      `${this.stackIdentifier}_CloudWatchFullAccessArn`,
-      "arn:aws:iam::aws:policy/CloudWatchFullAccess"
-    );
-
-    this.taskRole = new iam.Role(this, `${this.stackIdentifier}_TaskRole`, {
+    this.taskRole = new iam.Role(this, `${this.stackName}TaskRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-      managedPolicies: [
-        cloudWatchArn,
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "AWSXRayDaemonWriteAccessArn",
-          "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "AWSAppMeshEnvoyAccessArn",
-          "arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess"
-        ),
-      ],
+      managedPolicies: this.addManagedPolices(
+        1,
+        "CloudWatchFullAccess",
+        "AWSXRayDaemonWriteAccess",
+        "AWSAppMeshEnvoyAccess"
+      ),
     });
 
-    this.executionRole = new iam.Role(this, `${this.stackIdentifier}_ExecutionRole`, {
+    this.executionRole = new iam.Role(this, `${this.stackName}ExecutionRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-      managedPolicies: [
-        cloudWatchArn,
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "AmazonEC2ContainerRegistryReadOnlyArn",
-          "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-        ),
-      ],
+      managedPolicies: this.addManagedPolices(2, "CloudWatchFullAccess"),
     });
 
-    this.vpc = new ec2.Vpc(this, `${this.stackIdentifier}_Vpc`, {
+    this.vpc = new ec2.Vpc(this, `${this.stackName}Vpc`, {
       cidr: "10.0.0.0/16",
     });
 
-    this.cluster = new ecs.Cluster(this, `${this.stackIdentifier}_Cluster`, {
-      clusterName: this.projectName,
+    this.cluster = new ecs.Cluster(this, `${this.stackName}Cluster`, {
+      clusterName: this.PROJECT_NAME,
       vpc: this.vpc,
     });
 
-    this.dnsHostedZone = new route53.HostedZone(this, `${this.stackIdentifier}_DNSHostedZone`, {
-      zoneName: `${this.projectName}.hosted.local`,
+    this.dnsHostedZone = new route53.HostedZone(this, `${this.stackName}DNSHostedZone`, {
+      zoneName: `${this.PROJECT_NAME}.hosted.local`,
       vpcs: [this.vpc],
     });
 
-    this.dnsNameSpace = new service_discovery.PrivateDnsNamespace(
-      this,
-      `${this.stackIdentifier}_DNSNamespace`,
-      {
-        name: `${this.projectName}.pvt.local`,
-        vpc: this.vpc,
-      }
-    );
+    this.dnsNameSpace = new service_discovery.PrivateDnsNamespace(this, `${this.stackName}DNSNamespace`, {
+      name: `${this.PROJECT_NAME}.pvt.local`,
+      vpc: this.vpc,
+    });
 
-    this.logGroup = new logs.LogGroup(this, `${this.stackIdentifier}_LogGroup`, {
-      logGroupName: `${this.projectName}-log-group`,
+    this.logGroup = new logs.LogGroup(this, `${this.stackName}_LogGroup`, {
+      logGroupName: `${this.PROJECT_NAME}-log-group`,
       retention: logs.RetentionDays.ONE_DAY,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    this.backendAppImageAsset = new assets.DockerImageAsset(
-      this,
-      `${this.stackIdentifier}_ColorAppImageAsset`,
-      {
-        directory: ".././howto-alb/colorapp",
-        platform: assets.Platform.LINUX_AMD64,
-      }
-    );
+    this.backendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackName}ColorAppImageAsset`, {
+      directory: ".././howto-alb/colorapp",
+      platform: assets.Platform.LINUX_AMD64,
+    });
 
-    this.frontendAppImageAsset = new assets.DockerImageAsset(
-      this,
-      `${this.stackIdentifier}_FrontendAppImageAsset`,
-      {
-        directory: ".././howto-alb/feapp",
-        platform: assets.Platform.LINUX_AMD64,
-      }
-    );
-
-    this.envoyImage = ecs.ContainerImage.fromRegistry(
-      "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.21.2.0-prod"
-    );
-    this.xrayDaemonImage = ecs.ContainerImage.fromRegistry("public.ecr.aws/xray/aws-xray-daemon:3.3.3");
+    this.frontendAppImageAsset = new assets.DockerImageAsset(this, `${this.stackName}FrontAppImageAsset`, {
+      directory: ".././howto-alb/feapp",
+      platform: assets.Platform.LINUX_AMD64,
+    });
   }
+
+  private addManagedPolices = (logicalId: number, ...policyNames: string[]): iam.IManagedPolicy[] => {
+    const policies: iam.IManagedPolicy[] = [];
+    policyNames.forEach((policyName) =>
+      policies.push(
+        iam.ManagedPolicy.fromManagedPolicyArn(
+          this,
+          `${policyName}${logicalId}Arn`,
+          `arn:aws:iam::aws:policy/${policyName}`
+        )
+      )
+    );
+    return policies;
+  };
 }

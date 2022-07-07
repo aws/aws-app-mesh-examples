@@ -9,7 +9,7 @@ export class XrayContainer extends Construct {
     super(ms, id);
 
     this.options = {
-      image: ms.sd.base.xrayDaemonImage,
+      image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_XRAY")),
       containerName: "xray",
       logging: ecs.LogDriver.awsLogs({
         logGroup: ms.sd.base.logGroup,

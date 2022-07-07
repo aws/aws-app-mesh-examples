@@ -11,7 +11,7 @@ export class ECSServicesStack extends Stack {
     super(ms, id, props);
 
     // // Backend V1
-    const b1 = new AppMeshFargateService(ms, "BackendV1AppMeshFargateService", {
+    new AppMeshFargateService(ms, "BackendV1AppMeshFargateService", {
       serviceName: ms.sd.base.SERVICE_BACKEND_V1,
       serviceDiscoveryType: ServiceDiscoveryType.DNS,
       taskDefinitionFamily: "blue",
@@ -25,7 +25,7 @@ export class ECSServicesStack extends Stack {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
         environment: {
           COLOR: "blue",
-          PORT: ms.sd.base.containerPort.toString(),
+          PORT: ms.sd.base.PORT.toString(),
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV1VirtualNode.virtualNodeName}`,
         },
         logging: ecs.LogDriver.awsLogs({
@@ -34,8 +34,8 @@ export class ECSServicesStack extends Stack {
         }),
         portMappings: [
           {
-            containerPort: ms.sd.base.containerPort,
-            hostPort: ms.sd.base.containerPort,
+            containerPort: ms.sd.base.PORT,
+            hostPort: ms.sd.base.PORT,
             protocol: ecs.Protocol.TCP,
           },
         ],
@@ -43,7 +43,7 @@ export class ECSServicesStack extends Stack {
     });
 
     // // Backend V2
-    const b2 = new AppMeshFargateService(ms, "BackendV2AppMeshFargateService", {
+    new AppMeshFargateService(ms, "BackendV2AppMeshFargateService", {
       serviceName: ms.sd.base.SERVICE_BACKEND_V2,
       serviceDiscoveryType: ServiceDiscoveryType.CLOUDMAP,
       taskDefinitionFamily: "green",
@@ -53,7 +53,7 @@ export class ECSServicesStack extends Stack {
         appMeshResourcePath: `mesh/${ms.mesh.meshName}/virtualNode/${ms.backendV2VirtualNode.virtualNodeName}`,
         enableXrayTracing: true,
       }),
-      proxyConfiguration: buildAppMeshProxy(ms.sd.base.containerPort),
+      proxyConfiguration: buildAppMeshProxy(ms.sd.base.PORT),
       xrayContainer: new XrayContainer(ms, "BackendV2AppMeshXrayOpts", {
         logStreamPrefix: "backend-v2-xray",
       }),
@@ -62,7 +62,7 @@ export class ECSServicesStack extends Stack {
         containerName: "app",
         environment: {
           COLOR: "green",
-          PORT: ms.sd.base.containerPort.toString(),
+          PORT: ms.sd.base.PORT.toString(),
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV2VirtualNode.virtualNodeName}`,
         },
         logging: ecs.LogDriver.awsLogs({
@@ -71,8 +71,8 @@ export class ECSServicesStack extends Stack {
         }),
         portMappings: [
           {
-            containerPort: ms.sd.base.containerPort,
-            hostPort: ms.sd.base.containerPort,
+            containerPort: ms.sd.base.PORT,
+            hostPort: ms.sd.base.PORT,
             protocol: ecs.Protocol.TCP,
           },
         ],
@@ -80,7 +80,7 @@ export class ECSServicesStack extends Stack {
     });
 
     // // Frontend
-    const f = new AppMeshFargateService(ms, "FrontendAppMeshFargateService", {
+    new AppMeshFargateService(ms, "FrontendAppMeshFargateService", {
       serviceName: ms.sd.base.SERVICE_FRONTEND,
       serviceDiscoveryType: ServiceDiscoveryType.DNS,
       taskDefinitionFamily: "front",
@@ -89,7 +89,7 @@ export class ECSServicesStack extends Stack {
         appMeshResourcePath: `mesh/${ms.mesh.meshName}/virtualNode/${ms.frontendVirtualNode.virtualNodeName}`,
         enableXrayTracing: true,
       }),
-      proxyConfiguration: buildAppMeshProxy(ms.sd.base.containerPort),
+      proxyConfiguration: buildAppMeshProxy(ms.sd.base.PORT),
       xrayContainer: new XrayContainer(ms, "FrontendXrayOpts", {
         logStreamPrefix: "frontend-xray",
       }),
@@ -101,18 +101,18 @@ export class ECSServicesStack extends Stack {
           streamPrefix: "front-app",
         }),
         environment: {
-          PORT: ms.sd.base.containerPort.toString(),
-          COLOR_HOST: `${ms.backendVirtualService.virtualServiceName}:${ms.sd.base.containerPort}`,
+          PORT: ms.sd.base.PORT.toString(),
+          COLOR_HOST: `${ms.backendVirtualService.virtualServiceName}:${ms.sd.base.PORT}`,
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.frontendVirtualNode.virtualNodeName}`,
         },
-        portMappings: [{ containerPort: ms.sd.base.containerPort, protocol: ecs.Protocol.TCP }],
+        portMappings: [{ containerPort: ms.sd.base.PORT, protocol: ecs.Protocol.TCP }],
       },
     });
 
-    new CfnOutput(this, "PublicEndpoint", {
+    new CfnOutput(this, "URL", {
       value: ms.sd.frontendLoadBalancer.loadBalancerDnsName,
       description: "Public endpoint to query the frontend load balancer",
-      exportName: "PublicEndpoint",
+      exportName: "FrontendURL",
     });
   }
 }
