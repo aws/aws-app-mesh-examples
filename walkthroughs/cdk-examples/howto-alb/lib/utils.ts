@@ -2,14 +2,21 @@ import * as ecs from "aws-cdk-lib/aws-ecs";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
 import { XrayContainer } from "./constructs/xray-container";
 
-export interface EnvoyContainerProps {
+export interface CustomContainerProps {
   logStreamPrefix: string;
+}
+
+export interface EnvoyContainerProps extends CustomContainerProps {
   appMeshResourcePath: string;
   enableXrayTracing: boolean;
 }
 
-export interface XrayContainerProps {
-  logStreamPrefix: string;
+export interface XrayContainerProps extends CustomContainerProps {}
+
+export interface ApplicationContainerProps extends CustomContainerProps {
+  image: ecs.ContainerImage;
+  env: { [key: string]: string };
+  portMappings: ecs.PortMapping[];
 }
 
 export enum ServiceDiscoveryType {
