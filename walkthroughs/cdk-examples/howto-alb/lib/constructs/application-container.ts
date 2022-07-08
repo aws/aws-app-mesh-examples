@@ -1,7 +1,7 @@
+import * as ecs from "aws-cdk-lib/aws-ecs";
 import { Construct } from "constructs";
 import { MeshStack } from "../stacks/mesh-components";
 import { ApplicationContainerProps } from "../utils";
-import * as ecs from "aws-cdk-lib/aws-ecs";
 
 export class ApplicationContainer extends Construct {
   public options: ecs.ContainerDefinitionOptions;

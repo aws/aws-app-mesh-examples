@@ -1,7 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import { Template, Match } from "aws-cdk-lib/assertions";
 import { BaseStack } from "../lib/stacks/base";
-import { ECSServicesStack } from "../lib/stacks/ecs-services";
 import { MeshStack } from "../lib/stacks/mesh-components";
 import { ServiceDiscoveryStack } from "../lib/stacks/service-discovery";
 
@@ -10,7 +9,6 @@ const app = new cdk.App();
 const base = new BaseStack(app, "base");
 const serviceDiscovery = new ServiceDiscoveryStack(base, "service-discovery");
 const mesh = new MeshStack(serviceDiscovery, "mesh");
-const ecsServices = new ECSServicesStack(mesh, "ecs-services");
 
 const baseTemplate = Template.fromStack(base);
 const serviceDiscoveryTemplate = Template.fromStack(serviceDiscovery);

@@ -20,7 +20,7 @@ export class AppMeshFargateService extends Construct {
     this.securityGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
       vpc: ms.sd.base.vpc,
     });
-    this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
+    this.allowIpv4IngressForTcpPorts(this.securityGroup, [80, 8080]);
 
     this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}TaskDefinition`, {
       proxyConfiguration: props.proxyConfiguration,
@@ -101,4 +101,7 @@ export class AppMeshFargateService extends Construct {
       });
     }
   }
+  private allowIpv4IngressForTcpPorts = (securityGroup: ec2.SecurityGroup, ports: number[]): void => {
+    ports.forEach((port) => securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(port)));
+  };
 }

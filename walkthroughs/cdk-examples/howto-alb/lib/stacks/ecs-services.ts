@@ -1,9 +1,9 @@
+import * as ecs from "aws-cdk-lib/aws-ecs";
 import { StackProps, Stack, CfnOutput } from "aws-cdk-lib";
 import { MeshStack } from "./mesh-components";
 import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
 import { EnvoySidecar } from "../constructs/envoy-sidecar";
 import { XrayContainer } from "../constructs/xray-container";
-import * as ecs from "aws-cdk-lib/aws-ecs";
 import { buildAppMeshProxy, ServiceDiscoveryType } from "../utils";
 import { ApplicationContainer } from "../constructs/application-container";
 
@@ -26,7 +26,7 @@ export class ECSServicesStack extends Stack {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
         env: {
           COLOR: "blue",
-          PORT: ms.sd.base.PORT.toString(),
+          PORT: `${ms.sd.base.PORT}`,
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV1VirtualNode.virtualNodeName}`,
         },
         portMappings: [
@@ -62,7 +62,7 @@ export class ECSServicesStack extends Stack {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.backendAppImageAsset),
         env: {
           COLOR: "green",
-          PORT: ms.sd.base.PORT.toString(),
+          PORT: `${ms.sd.base.PORT}`,
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.backendV2VirtualNode.virtualNodeName}`,
         },
         portMappings: [
@@ -98,8 +98,8 @@ export class ECSServicesStack extends Stack {
         image: ecs.ContainerImage.fromDockerImageAsset(ms.sd.base.frontendAppImageAsset),
         logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-app`,
         env: {
-          PORT: ms.sd.base.PORT.toString(),
           COLOR_HOST: `${ms.backendVirtualService.virtualServiceName}:${ms.sd.base.PORT}`,
+          PORT: `${ms.sd.base.PORT}`,
           XRAY_APP_NAME: `${ms.mesh.meshName}/${ms.frontendVirtualNode.virtualNodeName}`,
         },
         portMappings: [{ containerPort: ms.sd.base.PORT, protocol: ecs.Protocol.TCP }],
