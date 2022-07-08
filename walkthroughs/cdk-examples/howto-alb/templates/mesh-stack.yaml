@@ -140,8 +140,15 @@ Resources:
           IpProtocol: "-1"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          Description: from 0.0.0.0/0:ALL TRAFFIC
-          IpProtocol: "-1"
+          Description: from 0.0.0.0/0:80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:8080
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
       VpcId:
         Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
     Metadata:
@@ -283,8 +290,15 @@ Resources:
           IpProtocol: "-1"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          Description: from 0.0.0.0/0:ALL TRAFFIC
-          IpProtocol: "-1"
+          Description: from 0.0.0.0/0:80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:8080
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
       VpcId:
         Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
     Metadata:
@@ -340,18 +354,9 @@ Resources:
               Value: "1"
             - Name: ENABLE_ENVOY_STATS_TAGS
               Value: "1"
-            - Name: APPMESH_VIRTUAL_NODE_NAME
+            - Name: APPMESH_RESOURCE_ARN
               Value:
-                Fn::Join:
-                  - ""
-                  - - mesh/
-                    - Fn::GetAtt:
-                        - meshcomponentsMesh4034AF8C
-                        - MeshName
-                    - /virtualNode/
-                    - Fn::GetAtt:
-                        - meshcomponentsBackendV2VirtualNode69EAFF36
-                        - VirtualNodeName
+                Ref: meshcomponentsBackendV2VirtualNode69EAFF36
           Essential: true
           HealthCheck:
             Command:
@@ -461,8 +466,15 @@ Resources:
           IpProtocol: "-1"
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          Description: from 0.0.0.0/0:ALL TRAFFIC
-          IpProtocol: "-1"
+          Description: from 0.0.0.0/0:80
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:8080
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
       VpcId:
         Fn::ImportValue: base:ExportsOutputRefbaseVpc7C0ACBA86A216E62
     Metadata:
@@ -507,8 +519,6 @@ Resources:
             - Condition: START
               ContainerName: xray
           Environment:
-            - Name: PORT
-              Value: "8080"
             - Name: COLOR_HOST
               Value:
                 Fn::Join:
@@ -517,6 +527,8 @@ Resources:
                         - meshcomponentsBackendVirtualServiceF618E0AD
                         - VirtualServiceName
                     - :8080
+            - Name: PORT
+              Value: "8080"
             - Name: XRAY_APP_NAME
               Value:
                 Fn::Join:
@@ -553,18 +565,9 @@ Resources:
               Value: "1"
             - Name: ENABLE_ENVOY_STATS_TAGS
               Value: "1"
-            - Name: APPMESH_VIRTUAL_NODE_NAME
+            - Name: APPMESH_RESOURCE_ARN
               Value:
-                Fn::Join:
-                  - ""
-                  - - mesh/
-                    - Fn::GetAtt:
-                        - meshcomponentsMesh4034AF8C
-                        - MeshName
-                    - /virtualNode/
-                    - Fn::GetAtt:
-                        - meshcomponentsFrontendVirtualNodeC3A75ECD
-                        - VirtualNodeName
+                Ref: meshcomponentsFrontendVirtualNodeC3A75ECD
           Essential: true
           HealthCheck:
             Command:
