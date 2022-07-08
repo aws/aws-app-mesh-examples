@@ -3,12 +3,17 @@ import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
 import { XrayContainer } from "./constructs/xray-container";
 
+export enum ServiceDiscoveryType {
+  DNS = "DNS",
+  CLOUDMAP = "CLOUDMAP",
+}
+
 export interface CustomContainerProps {
   logStreamPrefix: string;
 }
 
 export interface EnvoyContainerProps extends CustomContainerProps {
-  appMeshResourcePath: string;
+  appMeshResourceArn: string;
   enableXrayTracing: boolean;
 }
 
@@ -18,11 +23,6 @@ export interface ApplicationContainerProps extends CustomContainerProps {
   image: ecs.ContainerImage;
   env: { [key: string]: string };
   portMappings: ecs.PortMapping[];
-}
-
-export enum ServiceDiscoveryType {
-  DNS = "DNS",
-  CLOUDMAP = "CLOUDMAP",
 }
 
 export interface AppMeshFargateServiceProps {

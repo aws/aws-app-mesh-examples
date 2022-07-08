@@ -98,7 +98,7 @@ Three more constructs - `EnvoySidecar`, `XrayContainer` and `ApplicationContaine
   <img width="600" height="350" src="assets/stacks.jpg">
 </p>
 
-The order mentioned above also represents the dependency these Stacks have on eachother. In this case, since we are deploying the Envoy sidecar containers along with our application code, it is necessary for the mesh components to be provisioned before the services are running, so the Envoy proxy can locate them using the `APPMESH_VIRTUAL_NODE_NAME` environment variable.
+The order mentioned above also represents the dependency these Stacks have on eachother. In this case, since we are deploying the `EnvoySidecar` containers along with our application code, it is necessary for the mesh components to be provisioned before the services are running, so the Envoy proxy can locate them using the `APPMESH_RESOURCE_ARN` environment variable.
 
 These dependencies are propagated by passing the Stack objects in the `constructor` of their referencing Stack.
 

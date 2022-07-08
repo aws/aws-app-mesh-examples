@@ -19,7 +19,7 @@ export class EnvoySidecar extends Construct {
         ENVOY_LOG_LEVEL: "debug",
         ENABLE_ENVOY_XRAY_TRACING: props.enableXrayTracing ? "1" : "0",
         ENABLE_ENVOY_STATS_TAGS: "1",
-        APPMESH_VIRTUAL_NODE_NAME: props.appMeshResourcePath,
+        APPMESH_RESOURCE_ARN: props.appMeshResourceArn,
       },
       user: "1337",
       healthCheck: {
