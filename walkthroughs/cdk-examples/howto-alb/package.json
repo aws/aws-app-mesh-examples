@@ -1,8 +1,8 @@
 {
-  "name": "cdk-ecr",
+  "name": "howto-alb",
   "version": "0.1.0",
   "bin": {
-    "cdk-ecr": "bin/cdk-ecr.js"
+    "cdk-howto-alb": "bin/howto-alb.js"
   },
   "scripts": {
     "build": "tsc",
@@ -11,7 +11,7 @@
     "cdk": "cdk"
   },
   "devDependencies": {
-    "@types/jest": "^27.5.0",
+    "@types/jest": "^27.5.2",
     "@types/node": "^10.17.27",
     "@types/prettier": "2.6.0",
     "aws-cdk": "2.27.0",
