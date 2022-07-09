@@ -13,9 +13,9 @@ This guide uses [Colorteller example application with HTTP header bases routing]
 
 App Mesh provides a basic installation to setup Jaeger quickly using Helm. To install the Jaeger pre-configured to work with App Mesh, follow the instructions in [appmesh-jaeger](https://github.com/aws/eks-charts/blob/master/stable/appmesh-jaeger/README.md) Helm charts.
 
-Note: you will need to _restart_ all the running pods inside the mesh after enabling tracing so the Envoy sidecar can pick up the tracing config. Replace the `<name-space>` and `<deployment-name>` with necessary values.
+Note: you will need to _restart_ all the running pods/deployments inside the mesh after enabling tracing so the Envoy sidecar can pick up the tracing config. Replace the `<namespace>` and `<deployment-name>` with necessary values.
 ```sh
-kubectl -n <name-space> rollout restart deployment <deployment-name>
+kubectl -n <namespace> rollout restart deployment <deployment-name>
 ```
 
 #### Option 2: Existing Jaeger deployment

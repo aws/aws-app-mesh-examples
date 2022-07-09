@@ -23,9 +23,9 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
     --set serviceAccount.create=false
 ```
 
-Note: you will need to _restart_ all the running pods inside the mesh after enabling tracing so the Envoy sidecar can pick up the tracing config. Replace the `<name-space>` and `<deployment-name>` with necessary values.
+Note: you will need to _restart_ all the running pods/deployments inside the mesh after enabling tracing so the Envoy sidecar can pick up the tracing config. Replace the `<namespace>` and `<deployment-name>` with necessary values.
 ```sh
-kubectl -n <name-space> rollout restart deployment <deployment-name>
+kubectl -n <namespace> rollout restart deployment <deployment-name>
 ```
 
 The X-Ray daemon is automatically injected by [App Mesh Controller](https://github.com/aws/aws-app-mesh-controller-for-k8s) into your app containers. Let's verify that with the following command:
