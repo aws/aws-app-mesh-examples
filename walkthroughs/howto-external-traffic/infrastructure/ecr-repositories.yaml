@@ -1,0 +1,13 @@
+Parameters:
+
+  ColorTellerImageName:
+    Description: The name for the color teller image
+    Type: String
+
+
+Resources:
+
+  ColorTellerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ColorTellerImageName
