@@ -1,18 +1,20 @@
 # Configuring TLS with AWS Certificate Manager
 
-In this walkthrough we'll show you how to allow application to connect to external API outside of Mesh. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorapp).
+In this walkthrough we'll show you how to allow your application to connect to external API outside of your mesh. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorapp).
 
 ## Introduction
 
-When customer is using service mesh, some of them might have the need to connect to external or open API's from services inside the mesh.
+When using a service mesh, some services within the mesh might need to connect to external or open API's.
 
 In App Mesh, we have two ways of doing that.
 
 ### 1. Set egress filter to ``ALLOW_ALL``
-The first option is to set the [egress filter](https://docs.aws.amazon.com/app-mesh/latest/APIReference/API_EgressFilter.html) on the mesh resource to ``ALLOW_ALL``. This setting will allow any application service within the mesh to communicate with any destination IP address inside or outside of the mesh.
 
-### 2. Model the external service as a virtual service backed up by a virtaul node
-We can keep the egree filter as ``DROP_ALL`` which is default for a mesh and we need to model the external service as a virtual service backed up by a virtaul node. Then virtual node itself needs to set its service discovery method to dns with the hostname as the actual hostname of the external service. Note that if the external service's hostname can be resolved as an IPv6 address while your set up, e.g. VPC, doesn't support that, you need to set IP preference to ``IPv4_ONLY`` to stop envoy from tyring to make IPv6 requests.
+The first option is to set the [egress filter](https://docs.aws.amazon.com/app-mesh/latest/APIReference/API_EgressFilter.html) on the mesh resource to ``ALLOW_ALL``. This setting will allow any service within the mesh to communicate with any destination IP address inside or outside of the mesh.
+
+### 2. Model the external service as a virtual service backed up by a virtual node
+
+We can keep the egress filter as ``DROP_ALL`` which is default for a mesh and we need to model the external service as a virtual service backed up by a virtual node. Then virtual node itself needs to set its service discovery method to DNS with the hostname as the actual hostname of the external service. Note that if the external service's hostname can be resolved as an IPv6 address while your setup, e.g. VPC, doesn't support that, you need to set IP preference to ``IPv4_ONLY`` to stop envoy from trying to make IPv6 requests.
 
 Let's jump into a brief example of App Mesh external traffic in action.
 
@@ -67,7 +69,7 @@ Finally, build and deploy the color app images.
 ./src/colorteller_with_external_traffic/deploy.sh
 ```
 
-Note that the example apps use go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
+Note that the example apps use go modules. If you have trouble accessing <https://proxy.golang.org> during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
 GO_PROXY=direct ./src/colorteller_with_external_traffic/deploy.sh
@@ -77,7 +79,7 @@ GO_PROXY=direct ./src/colorteller_with_external_traffic/deploy.sh
 
 This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white).
 
-The external service can be medeled by a virtual service with virtaul node as provider. The spec for virtaul service looks like this:
+The external service can be modelled by a virtual service with virtual node as provider. The spec for virtual service looks like this:
 
 ```yaml
 ExternalServiceVirtualService:
@@ -109,7 +111,7 @@ ExternalServiceVirtualNode:
             IpPreference: IPv4_ONLY
 ```
 
-Additionally, the virtual nodes associated with the application that will make the external requests should use the newly created virtaul servce, in this example it is ``ExternalServiceVirtualService``, as a backend. The spec for the virtual node associated with the application looks like this:
+Additionally, the virtual nodes associated with the application that will make the external requests should use the newly created virtual service, in this example it is ``ExternalServiceVirtualService``, as a backend. The spec for the virtual node associated with the application looks like this:
 
 ```yaml
 ColorTellerVirtualNode:
@@ -160,12 +162,12 @@ COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
 curl "${COLORAPP_ENDPOINT}/external"
 ```
 
-You should see a successful response with homepage of github. You can also access the link through your brower.
+You should see a successful response with homepage of GitHub. You can also access the link through your browser.
 
 ## Step 5: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
-Run the following commands to clean up and tear down the resources that we’ve created.
+Run the following commands to clean up and tear down the resources that we've created.
 
 ```bash
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecs-service
