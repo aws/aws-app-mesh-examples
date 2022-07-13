@@ -20,7 +20,7 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 - Open your terminal
 - Clone the repository `git clone https://github.com/aws/aws-app-mesh-examples.git`
 - Navigate to `aws-app-mesh-examples/walkthroughs/cdk-examples/howto-alb/`
-- Run `cdk boostrap`
+- Run `cdk bootstrap`
 - Run `cdk deploy --all --require-approval never`
 
 - Once the entire infrastructure has been provisioned, you will see the following message on your terminal.
