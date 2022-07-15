@@ -11,6 +11,7 @@ The entire infrastructure is provisioned using the AWS Cloud Development Kit (CD
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [AWS CDK (V2)](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
 - [TypeScript](https://www.typescriptlang.org/download)
+- [`aws-cdk-lib`](https://www.npmjs.com/package/aws-cdk-lib)
 - [Docker](https://docs.docker.com/get-docker/)
 
 _Note - CDK uses default AWS credentials `~/.aws/credentials` and configuration `~/.aws/config` unless specified explicitly in the Stack. To learn more about this, click [here](https://docs.aws.amazon.com/cdk/v2/guide/environments.html)._
