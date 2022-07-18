@@ -12,9 +12,9 @@ In App Mesh, we have two ways of doing that.
 
 The first option is to set the [egress filter](https://docs.aws.amazon.com/app-mesh/latest/APIReference/API_EgressFilter.html) on the mesh resource to ``ALLOW_ALL``. This setting will allow any service within the mesh to communicate with any destination IP address inside or outside of the mesh.
 
-### 2. Model the external service as a virtual service backed up by a virtual node
+### 2. Model the external service as a virtual service backed up by a virtaul node
 
-We can keep the egress filter as ``DROP_ALL`` which is default for a mesh and we need to model the external service as a virtual service backed up by a virtual node. Then virtual node itself needs to set its service discovery method to DNS with the hostname as the actual hostname of the external service. Note that if the external service's hostname can be resolved as an IPv6 address while your setup, e.g. VPC, doesn't support that, you need to set IP preference to ``IPv4_ONLY`` to stop envoy from trying to make IPv6 requests.
+We can keep the egree filter as ``DROP_ALL`` which is default for a mesh and we need to model the external service as a virtual service backed up by a virtaul node. Then virtual node itself needs to set its service discovery method to dns with the hostname as the actual hostname of the external service. Note that if the external service's hostname can be resolved as an IPv6 address while your set up, e.g. VPC, doesn't support that, you need to set IP preference to ``IPv4_ONLY`` to stop envoy from tyring to make IPv6 requests. Also note that if the application itself needs to make HTTPS requests, i.e. TLS connections are not handled by Envoy sidecar, the listener protocol should be set to ``tcp`` instead of ``http``.
 
 Let's jump into a brief example of App Mesh external traffic in action.
 
@@ -43,8 +43,8 @@ infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, a
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-2
-export ENVIRONMENT_NAME=AppMeshTLSExample
-export MESH_NAME=ColorApp-TLS
+export ENVIRONMENT_NAME=AppMeshExternalTrafficExample
+export MESH_NAME=ColorApp-External-Traffic
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
 export COLOR_TELLER_IMAGE_NAME="colorteller"
@@ -177,3 +177,5 @@ aws ecr delete-repository --force --repository-name colorteller
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 ```
+
+## Frequently Asked Questions
