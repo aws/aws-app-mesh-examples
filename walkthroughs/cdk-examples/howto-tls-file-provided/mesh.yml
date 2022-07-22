@@ -1,0 +1,749 @@
+Resources:
+  meshMesh057F1004:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: ColorApp-TLS
+      Spec: {}
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshMesh/Resource
+  meshVirtualGateway6EE2B495:
+    Type: AWS::AppMesh::VirtualGateway
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        BackendDefaults:
+          ClientPolicy:
+            TLS:
+              Validation:
+                Trust:
+                  File:
+                    CertificateChain: /keys/ca_1_ca_2_bundle.pem
+        Listeners:
+          - PortMapping:
+              Port: 80
+              Protocol: http
+      VirtualGatewayName: ColorGateway
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshVirtualGateway/Resource
+  meshVirtualGatewaymeshVirtualGatewayRouteD4B053C8:
+    Type: AWS::AppMesh::GatewayRoute
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        HttpRoute:
+          Action:
+            Target:
+              VirtualService:
+                VirtualServiceName:
+                  Fn::GetAtt:
+                    - meshVirtualService7F9C4601
+                    - VirtualServiceName
+          Match:
+            Prefix: /
+      VirtualGatewayName:
+        Fn::GetAtt:
+          - meshVirtualGateway6EE2B495
+          - VirtualGatewayName
+      GatewayRouteName: gateway-gr
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshVirtualGateway/meshVirtualGatewayRoute/Resource
+  meshColorTellerWhite9F5D6B53:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        Listeners:
+          - HealthCheck:
+              HealthyThreshold: 2
+              IntervalMillis: 5000
+              Path: /
+              Port: 80
+              Protocol: http
+              TimeoutMillis: 2000
+              UnhealthyThreshold: 3
+            PortMapping:
+              Port: 80
+              Protocol: http
+            TLS:
+              Certificate:
+                File:
+                  CertificateChain: /keys/colorteller_white_cert_chain.pem
+                  PrivateKey: /keys/colorteller_white_key.pem
+              Mode: STRICT
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: default.svc.cluster.local
+            ServiceName:
+              Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttsvcdscvryNmspcsvcdscvryWhiteSvcF008A8DDNameB1B515A7
+      VirtualNodeName: ColorTellerWhite
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshColorTellerWhite/Resource
+  meshColorTellerGreen8E6BE135:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        Listeners:
+          - HealthCheck:
+              HealthyThreshold: 2
+              IntervalMillis: 5000
+              Path: /
+              Port: 80
+              Protocol: http
+              TimeoutMillis: 2000
+              UnhealthyThreshold: 3
+            PortMapping:
+              Port: 80
+              Protocol: http
+            TLS:
+              Certificate:
+                File:
+                  CertificateChain: /keys/colorteller_green_cert_chain.pem
+                  PrivateKey: /keys/colorteller_green_key.pem
+              Mode: STRICT
+        ServiceDiscovery:
+          AWSCloudMap:
+            NamespaceName: default.svc.cluster.local
+            ServiceName:
+              Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttsvcdscvryNmspcsvcdscvryGreenSvc9AF1FCD3NameF218A21C
+      VirtualNodeName: ColorTellerGreen
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshColorTellerGreen/Resource
+  meshVritualRouter872576BA:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 80
+              Protocol: http
+      VirtualRouterName: ColorTellerVirtualRouter
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshVritualRouter/Resource
+  meshBackendRoute4364F320:
+    Type: AWS::AppMesh::Route
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        HttpRoute:
+          Action:
+            WeightedTargets:
+              - VirtualNode:
+                  Fn::GetAtt:
+                    - meshColorTellerWhite9F5D6B53
+                    - VirtualNodeName
+                Weight: 1
+              - VirtualNode:
+                  Fn::GetAtt:
+                    - meshColorTellerGreen8E6BE135
+                    - VirtualNodeName
+                Weight: 1
+          Match:
+            Prefix: /
+      VirtualRouterName:
+        Fn::GetAtt:
+          - meshVritualRouter872576BA
+          - VirtualRouterName
+      RouteName: ColorTellerRoute
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshBackendRoute/Resource
+  meshVirtualService7F9C4601:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName:
+        Fn::GetAtt:
+          - meshMesh057F1004
+          - MeshName
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName:
+              Fn::GetAtt:
+                - meshVritualRouter872576BA
+                - VirtualRouterName
+      VirtualServiceName: colorteller.default.svc.cluster.local
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/meshVirtualService/Resource
+  ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: infra/svc-dscvry/mesh/ecs-servicesWhiteService/whiteTaskSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:ALL TRAFFIC
+          IpProtocol: "-1"
+      VpcId:
+        Fn::ImportValue: infra:ExportsOutputRefinfraVpcB47AB2613FEA3631
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesWhiteService/whiteTaskSecurityGroup/Resource
+  ecsservicesWhiteServicewhiteTaskDefinitionDB434D84:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - DependsOn:
+            - Condition: HEALTHY
+              ContainerName: envoy
+          Environment:
+            - Name: SERVER_PORT
+              Value: "80"
+            - Name: COLOR
+              Value: WHITE
+          Essential: true
+          Image:
+            Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:288848a211a9a743283ed61d7cf61c94d701afef288ced81c413daa98e91135a
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: infra:ExportsOutputRefinfraLogGroupD76183B01F911F91
+              awslogs-stream-prefix: white
+              awslogs-region:
+                Ref: AWS::Region
+          Name: app
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+        - Environment:
+            - Name: ENVOY_LOG_LEVEL
+              Value: debug
+            - Name: APPMESH_RESOURCE_ARN
+              Value:
+                Ref: meshColorTellerWhite9F5D6B53
+            - Name: CERTIFICATE_NAME
+              Value: colorteller_white
+          Essential: true
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+            Interval: 5
+            Retries: 10
+            Timeout: 10
+          Image:
+            Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:076533b2cc16e68ca41292a661a6ae766ca6de28404ab60b962ef7f2b5f664dc
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: infra:ExportsOutputRefinfraLogGroupD76183B01F911F91
+              awslogs-stream-prefix: white-envoy
+              awslogs-region:
+                Ref: AWS::Region
+          Name: envoy
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: tcp
+            - ContainerPort: 15000
+              Protocol: tcp
+            - ContainerPort: 15001
+              Protocol: tcp
+          Ulimits:
+            - HardLimit: 15000
+              Name: nofile
+              SoftLimit: 15000
+          User: "1337"
+      Cpu: "256"
+      ExecutionRoleArn:
+        Fn::ImportValue: infra:ExportsOutputFnGetAttinfraExecutionRole7EF40A47Arn4A7107EC
+      Family: white
+      Memory: "512"
+      NetworkMode: awsvpc
+      ProxyConfiguration:
+        ContainerName: envoy
+        ProxyConfigurationProperties:
+          - Name: ProxyIngressPort
+            Value: "15000"
+          - Name: ProxyEgressPort
+            Value: "15001"
+          - Name: AppPorts
+            Value: "80"
+          - Name: IgnoredUID
+            Value: "1337"
+          - Name: EgressIgnoredIPs
+            Value: 169.254.170.2,169.254.169.254
+        Type: APPMESH
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn:
+        Fn::ImportValue: infra:ExportsOutputFnGetAttinfraTaskRole479B0A8BArn166A073E
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesWhiteService/whiteTaskDefinition/Resource
+  ecsservicesWhiteServicewhiteService4CBD5021:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Fn::ImportValue: infra:ExportsOutputRefinfraClusterBFF254082A55F6EB
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      EnableECSManagedTags: false
+      EnableExecuteCommand: true
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::GetAtt:
+                - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+                - GroupId
+          Subnets:
+            - Fn::ImportValue: infra:ExportsOutputRefinfraVpcPrivateSubnet1Subnet81333A51C473A3FD
+            - Fn::ImportValue: infra:ExportsOutputRefinfraVpcPrivateSubnet2SubnetB8F477B481CC1519
+      ServiceName: white
+      ServiceRegistries:
+        - RegistryArn:
+            Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttsvcdscvryNmspcsvcdscvryWhiteSvcF008A8DDArnB87931DF
+      TaskDefinition:
+        Ref: ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesWhiteService/whiteService/Service
+  ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: infra/svc-dscvry/mesh/ecs-servicesGreenService/greenTaskSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:ALL TRAFFIC
+          IpProtocol: "-1"
+      VpcId:
+        Fn::ImportValue: infra:ExportsOutputRefinfraVpcB47AB2613FEA3631
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGreenService/greenTaskSecurityGroup/Resource
+  ecsservicesGreenServicegreenTaskDefinitionCF8EB689:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - DependsOn:
+            - Condition: HEALTHY
+              ContainerName: envoy
+          Environment:
+            - Name: SERVER_PORT
+              Value: "80"
+            - Name: COLOR
+              Value: GREEN
+          Essential: true
+          Image:
+            Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:288848a211a9a743283ed61d7cf61c94d701afef288ced81c413daa98e91135a
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: infra:ExportsOutputRefinfraLogGroupD76183B01F911F91
+              awslogs-stream-prefix: green
+              awslogs-region:
+                Ref: AWS::Region
+          Name: app
+          PortMappings:
+            - ContainerPort: 80
+              Protocol: tcp
+        - Environment:
+            - Name: ENVOY_LOG_LEVEL
+              Value: debug
+            - Name: APPMESH_RESOURCE_ARN
+              Value:
+                Ref: meshColorTellerGreen8E6BE135
+            - Name: CERTIFICATE_NAME
+              Value: colorteller_green
+          Essential: true
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+            Interval: 5
+            Retries: 10
+            Timeout: 10
+          Image:
+            Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:076533b2cc16e68ca41292a661a6ae766ca6de28404ab60b962ef7f2b5f664dc
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: infra:ExportsOutputRefinfraLogGroupD76183B01F911F91
+              awslogs-stream-prefix: green-envoy
+              awslogs-region:
+                Ref: AWS::Region
+          Name: envoy
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: tcp
+            - ContainerPort: 15000
+              Protocol: tcp
+            - ContainerPort: 15001
+              Protocol: tcp
+          Ulimits:
+            - HardLimit: 15000
+              Name: nofile
+              SoftLimit: 15000
+          User: "1337"
+      Cpu: "256"
+      ExecutionRoleArn:
+        Fn::ImportValue: infra:ExportsOutputFnGetAttinfraExecutionRole7EF40A47Arn4A7107EC
+      Family: green
+      Memory: "512"
+      NetworkMode: awsvpc
+      ProxyConfiguration:
+        ContainerName: envoy
+        ProxyConfigurationProperties:
+          - Name: ProxyIngressPort
+            Value: "15000"
+          - Name: ProxyEgressPort
+            Value: "15001"
+          - Name: AppPorts
+            Value: "80"
+          - Name: IgnoredUID
+            Value: "1337"
+          - Name: EgressIgnoredIPs
+            Value: 169.254.170.2,169.254.169.254
+        Type: APPMESH
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn:
+        Fn::ImportValue: infra:ExportsOutputFnGetAttinfraTaskRole479B0A8BArn166A073E
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGreenService/greenTaskDefinition/Resource
+  ecsservicesGreenServicegreenService3091DEA2:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Fn::ImportValue: infra:ExportsOutputRefinfraClusterBFF254082A55F6EB
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      EnableECSManagedTags: false
+      EnableExecuteCommand: true
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::GetAtt:
+                - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+                - GroupId
+          Subnets:
+            - Fn::ImportValue: infra:ExportsOutputRefinfraVpcPrivateSubnet1Subnet81333A51C473A3FD
+            - Fn::ImportValue: infra:ExportsOutputRefinfraVpcPrivateSubnet2SubnetB8F477B481CC1519
+      ServiceName: green
+      ServiceRegistries:
+        - RegistryArn:
+            Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttsvcdscvryNmspcsvcdscvryGreenSvc9AF1FCD3Arn506DE091
+      TaskDefinition:
+        Ref: ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGreenService/greenService/Service
+  ecsservicesGatewayServicegatewayTaskSecurityGroupB79E24EC:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayTaskSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: from 0.0.0.0/0:ALL TRAFFIC
+          IpProtocol: "-1"
+      VpcId:
+        Fn::ImportValue: infra:ExportsOutputRefinfraVpcB47AB2613FEA3631
+    DependsOn:
+      - ecsservicesGreenServicegreenService3091DEA2
+      - ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+      - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+      - ecsservicesWhiteServicewhiteService4CBD5021
+      - ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+      - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayTaskSecurityGroup/Resource
+  ecsservicesGatewayServicegatewayTaskSecurityGroupfrominfrasvcdscvryAlbSecurityGroupB57B7957805EB3D8B2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: Load balancer to target
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - ecsservicesGatewayServicegatewayTaskSecurityGroupB79E24EC
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttAlbSecurityGroup580F65A6GroupId37F3639D
+      ToPort: 80
+    DependsOn:
+      - ecsservicesGreenServicegreenService3091DEA2
+      - ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+      - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+      - ecsservicesWhiteServicewhiteService4CBD5021
+      - ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+      - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayTaskSecurityGroup/from infrasvcdscvryAlbSecurityGroupB57B7957:80
+  ecsservicesGatewayServicegatewayTaskSecurityGroupfrominfrasvcdscvrysvcdscvryAlbSec427DF91C80D120E232:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: Load balancer to target
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+          - ecsservicesGatewayServicegatewayTaskSecurityGroupB79E24EC
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttsvcdscvryAlbSecF878EA0AGroupIdD3A80240
+      ToPort: 80
+    DependsOn:
+      - ecsservicesGreenServicegreenService3091DEA2
+      - ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+      - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+      - ecsservicesWhiteServicewhiteService4CBD5021
+      - ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+      - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayTaskSecurityGroup/from infrasvcdscvrysvcdscvryAlbSec427DF91C:80
+  ecsservicesGatewayServicegatewayTaskSecurityGroupinfrasvcdscvryAlbSecurityGroupB57B795780from2B07A6F6:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId:
+        Fn::ImportValue: svc-dscvry:ExportsOutputFnGetAttAlbSecurityGroup580F65A6GroupId37F3639D
+      IpProtocol: tcp
+      Description: Load balancer to target
+      DestinationSecurityGroupId:
+        Fn::GetAtt:
+          - ecsservicesGatewayServicegatewayTaskSecurityGroupB79E24EC
+          - GroupId
+      FromPort: 80
+      ToPort: 80
+    DependsOn:
+      - ecsservicesGreenServicegreenService3091DEA2
+      - ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+      - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+      - ecsservicesWhiteServicewhiteService4CBD5021
+      - ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+      - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayTaskSecurityGroup/infrasvcdscvryAlbSecurityGroupB57B7957:80 from
+  ecsservicesGatewayServicegatewayTaskDefinition25A72908:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Environment:
+            - Name: ENVOY_LOG_LEVEL
+              Value: debug
+            - Name: APPMESH_RESOURCE_ARN
+              Value:
+                Ref: meshVirtualGateway6EE2B495
+            - Name: CERTIFICATE_NAME
+              Value: colorgateway
+          Essential: true
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+            Interval: 5
+            Retries: 10
+            Timeout: 10
+          Image:
+            Fn::Sub: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:076533b2cc16e68ca41292a661a6ae766ca6de28404ab60b962ef7f2b5f664dc
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Fn::ImportValue: infra:ExportsOutputRefinfraLogGroupD76183B01F911F91
+              awslogs-stream-prefix: gateway-envoy
+              awslogs-region:
+                Ref: AWS::Region
+          Name: envoy
+          PortMappings:
+            - ContainerPort: 9901
+              Protocol: tcp
+            - ContainerPort: 15000
+              Protocol: tcp
+            - ContainerPort: 15001
+              Protocol: tcp
+            - ContainerPort: 80
+              Protocol: tcp
+          Ulimits:
+            - HardLimit: 15000
+              Name: nofile
+              SoftLimit: 15000
+          User: "1337"
+      Cpu: "256"
+      ExecutionRoleArn:
+        Fn::ImportValue: infra:ExportsOutputFnGetAttinfraExecutionRole7EF40A47Arn4A7107EC
+      Family: gateway
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn:
+        Fn::ImportValue: infra:ExportsOutputFnGetAttinfraTaskRole479B0A8BArn166A073E
+    DependsOn:
+      - ecsservicesGreenServicegreenService3091DEA2
+      - ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+      - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+      - ecsservicesWhiteServicewhiteService4CBD5021
+      - ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+      - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayTaskDefinition/Resource
+  ecsservicesGatewayServicegatewayService67160E4F:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Fn::ImportValue: infra:ExportsOutputRefinfraClusterBFF254082A55F6EB
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      EnableECSManagedTags: false
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: envoy
+          ContainerPort: 80
+          TargetGroupArn:
+            Fn::ImportValue: svc-dscvry:ExportsOutputRefAlbgatewayListenergatewayTargetGroupGroupFBA0833349F84613
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Fn::GetAtt:
+                - ecsservicesGatewayServicegatewayTaskSecurityGroupB79E24EC
+                - GroupId
+          Subnets:
+            - Fn::ImportValue: infra:ExportsOutputRefinfraVpcPrivateSubnet1Subnet81333A51C473A3FD
+            - Fn::ImportValue: infra:ExportsOutputRefinfraVpcPrivateSubnet2SubnetB8F477B481CC1519
+      ServiceName: gateway
+      TaskDefinition:
+        Ref: ecsservicesGatewayServicegatewayTaskDefinition25A72908
+    DependsOn:
+      - ecsservicesGreenServicegreenService3091DEA2
+      - ecsservicesGreenServicegreenTaskDefinitionCF8EB689
+      - ecsservicesGreenServicegreenTaskSecurityGroup3AC2C500
+      - ecsservicesWhiteServicewhiteService4CBD5021
+      - ecsservicesWhiteServicewhiteTaskDefinitionDB434D84
+      - ecsservicesWhiteServicewhiteTaskSecurityGroup00D01370
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/ecs-servicesGatewayService/gatewayService/Service
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/32RTW/CMAyGf8vubdi6w7jvA+0AB5h2nbzUMFNIKjsBoar/fUnIpsCkXeL4sd9XdtKo5kHd3sBRat129Y4+1bByoLsqoI8B+n6P8qWGeTirx7VJ8Z3YedjNwOERThFfkRyX1juM5Ys89y5si4U0pfme+rgoZvDrd2G0Qj6QLr0yGSvUTVgHtWdypxlb38eu/8Gr2TCK/OHPCUdPUcML8Cbs9AbSPeGaDDmyJkquiTUOyCAXLGuLsX/mHdNuKNbzuRDkbRKNlQnvo7YyOdxN1X34sa0Q1eyNoz2q5Tl+A2nSeRrNAQAA
+    Metadata:
+      aws:cdk:path: infra/svc-dscvry/mesh/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+
