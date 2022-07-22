@@ -81,8 +81,6 @@ export class AppMeshFargateService extends Construct {
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT },
     });
 
-    const cloudMapService = ms.serviceDiscovery.getCloudMapSerivce(props.serviceName);
-
     if (isGatewayService) {
       const listener = ms.serviceDiscovery.publicLoadBalancer.addListener(`${props.serviceName}Listener`, {
         port: 80,
@@ -105,7 +103,7 @@ export class AppMeshFargateService extends Construct {
       this.service.associateCloudMapService({
         container: this.appContainer,
         containerPort: 80,
-        service: cloudMapService,
+        service: ms.serviceDiscovery.getCloudMapSerivce(props.serviceName),
       });
     }
   }

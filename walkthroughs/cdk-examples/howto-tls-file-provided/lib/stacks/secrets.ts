@@ -11,22 +11,20 @@ export class SecretsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    if (["true", true].includes(this.node.tryGetContext("gencerts"))) {
+    if (this.node.tryGetContext("make-certs") === "true") {
       this.generateNewCertificates();
-    }
-
-    Object.entries(this.fetchCertificateContents()).forEach(([certName, certContent]) => {
-      new secrets_mgr.Secret(this, `${this.stackName}${certName}`, {
-        secretName: certName,
-        description: "OpenSSL certificate",
-        secretStringValue: SecretValue.unsafePlainText(certContent),
-        removalPolicy: RemovalPolicy.DESTROY,
+      Object.entries(this.fetchCertificateContents()).forEach(([certName, certContent]) => {
+        new secrets_mgr.Secret(this, `${this.stackName}${certName}`, {
+          secretName: certName,
+          description: "OpenSSL certificate",
+          secretStringValue: SecretValue.unsafePlainText(certContent),
+          removalPolicy: RemovalPolicy.DESTROY,
+        });
       });
-    });
+    }
   }
 
   private generateNewCertificates = (): void => {
-    // Delete old certificates if any
     const files = fs.readdirSync(path.join(__dirname, this.CERT_DIR));
     files
       .filter((file) => file.endsWith(".pem") || file.endsWith(".generated"))

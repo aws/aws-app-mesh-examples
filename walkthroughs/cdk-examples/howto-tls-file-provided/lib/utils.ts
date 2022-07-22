@@ -4,9 +4,9 @@ import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
 
 export enum MeshUpdateChoices {
-  ADD_GREEN_VN = "addgreen",
-  ENABLE_CA_1 = "addca1",
-  ENABLE_BUNDLE = "addbundle",
+  ADD_GREEN_VN = "add-green-vn",
+  ADD_CA1 = "add-ca1",
+  ADD_BUNDLE = "add-bundle",
 }
 
 export enum ServiceDiscoveryType {

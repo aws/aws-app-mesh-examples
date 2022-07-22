@@ -42,10 +42,10 @@ export class ServiceDiscoveryStack extends Stack {
     this.loadBalancerSecGroup = new ec2.SecurityGroup(this, `${this.stackName}AlbSec`, {
       vpc: this.infra.vpc,
     });
-    this.loadBalancerSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
+    this.loadBalancerSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80));
 
     this.publicLoadBalancer = new elbv2.ApplicationLoadBalancer(this, "Alb", {
-      loadBalancerName: "public-load-balancer",
+      loadBalancerName: "gateway",
       vpc: this.infra.vpc,
       internetFacing: true,
       vpcSubnets: {
@@ -54,7 +54,7 @@ export class ServiceDiscoveryStack extends Stack {
     });
     this.publicLoadBalancer.addSecurityGroup(this.loadBalancerSecGroup);
 
-    this.colorTellerGatewayServiceDiscovery.registerLoadBalancer("Rg", this.publicLoadBalancer);
+    this.colorTellerGatewayServiceDiscovery.registerLoadBalancer("CmapAlb", this.publicLoadBalancer);
   }
 
   private buildDnsServiceProps = (serviceName: string, lb: boolean): service_discovery.DnsServiceProps => {

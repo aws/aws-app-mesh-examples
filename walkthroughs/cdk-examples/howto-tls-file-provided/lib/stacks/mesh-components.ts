@@ -22,7 +22,7 @@ export class MeshStack extends Stack {
 
     this.serviceDiscovery = serviceDiscovery;
 
-    const meshUpdate = this.node.tryGetContext("meshupdate");
+    const meshUpdateChoice = this.node.tryGetContext("mesh-update");
 
     this.mesh = new appmesh.Mesh(this, `${this.stackName}Mesh`, {
       meshName: this.node.tryGetContext("MESH_NAME"),
@@ -33,12 +33,12 @@ export class MeshStack extends Stack {
       virtualGatewayName: "ColorGateway",
       listeners: [appmesh.VirtualGatewayListener.http({ port: 8080 })],
       backendDefaults:
-        meshUpdate == MeshUpdateChoices.ADD_GREEN_VN
+        meshUpdateChoice == MeshUpdateChoices.ADD_GREEN_VN
           ? undefined
           : {
               tlsClientPolicy: {
                 validation: {
-                  trust: appmesh.TlsValidationTrust.file(this.fetchClientTlsCert(meshUpdate)),
+                  trust: appmesh.TlsValidationTrust.file(this.fetchClientTlsCert(meshUpdateChoice)),
                 },
               },
             },
@@ -76,7 +76,7 @@ export class MeshStack extends Stack {
           },
           {
             virtualNode: this.virtualNodeGreen,
-            weight: meshUpdate ? 1 : 0,
+            weight: meshUpdateChoice ? 1 : 0,
           },
         ],
       }),
@@ -95,8 +95,8 @@ export class MeshStack extends Stack {
     });
   }
 
-  private fetchClientTlsCert = (meshUpdate: MeshUpdateChoices): string => {
-    return meshUpdate == MeshUpdateChoices.ENABLE_BUNDLE ? "/keys/ca_1_ca_2_bundle.pem" : "/keys/ca_1_cert.pem";
+  private fetchClientTlsCert = (meshUpdateChoice: MeshUpdateChoices): string => {
+    return meshUpdateChoice == MeshUpdateChoices.ADD_BUNDLE ? "/keys/ca_1_ca_2_bundle.pem" : "/keys/ca_1_cert.pem";
   };
 
   private buildTlsEnabledVirtualNode = (
