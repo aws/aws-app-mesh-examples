@@ -74,7 +74,8 @@ export class EcsServicesStack extends Stack {
 
     gateway.node.addDependency(white);
     gateway.node.addDependency(green);
-
+    
+    new CfnOutput(this, "BastionIP", { value: ms.serviceDiscovery.infra.bastionHost.instancePublicIp });
     new CfnOutput(this, "URL", { value: ms.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName });
   }
 }
