@@ -122,16 +122,24 @@ const serviceDiscoveryStack = new ServiceDiscoveryStack(baseStack, 'ServiceDisco
 To easily define Fargate services with Envoy proxies, we make use of the `AppMeshFargateService` construct mentioned above. The main purpose of this construct is to bundle the application containers with the Envoy sidecar and proxy. To do so, we define a set of custom props in `lib/utils.ts` called `AppMeshFargateServiceProps`.
 
 ```c
+// utils.ts
+export interface EnvoyConfiguration {
+  container: EnvoySidecar;
+  proxyConfiguration?: ecs.ProxyConfiguration;
+}
+
 export interface AppMeshFargateServiceProps {
   serviceName: string;
   taskDefinitionFamily: string;
-  serviceDiscoveryType: ServiceDiscoveryType;
+  serviceDiscoveryType?: ServiceDiscoveryType;
   applicationContainer: ApplicationContainer;
-  envoySidecar?: EnvoySidecar;
+  envoyConfiguration?: EnvoyConfiguration;
   xrayContainer?: XrayContainer;
-  proxyConfiguration?: ecs.AppMeshProxyConfiguration;
 }
+
 ```
+
+Note that the `proxyConfiguration` prop in `EnvoyConfiguration` is separate because the Envoy sidecar container can exist own its own without acting as a proxy, but for it to act as a proxy there must be a running container with the name mentioned in the proxy configuration.
 
 These props are passed to instantiate Fargate Services in the ECSServicesStack. Note that `backend-v1` only defines the `xrayContainer` and `applicationContainer` whereas `backend-v2` and `frontend` define all attributes.
 
