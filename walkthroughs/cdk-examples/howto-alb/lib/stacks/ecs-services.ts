@@ -4,7 +4,7 @@ import { MeshStack } from "./mesh-components";
 import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
 import { EnvoySidecar } from "../constructs/envoy-sidecar";
 import { XrayContainer } from "../constructs/xray-container";
-import { buildAppMeshProxy, ServiceDiscoveryType } from "../utils";
+import { ServiceDiscoveryType } from "../utils";
 import { ApplicationContainer } from "../constructs/application-container";
 
 export class ECSServicesStack extends Stack {
@@ -45,14 +45,15 @@ export class ECSServicesStack extends Stack {
       serviceName: ms.sd.base.SERVICE_BACKEND_V2,
       serviceDiscoveryType: ServiceDiscoveryType.CLOUDMAP,
       taskDefinitionFamily: "green",
-      proxyConfiguration: buildAppMeshProxy(ms.sd.base.PORT),
-
       // Containers
-      envoySidecar: new EnvoySidecar(ms, "BackendV2AppMeshEnvoySidecar", {
-        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V2}-envoy`,
-        appMeshResourceArn: ms.backendV2VirtualNode.virtualNodeArn,
-        enableXrayTracing: true,
-      }),
+      envoyConfiguration: {
+        container: new EnvoySidecar(ms, `${this.stackName}BackendV2EnvoySidecar`, {
+          logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V2}-envoy`,
+          appMeshResourceArn: ms.backendV2VirtualNode.virtualNodeArn,
+          enableXrayTracing: true,
+        }),
+        proxyConfiguration: EnvoySidecar.buildAppMeshProxy(ms.sd.base.PORT),
+      },
 
       xrayContainer: new XrayContainer(ms, "BackendV2AppMeshXrayOpts", {
         logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_V2}-xray`,
@@ -81,14 +82,16 @@ export class ECSServicesStack extends Stack {
       serviceName: ms.sd.base.SERVICE_FRONTEND,
       serviceDiscoveryType: ServiceDiscoveryType.DNS,
       taskDefinitionFamily: "front",
-      proxyConfiguration: buildAppMeshProxy(ms.sd.base.PORT),
 
       // Containers
-      envoySidecar: new EnvoySidecar(ms, "FrontendAppMeshEnvoySidecar", {
-        logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-envoy`,
-        appMeshResourceArn: ms.frontendVirtualNode.virtualNodeArn,
-        enableXrayTracing: true,
-      }),
+      envoyConfiguration: {
+        container: new EnvoySidecar(ms, `${this.stackName}FrontendEnvoySidecar`, {
+          logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-envoy`,
+          appMeshResourceArn: ms.frontendVirtualNode.virtualNodeArn,
+          enableXrayTracing: true,
+        }),
+        proxyConfiguration: EnvoySidecar.buildAppMeshProxy(ms.sd.base.PORT),
+      },
 
       xrayContainer: new XrayContainer(ms, "FrontendXrayOpts", {
         logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-xray`,

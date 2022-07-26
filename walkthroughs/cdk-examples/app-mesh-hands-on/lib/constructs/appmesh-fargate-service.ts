@@ -1,10 +1,8 @@
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
-import { Duration } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { MeshStack } from "../stacks/mesh-components";
-import { AppMeshFargateServiceProps, ServiceDiscoveryType } from "../utils";
+import { AppMeshFargateServiceProps } from "../utils";
 
 export class AppMeshFargateService extends Construct {
   taskDefinition: ecs.FargateTaskDefinition;
@@ -12,6 +10,7 @@ export class AppMeshFargateService extends Construct {
   securityGroup: ec2.SecurityGroup;
   envoySidecar: ecs.ContainerDefinition;
   xrayContainer: ecs.ContainerDefinition;
+
   appContainer: ecs.ContainerDefinition;
 
   constructor(ms: MeshStack, id: string, props: AppMeshFargateServiceProps) {
@@ -20,7 +19,7 @@ export class AppMeshFargateService extends Construct {
     this.securityGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
       vpc: ms.sd.base.vpc,
     });
-    this.allowIpv4IngressForTcpPorts(this.securityGroup, [80, 8080]);
+    this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(ms.sd.base.PORT));
 
     const proxyConfiguration =
       props.envoyConfiguration &&
@@ -74,41 +73,18 @@ export class AppMeshFargateService extends Construct {
       }
     }
 
+    const serviceNamePrefix = this.envoySidecar ? "meshified-" : "";
     this.service = new ecs.FargateService(this, `${props.serviceName}Service`, {
-      serviceName: props.serviceName,
+      serviceName: `${serviceNamePrefix}${props.serviceName}`,
       cluster: ms.sd.base.cluster,
       taskDefinition: this.taskDefinition,
       securityGroups: [this.securityGroup],
+      assignPublicIp: true,
     });
-
-    if (props.serviceDiscoveryType == ServiceDiscoveryType.DNS) {
-      const loadBalancer = ms.sd.getAlbForService(props.serviceName);
-      const listener = loadBalancer.addListener(`${props.serviceName}Listener`, {
-        port: props.serviceName == ms.sd.base.SERVICE_FRONTEND ? 80 : ms.sd.base.PORT,
-        open: true,
-      });
-      this.service.registerLoadBalancerTargets({
-        containerName: this.appContainer.containerName,
-        containerPort: ms.sd.base.PORT,
-        newTargetGroupId: `${props.serviceName}TargetGroup`,
-        listener: ecs.ListenerConfig.applicationListener(listener, {
-          protocol: elbv2.ApplicationProtocol.HTTP,
-          healthCheck: {
-            path: "/ping",
-            port: ms.sd.base.PORT.toString(),
-            interval: Duration.seconds(60),
-          },
-        }),
-      });
-    } else if (props.serviceDiscoveryType == ServiceDiscoveryType.CLOUDMAP) {
-      this.service.associateCloudMapService({
-        container: this.appContainer,
-        containerPort: ms.sd.base.PORT,
-        service: ms.sd.backendV2CloudMapService,
-      });
-    }
+    this.service.associateCloudMapService({
+      container: this.appContainer,
+      containerPort: ms.sd.base.PORT,
+      service: ms.sd.getCloudMapService(props.serviceName),
+    });
   }
-  private allowIpv4IngressForTcpPorts = (securityGroup: ec2.SecurityGroup, ports: number[]): void => {
-    ports.forEach((port) => securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(port)));
-  };
 }

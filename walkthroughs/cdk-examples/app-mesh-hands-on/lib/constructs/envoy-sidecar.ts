@@ -3,6 +3,7 @@ import { Duration } from "aws-cdk-lib";
 import { MeshStack } from "../stacks/mesh-components";
 import { EnvoyContainerProps } from "../utils";
 import { Construct } from "constructs";
+
 export class EnvoySidecar extends Construct {
   public readonly options: ecs.ContainerDefinitionOptions;
   constructor(ms: MeshStack, id: string, props: EnvoyContainerProps) {
