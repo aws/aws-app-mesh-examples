@@ -6,7 +6,7 @@ import * as path from "path";
 import * as shell from "child_process";
 
 export class SecretsStack extends Stack {
-  readonly CERT_DIR: string = "../../src/tlsCertificates";
+  readonly certDir: string = "../../src/tlsCertificates";
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -16,7 +16,7 @@ export class SecretsStack extends Stack {
       Object.entries(this.fetchCertificateContents()).forEach(([certName, certContent]) => {
         new secrets_mgr.Secret(this, `${this.stackName}${certName}`, {
           secretName: certName,
-          description: "OpenSSL certificate",
+          description: `Plaintext secret: ${certName}`,
           secretStringValue: SecretValue.unsafePlainText(certContent),
           removalPolicy: RemovalPolicy.DESTROY,
         });
@@ -25,25 +25,25 @@ export class SecretsStack extends Stack {
   }
 
   private generateNewCertificates = (): void => {
-    const files = fs.readdirSync(path.join(__dirname, this.CERT_DIR));
+    const files = fs.readdirSync(path.join(__dirname, this.certDir));
     files
       .filter((file) => file.endsWith(".pem") || file.endsWith(".generated"))
       .forEach((file) => {
-        fs.unlinkSync(path.join(__dirname, this.CERT_DIR, file));
+        fs.unlinkSync(path.join(__dirname, this.certDir, file));
       });
 
     process.env.SERVICES_DOMAIN = this.node.tryGetContext("SERVICES_DOMAIN");
-    shell.execFileSync(path.join(__dirname, this.CERT_DIR, "certs.sh"));
+    shell.execFileSync(path.join(__dirname, this.certDir, "certs.sh"));
   };
 
   private fetchCertificateContents = (): { [key: string]: string } => {
     const certContents: { [key: string]: string } = {};
-    const files = fs.readdirSync(path.join(__dirname, this.CERT_DIR));
+    const files = fs.readdirSync(path.join(__dirname, this.certDir));
 
     files
       .filter((file) => file.endsWith(".pem") && !["ca_1_key.pem", "ca_2_key.pem"].includes(file))
       .forEach((file) => {
-        const content = fs.readFileSync(path.join(__dirname, this.CERT_DIR, file));
+        const content = fs.readFileSync(path.join(__dirname, this.certDir, file));
         certContents[file.replace(".pem", "")] = content.toString();
       });
     return certContents;

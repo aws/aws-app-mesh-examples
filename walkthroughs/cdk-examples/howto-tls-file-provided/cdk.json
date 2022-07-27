@@ -30,7 +30,6 @@
     "MESH_NAME": "ColorApp-TLS",
     "ENVOY_IMAGE": "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.21.2.0-prod",
     "SERVICES_DOMAIN": "default.svc.cluster.local",
-    "KEY_PAIR_NAME": "mykp",
     "GO_PROXY": "direct"
   }
 }

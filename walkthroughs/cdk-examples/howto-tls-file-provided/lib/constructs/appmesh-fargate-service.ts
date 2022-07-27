@@ -17,15 +17,15 @@ export class AppMeshFargateService extends Construct {
   appContainer: ecs.ContainerDefinition;
   cfnService: ecs.CfnService;
 
-  constructor(ms: MeshStack, id: string, props: AppMeshFargateServiceProps) {
-    super(ms, id);
+  constructor(mesh: MeshStack, id: string, props: AppMeshFargateServiceProps) {
+    super(mesh, id);
 
     this.securityGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
-      vpc: ms.serviceDiscovery.infra.vpc,
+      vpc: mesh.serviceDiscovery.infra.vpc,
     });
     this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic());
 
-    const isGatewayService = props.serviceName == ms.serviceDiscovery.infra.SERVICE_GATEWAY;
+    const isGatewayService = props.serviceName == mesh.serviceDiscovery.infra.serviceGateway;
     const proxyConfiguration =
       props.envoyConfiguration && props.envoyConfiguration.container && props.envoyConfiguration.proxyConfiguration
         ? props.envoyConfiguration.proxyConfiguration
@@ -33,8 +33,8 @@ export class AppMeshFargateService extends Construct {
 
     this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}TaskDefinition`, {
       proxyConfiguration: proxyConfiguration,
-      executionRole: ms.serviceDiscovery.infra.executionRole,
-      taskRole: ms.serviceDiscovery.infra.taskRole,
+      executionRole: mesh.serviceDiscovery.infra.executionRole,
+      taskRole: mesh.serviceDiscovery.infra.taskRole,
       family: props.taskDefinitionFamily,
     });
 
@@ -73,7 +73,7 @@ export class AppMeshFargateService extends Construct {
 
     this.service = new ecs.FargateService(this, `${props.serviceName}Service`, {
       serviceName: props.serviceName,
-      cluster: ms.serviceDiscovery.infra.cluster,
+      cluster: mesh.serviceDiscovery.infra.cluster,
       taskDefinition: this.taskDefinition,
       securityGroups: [this.securityGroup],
       assignPublicIp: isGatewayService,
@@ -82,7 +82,7 @@ export class AppMeshFargateService extends Construct {
     });
 
     if (isGatewayService) {
-      const listener = ms.serviceDiscovery.publicLoadBalancer.addListener(`${props.serviceName}Listener`, {
+      const listener = mesh.serviceDiscovery.publicLoadBalancer.addListener(`${props.serviceName}Listener`, {
         port: 80,
         open: true,
       });
@@ -103,7 +103,7 @@ export class AppMeshFargateService extends Construct {
       this.service.associateCloudMapService({
         container: this.appContainer,
         containerPort: 80,
-        service: ms.serviceDiscovery.getCloudMapSerivce(props.serviceName),
+        service: mesh.serviceDiscovery.getCloudMapSerivce(props.serviceName),
       });
     }
   }

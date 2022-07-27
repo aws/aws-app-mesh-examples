@@ -1,21 +1,30 @@
 import * as appmesh from "aws-cdk-lib/aws-appmesh";
 import { StackProps, Stack } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
-import { MeshUpdateChoices } from "../utils";
+import { MeshUpdateChoice } from "../utils";
 
 export class MeshStack extends Stack {
-  serviceDiscovery: ServiceDiscoveryStack;
-  mesh: appmesh.Mesh;
+  readonly serviceDiscovery: ServiceDiscoveryStack;
+  readonly mesh: appmesh.Mesh;
 
-  virtualNodeWhite: appmesh.VirtualNode;
-  virtualNodeGreen: appmesh.VirtualNode;
+  readonly virtualNodeWhite: appmesh.VirtualNode;
+  readonly virtualNodeGreen: appmesh.VirtualNode;
 
-  virtualGateway: appmesh.VirtualGateway;
+  readonly virtualGateway: appmesh.VirtualGateway;
 
-  virtualRouter: appmesh.VirtualRouter;
-  route: appmesh.Route;
+  readonly virtualRouter: appmesh.VirtualRouter;
+  readonly route: appmesh.Route;
 
-  virtualService: appmesh.VirtualService;
+  readonly virtualService: appmesh.VirtualService;
+
+  readonly whiteCertChainPath: string = "/keys/colorteller_white_cert_chain.pem";
+  readonly whitePrivateKeyPath: string = "/keys/colorteller_white_key.pem";
+
+  readonly greenCertChainPath: string = "/keys/colorteller_green_cert_chain.pem";
+  readonly greenPrivateKeyPath: string = "/keys/colorteller_green_key.pem";
+
+  readonly ca1CertPath: string = "/keys/ca_1_cert.pem";
+  readonly bundleCertPath: string = "/keys/ca_1_ca_2_bundle.pem";
 
   constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: StackProps) {
     super(serviceDiscovery, id, props);
@@ -23,17 +32,27 @@ export class MeshStack extends Stack {
     this.serviceDiscovery = serviceDiscovery;
 
     const meshUpdateChoice = this.node.tryGetContext("mesh-update");
-
     this.mesh = new appmesh.Mesh(this, `${this.stackName}Mesh`, {
       meshName: this.node.tryGetContext("MESH_NAME"),
     });
+
+    const greenVnWeight: number = meshUpdateChoice ? 50 : 0;
+    const whiteVnWeight: number = greenVnWeight == 0 ? 100 : 50;
+
+    console.log(
+      "\n\n",
+      " ------- ",
+      `Green VN Weight = ${greenVnWeight}`,
+      `White VN Weight = ${whiteVnWeight}`,
+      " ------- "
+    );
 
     this.virtualGateway = new appmesh.VirtualGateway(this, `${this.stackName}VirtualGateway`, {
       mesh: this.mesh,
       virtualGatewayName: "ColorGateway",
       listeners: [appmesh.VirtualGatewayListener.http({ port: 8080 })],
       backendDefaults:
-        meshUpdateChoice == MeshUpdateChoices.ADD_GREEN_VN
+        meshUpdateChoice == MeshUpdateChoice.ADD_GREEN_VN
           ? undefined
           : {
               tlsClientPolicy: {
@@ -46,16 +65,16 @@ export class MeshStack extends Stack {
 
     this.virtualNodeWhite = this.buildTlsEnabledVirtualNode(
       "ColorTellerWhite",
-      this.serviceDiscovery.infra.SERVICE_WHITE,
-      "/keys/colorteller_white_cert_chain.pem",
-      "/keys/colorteller_white_key.pem"
+      this.serviceDiscovery.infra.serviceWhite,
+      this.whiteCertChainPath,
+      this.whitePrivateKeyPath
     );
 
     this.virtualNodeGreen = this.buildTlsEnabledVirtualNode(
       "ColorTellerGreen",
-      this.serviceDiscovery.infra.SERVICE_GREEN,
-      "/keys/colorteller_green_cert_chain.pem",
-      "/keys/colorteller_green_key.pem"
+      this.serviceDiscovery.infra.serviceGreen,
+      this.greenCertChainPath,
+      this.greenPrivateKeyPath
     );
 
     this.virtualRouter = new appmesh.VirtualRouter(this, `${this.stackName}VritualRouter`, {
@@ -72,11 +91,11 @@ export class MeshStack extends Stack {
         weightedTargets: [
           {
             virtualNode: this.virtualNodeWhite,
-            weight: 1,
+            weight: whiteVnWeight,
           },
           {
             virtualNode: this.virtualNodeGreen,
-            weight: meshUpdateChoice ? 1 : 0,
+            weight: greenVnWeight,
           },
         ],
       }),
@@ -94,9 +113,8 @@ export class MeshStack extends Stack {
       }),
     });
   }
-
-  private fetchClientTlsCert = (meshUpdateChoice: MeshUpdateChoices): string => {
-    return meshUpdateChoice == MeshUpdateChoices.ADD_BUNDLE ? "/keys/ca_1_ca_2_bundle.pem" : "/keys/ca_1_cert.pem";
+  private fetchClientTlsCert = (meshUpdateChoice: MeshUpdateChoice): string => {
+    return meshUpdateChoice == MeshUpdateChoice.ADD_BUNDLE ? this.bundleCertPath : this.ca1CertPath;
   };
 
   private buildTlsEnabledVirtualNode = (

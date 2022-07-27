@@ -3,7 +3,7 @@ import { StackProps } from "aws-cdk-lib";
 import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
 
-export enum MeshUpdateChoices {
+export enum MeshUpdateChoice {
   ADD_GREEN_VN = "add-green-vn",
   ADD_CA1 = "add-ca1",
   ADD_BUNDLE = "add-bundle",
@@ -35,7 +35,7 @@ export interface ApplicationContainerProps extends CustomContainerProps {
 }
 
 export interface EnvoyConfiguration {
-  container?: EnvoySidecar;
+  container: EnvoySidecar;
   proxyConfiguration?: ecs.ProxyConfiguration;
 }
 

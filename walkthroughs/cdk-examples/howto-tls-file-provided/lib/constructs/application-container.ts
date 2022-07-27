@@ -5,13 +5,13 @@ import { ApplicationContainerProps } from "../utils";
 
 export class ApplicationContainer extends Construct {
   public options: ecs.ContainerDefinitionOptions;
-  constructor(ms: MeshStack, id: string, props: ApplicationContainerProps) {
-    super(ms, id);
+  constructor(mesh: MeshStack, id: string, props: ApplicationContainerProps) {
+    super(mesh, id);
     this.options = {
       image: props.image,
       containerName: "app",
       logging: ecs.LogDriver.awsLogs({
-        logGroup: ms.serviceDiscovery.infra.logGroup,
+        logGroup: mesh.serviceDiscovery.infra.logGroup,
         streamPrefix: props.logStreamPrefix,
       }),
       environment: props.env,
