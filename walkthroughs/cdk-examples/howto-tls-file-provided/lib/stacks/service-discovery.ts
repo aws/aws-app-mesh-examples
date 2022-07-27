@@ -71,11 +71,11 @@ export class ServiceDiscoveryStack extends Stack {
 
   public getCloudMapSerivce = (serviceName: string): service_discovery.Service => {
     switch (serviceName.toLowerCase()) {
-      case this.infra.SERVICE_GATEWAY:
+      case this.infra.serviceGateway:
         return this.colorTellerGatewayServiceDiscovery;
-      case this.infra.SERVICE_WHITE:
+      case this.infra.serviceWhite:
         return this.colorTellerWhiteServiceDiscovery;
-      case this.infra.SERVICE_GREEN:
+      case this.infra.serviceGreen:
         return this.colorTellerGreenServiceDiscovery;
       default:
         return this.colorTellerWhiteServiceDiscovery;
@@ -83,13 +83,6 @@ export class ServiceDiscoveryStack extends Stack {
   };
 
   public getAppMeshServiceDiscovery = (serviceName: string): appmesh.ServiceDiscovery => {
-    switch (serviceName.toLowerCase()) {
-      case this.infra.SERVICE_WHITE:
-        return appmesh.ServiceDiscovery.cloudMap(this.colorTellerWhiteServiceDiscovery);
-      case this.infra.SERVICE_GREEN:
-        return appmesh.ServiceDiscovery.cloudMap(this.colorTellerGreenServiceDiscovery);
-      default:
-        return appmesh.ServiceDiscovery.cloudMap(this.colorTellerWhiteServiceDiscovery);
-    }
+    return appmesh.ServiceDiscovery.cloudMap(this.getCloudMapSerivce(serviceName));
   };
 }

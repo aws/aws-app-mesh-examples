@@ -25,14 +25,11 @@ export class InfraStack extends Stack {
   readonly taskRole: iam.Role;
   readonly executionRole: iam.Role;
 
-  readonly SERVICE_WHITE: string = "white";
-  readonly SERVICE_GREEN: string = "green";
-  readonly SERVICE_GATEWAY: string = "gateway";
+  readonly serviceWhite: string = "white";
+  readonly serviceGreen: string = "green";
+  readonly serviceGateway: string = "gateway";
 
-  readonly PORT_BACKEND: number = 80;
-  readonly PORT_FRONTEND: number = 8080;
-
-  readonly APP_DIR: string = "../../src";
+  readonly appDir: string = "../../src";
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -80,10 +77,10 @@ export class InfraStack extends Stack {
       instanceType: ec2.InstanceType.of(InstanceClass.T2, InstanceSize.MICRO),
       subnetSelection: { subnetType: ec2.SubnetType.PUBLIC },
     });
-    this.bastionHost.instance.instance.addPropertyOverride("KeyName", this.node.tryGetContext("KEY_PAIR_NAME"));
+    this.bastionHost.instance.instance.addPropertyOverride("KeyName", process.env.KEY_PAIR_NAME!);
 
     this.customEnvoyImageAsset = this.buildImageAsset(
-      path.join(__dirname, this.APP_DIR, "customEnvoyImage"),
+      path.join(__dirname, this.appDir, "customEnvoyImage"),
       "CustomEnvoyImage",
       {
         AWS_DEFAULT_REGION: process.env.CDK_DEFAULT_REGION!,
@@ -92,7 +89,7 @@ export class InfraStack extends Stack {
     );
 
     this.colorTellerImageAsset = this.buildImageAsset(
-      path.join(__dirname, this.APP_DIR, "colorteller"),
+      path.join(__dirname, this.appDir, "colorteller"),
       "ColorTellerImage",
       {
         GO_PROXY: this.node.tryGetContext("GO_PROXY"),
