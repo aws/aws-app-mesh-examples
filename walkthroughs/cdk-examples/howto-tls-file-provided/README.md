@@ -109,12 +109,12 @@ You can verify that the White Color Teller certificate was signed by CA 1 using 
 ```bash
 openssl verify -verbose -CAfile src/tlsCertificates/ca_1_cert.pem  src/tlsCertificates/colorteller_white_cert.pem
 ```
+
 You should see a response saying `OK`
 
 ```bash
 src/tlsCertificates/colorteller_white_cert.pem: OK
 ```
-
 
 To store these certficates in Envoy, we build a custom Docker Image `src/customEnvoyImage/Dockerfile` and deploy it to Amazon Elastic Container Registry (ECR). To do this, we make use of the [`aws-ecr-assets.DockerImageAsset`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr_assets.DockerImageAsset.html) construct in the `InfraStack` (`lib/stacks/infra.ts`).
 
@@ -122,7 +122,7 @@ This image stores certfiicates in the `/keys` directory, which will be reference
 
 ## Testing the SSL Handshake
 
-- Copy the `BastionIP` output from before and run the following command.
+- Run the following command.
 
 ```bash
 ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
