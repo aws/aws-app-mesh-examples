@@ -71,10 +71,6 @@ export class EcsServicesStack extends Stack {
     gateway.node.addDependency(white);
     gateway.node.addDependency(green);
 
-
-    const bastionIp = mesh.serviceDiscovery.infra.bastionHost.instancePublicIp;
-    const url = mesh.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName;
-
     new CfnOutput(this, "BastionIP", { value: mesh.serviceDiscovery.infra.bastionHost.instancePublicIp });
     new CfnOutput(this, "URL", { value: mesh.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName });
   }
