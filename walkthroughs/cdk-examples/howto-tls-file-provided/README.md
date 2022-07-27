@@ -39,6 +39,9 @@ Optional: If you want to create a new key-pair, run these commands:
 
 ```bash
 aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | jq -r .KeyMaterial > ~/.ssh/$KEY_PAIR_NAME.pem
+```
+
+```bash
 chmod 400 ~/.ssh/$KEY_PAIR_NAME.pem
 ```
 
@@ -106,8 +109,14 @@ You can verify that the White Color Teller certificate was signed by CA 1 using 
 ```bash
 openssl verify -verbose -CAfile src/tlsCertificates/ca_1_cert.pem  src/tlsCertificates/colorteller_white_cert.pem
 ```
+You should see a response saying `OK`
 
-To store these certficates in Envoy, we build a custom Docker Image `src/customEnvoyImage/Dockerfile` and deploy it to Amazon Elastic Container Registry (ECR). To do this, we make use of the `aws-ecr-assets.DockerImageAsset` construct in the `InfraStack` (`lib/stacks/infra.ts`).
+```bash
+src/tlsCertificates/colorteller_white_cert.pem: OK
+```
+
+
+To store these certficates in Envoy, we build a custom Docker Image `src/customEnvoyImage/Dockerfile` and deploy it to Amazon Elastic Container Registry (ECR). To do this, we make use of the [`aws-ecr-assets.DockerImageAsset`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr_assets.DockerImageAsset.html) construct in the `InfraStack` (`lib/stacks/infra.ts`).
 
 This image stores certfiicates in the `/keys` directory, which will be referenced by the virtual nodes for TLS encryption.
 
@@ -139,7 +148,7 @@ curl $URL/color
 WHITE%
 ```
 
-- We can see that the White Color Teller returns a response
+- We can see that the White Color Teller returns a response.
 
 ## Client TLS Validation
 
@@ -147,7 +156,7 @@ Enabling TLS communication from your virtual node is the first step to securing 
 
 App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
 
-- To update the mesh such that traffic is routed to the Green Color Teller node, we need to perform another deployment. Since, we have already generated the certficates, we don't need to deploy them again.
+- To update the mesh such that traffic is routed to the Green Color Teller node, we need to perform another deployment. Since we have already generated the certficates, we don't need to deploy them again.
 
 ```bash
 cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=add-green-vn
@@ -189,7 +198,7 @@ upstream connect error or disconnect/reset before headers. reset reason: connect
 
 ## Restoring Communication with the Green Color Teller
 
-We can restore communication by changing the `certificateChain` in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instruct Envoy to accept certificates signed by both CA 1 and CA 2.
+We can restore communication by changing the certificate chain in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instruct Envoy to accept certificates signed by both CA 1 and CA 2.
 
 - To update the mesh such that the virtual gateway trusts CA 1 and CA 2, we will provision another deployment.
 
@@ -233,7 +242,7 @@ _Note - The `cdk bootstrap` command provisions a `CDKToolkit` Stack to deploy AW
 1. `MeshStack` - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual gateway.
 1. `EcsServicesStack` - this stack provisions the 3 Fargate services using a custom construct `AppMeshFargateService` which encapsulates the application container and Envoy sidecar/proxy into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
 
-Two more constructs - `EnvoySidecar` and `ApplicationContainer` bundle the common container options used by these Fargate services.
+Two more constructs - `EnvoySidecar` and `ApplicationContainer` bundle the common container options used by these Fargate service task definitions.
 
 <p align="center">
   <img src="assets/stacks_tls.png">

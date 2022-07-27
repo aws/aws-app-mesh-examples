@@ -31,10 +31,21 @@ export class MeshStack extends Stack {
 
     this.serviceDiscovery = serviceDiscovery;
 
-    const meshUpdateChoice = this.node.tryGetContext("mesh-update");
+    let meshUpdateChoice = this.node.tryGetContext("mesh-update");
+
     this.mesh = new appmesh.Mesh(this, `${this.stackName}Mesh`, {
       meshName: this.node.tryGetContext("MESH_NAME"),
     });
+
+    if (meshUpdateChoice && meshUpdateChoice! in MeshUpdateChoice) {
+      console.log(
+        new Error("Invalid choice for mesh-update\n"),
+        "Valid choices are\n",
+        Object.values(MeshUpdateChoice)
+      );
+      meshUpdateChoice = MeshUpdateChoice.ADD_GREEN_VN;
+      console.log("Defaulting to mesh-upate=add-green-vn");
+    }
 
     const greenVnWeight: number = meshUpdateChoice ? 50 : 0;
     const whiteVnWeight: number = greenVnWeight == 0 ? 100 : 50;
@@ -42,7 +53,7 @@ export class MeshStack extends Stack {
     console.log(
       "\n\n",
       " ------- ",
-      `Green VN Weight = ${greenVnWeight}`,
+      `Green VN Weight = ${greenVnWeight}, `,
       `White VN Weight = ${whiteVnWeight}`,
       " ------- "
     );
