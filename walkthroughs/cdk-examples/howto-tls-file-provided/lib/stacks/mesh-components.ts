@@ -37,14 +37,16 @@ export class MeshStack extends Stack {
       meshName: this.node.tryGetContext("MESH_NAME"),
     });
 
-    if (meshUpdateChoice && meshUpdateChoice! in MeshUpdateChoice) {
+    if (meshUpdateChoice != undefined && !Object.values(MeshUpdateChoice).includes(meshUpdateChoice)) {
+      meshUpdateChoice = undefined;
+      console.log("\n\n -------------------------------------------------------- \n\n");
       console.log(
-        new Error("Invalid choice for mesh-update\n"),
-        "Valid choices are\n",
-        Object.values(MeshUpdateChoice)
+        "Invalid choice for mesh-update, valid choices are: \n",
+        Object.values(MeshUpdateChoice),
+        " or undefined\n"
       );
-      meshUpdateChoice = MeshUpdateChoice.ADD_GREEN_VN;
-      console.log("Defaulting to mesh-upate=add-green-vn");
+      console.log("Defaulting to mesh-update = undefined");
+      console.log("\n\n -------------------------------------------------------- \n\n");
     }
 
     const greenVnWeight: number = meshUpdateChoice ? 50 : 0;
@@ -55,7 +57,7 @@ export class MeshStack extends Stack {
       " ------- ",
       `Green VN Weight = ${greenVnWeight}, `,
       `White VN Weight = ${whiteVnWeight}`,
-      " ------- "
+      " ------- \n\n"
     );
 
     this.virtualGateway = new appmesh.VirtualGateway(this, `${this.stackName}VirtualGateway`, {
