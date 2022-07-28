@@ -141,7 +141,7 @@ listener.0.0.0.0_15000.ssl.handshake: 1
 
 ## White Color Teller Response
 
-- Copy the `URL` output from before and run the following command
+- Let's query the gateway load balancer.
 
 ```bash
 curl $URL/color
