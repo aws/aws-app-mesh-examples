@@ -45,6 +45,8 @@ aws ec2 create-key-pair --key-name $KEY_PAIR_NAME | jq -r .KeyMaterial > ~/.ssh/
 chmod 400 ~/.ssh/$KEY_PAIR_NAME.pem
 ```
 
+Optional: Note that the example apps use Go modules. By default `"GO_PROXY": "direct"` in `cdk.json`. You can change this to `"GO_PROXY": "https://proxy.golang.org"`.
+
 We can now provision our infrastructure through CDK.
 
 ```bash
