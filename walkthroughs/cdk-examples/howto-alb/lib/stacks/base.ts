@@ -22,18 +22,18 @@ export class BaseStack extends Stack {
   readonly executionRole: iam.Role;
   readonly taskRole: iam.Role;
 
-  readonly PROJECT_NAME: string;
-  readonly PORT: number;
+  readonly projectName: string;
+  readonly port: number;
 
-  public readonly SERVICE_BACKEND_V1 = "backend-v1";
-  public readonly SERVICE_BACKEND_V2 = "backend-v2";
-  public readonly SERVICE_FRONTEND = "frontend";
+  readonly serviceBackend1 = "backend-v1";
+  readonly serviceBackend2 = "backend-v2";
+  readonly serviceFrontend = "frontend";
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    this.PROJECT_NAME = this.node.tryGetContext("PROJECT_NAME");
-    this.PORT = this.node.tryGetContext("CONTAINER_PORT");
+    this.projectName = this.node.tryGetContext("PROJECT_NAME");
+    this.port = this.node.tryGetContext("CONTAINER_PORT");
 
     this.taskRole = new iam.Role(this, `${this.stackName}TaskRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
@@ -55,22 +55,22 @@ export class BaseStack extends Stack {
     });
 
     this.cluster = new ecs.Cluster(this, `${this.stackName}Cluster`, {
-      clusterName: this.PROJECT_NAME,
+      clusterName: this.projectName,
       vpc: this.vpc,
     });
 
     this.dnsHostedZone = new route53.HostedZone(this, `${this.stackName}DNSHostedZone`, {
-      zoneName: `${this.PROJECT_NAME}.hosted.local`,
+      zoneName: `${this.projectName}.hosted.local`,
       vpcs: [this.vpc],
     });
 
     this.dnsNameSpace = new service_discovery.PrivateDnsNamespace(this, `${this.stackName}DNSNamespace`, {
-      name: `${this.PROJECT_NAME}.pvt.local`,
+      name: `${this.projectName}.pvt.local`,
       vpc: this.vpc,
     });
 
     this.logGroup = new logs.LogGroup(this, `${this.stackName}_LogGroup`, {
-      logGroupName: `${this.PROJECT_NAME}-log-group`,
+      logGroupName: `${this.projectName}-log-group`,
       retention: logs.RetentionDays.ONE_DAY,
       removalPolicy: RemovalPolicy.DESTROY,
     });

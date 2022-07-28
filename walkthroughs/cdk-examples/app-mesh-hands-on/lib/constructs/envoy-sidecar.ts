@@ -6,14 +6,14 @@ import { Construct } from "constructs";
 
 export class EnvoySidecar extends Construct {
   public readonly options: ecs.ContainerDefinitionOptions;
-  constructor(ms: MeshStack, id: string, props: EnvoyContainerProps) {
-    super(ms, id);
+  constructor(mesh: MeshStack, id: string, props: EnvoyContainerProps) {
+    super(mesh, id);
 
     this.options = {
       image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_ENVOY")),
       containerName: "envoy",
       logging: ecs.LogDriver.awsLogs({
-        logGroup: ms.sd.base.logGroup,
+        logGroup: mesh.serviceDiscovery.base.logGroup,
         streamPrefix: props.logStreamPrefix,
       }),
       environment: {

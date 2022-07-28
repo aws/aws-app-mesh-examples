@@ -4,11 +4,11 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import { BaseStack } from "./base";
 
 export class ServiceDiscoveryStack extends Stack {
-  base: BaseStack;
+  readonly base: BaseStack;
 
-  backendV1CloudMapService: service_discovery.Service;
-  backendV2CloudMapService: service_discovery.Service;
-  frontendCloudMapService: service_discovery.Service;
+  readonly backendV1CloudMapService: service_discovery.Service;
+  readonly backendV2CloudMapService: service_discovery.Service;
+  readonly frontendCloudMapService: service_discovery.Service;
 
   constructor(base: BaseStack, id: string, props?: StackProps) {
     super(base, id, props);
@@ -17,17 +17,17 @@ export class ServiceDiscoveryStack extends Stack {
 
     this.backendV1CloudMapService = this.base.dnsNameSpace.createService(
       `${this.stackName}BackendV1CloudMapService`,
-      this.buildDnsServiceProps(base.SERVICE_BACKEND)
+      this.buildDnsServiceProps(base.serviceBackend)
     );
 
     this.backendV2CloudMapService = this.base.dnsNameSpace.createService(
       `${this.stackName}BackendV2CloudMapService`,
-      this.buildDnsServiceProps(base.SERVICE_BACKEND_1)
+      this.buildDnsServiceProps(base.serviceBackend1)
     );
 
     this.frontendCloudMapService = this.base.dnsNameSpace.createService(
       `${this.stackName}FrontendCloudMapService`,
-      this.buildDnsServiceProps(base.SERVICE_FRONTEND)
+      this.buildDnsServiceProps(base.serviceFrontend)
     );
   }
 
@@ -43,11 +43,11 @@ export class ServiceDiscoveryStack extends Stack {
 
   public getCloudMapService(serviceName: string): service_discovery.Service {
     switch (serviceName) {
-      case this.base.SERVICE_BACKEND:
+      case this.base.serviceBackend:
         return this.backendV1CloudMapService;
-      case this.base.SERVICE_BACKEND_1:
+      case this.base.serviceBackend1:
         return this.backendV2CloudMapService;
-      case this.base.SERVICE_FRONTEND:
+      case this.base.serviceFrontend:
         return this.frontendCloudMapService;
       default:
         return this.backendV1CloudMapService;
@@ -55,15 +55,6 @@ export class ServiceDiscoveryStack extends Stack {
   }
 
   public getAppMeshServiceDiscovery(serviceName: string): appmesh.ServiceDiscovery {
-    switch (serviceName) {
-      case this.base.SERVICE_BACKEND:
-        return appmesh.ServiceDiscovery.cloudMap(this.backendV1CloudMapService);
-      case this.base.SERVICE_BACKEND_1:
-        return appmesh.ServiceDiscovery.cloudMap(this.backendV2CloudMapService);
-      case this.base.SERVICE_FRONTEND:
-        return appmesh.ServiceDiscovery.cloudMap(this.frontendCloudMapService);
-      default:
-        return appmesh.ServiceDiscovery.cloudMap(this.backendV1CloudMapService);
-    }
+    return appmesh.ServiceDiscovery.cloudMap(this.getCloudMapService(serviceName));
   }
 }

@@ -5,14 +5,14 @@ import { XrayContainerProps } from "../utils";
 
 export class XrayContainer extends Construct {
   public readonly options: ecs.ContainerDefinitionOptions;
-  constructor(ms: MeshStack, id: string, props: XrayContainerProps) {
-    super(ms, id);
+  constructor(mesh: MeshStack, id: string, props: XrayContainerProps) {
+    super(mesh, id);
 
     this.options = {
       image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_XRAY")),
       containerName: "xray",
       logging: ecs.LogDriver.awsLogs({
-        logGroup: ms.sd.base.logGroup,
+        logGroup: mesh.serviceDiscovery.base.logGroup,
         streamPrefix: props.logStreamPrefix,
       }),
       user: "1337",

@@ -13,25 +13,23 @@ export class AppMeshFargateService extends Construct {
 
   appContainer: ecs.ContainerDefinition;
 
-  constructor(ms: MeshStack, id: string, props: AppMeshFargateServiceProps) {
-    super(ms, id);
+  constructor(mesh: MeshStack, id: string, props: AppMeshFargateServiceProps) {
+    super(mesh, id);
 
     this.securityGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
-      vpc: ms.sd.base.vpc,
+      vpc: mesh.serviceDiscovery.base.vpc,
     });
-    this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(ms.sd.base.PORT));
+    this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(mesh.serviceDiscovery.base.port));
 
     const proxyConfiguration =
-      props.envoyConfiguration &&
-      props.envoyConfiguration.container &&
-      props.envoyConfiguration.proxyConfiguration
+      props.envoyConfiguration && props.envoyConfiguration.container && props.envoyConfiguration.proxyConfiguration
         ? props.envoyConfiguration.proxyConfiguration
         : undefined;
 
     this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}TaskDefinition`, {
       proxyConfiguration: proxyConfiguration,
-      executionRole: ms.sd.base.executionRole,
-      taskRole: ms.sd.base.taskRole,
+      executionRole: mesh.serviceDiscovery.base.executionRole,
+      taskRole: mesh.serviceDiscovery.base.taskRole,
       family: props.taskDefinitionFamily,
     });
 
@@ -76,15 +74,15 @@ export class AppMeshFargateService extends Construct {
     const serviceNamePrefix = this.envoySidecar ? "meshified-" : "";
     this.service = new ecs.FargateService(this, `${props.serviceName}Service`, {
       serviceName: `${serviceNamePrefix}${props.serviceName}`,
-      cluster: ms.sd.base.cluster,
+      cluster: mesh.serviceDiscovery.base.cluster,
       taskDefinition: this.taskDefinition,
       securityGroups: [this.securityGroup],
       assignPublicIp: true,
     });
     this.service.associateCloudMapService({
       container: this.appContainer,
-      containerPort: ms.sd.base.PORT,
-      service: ms.sd.getCloudMapService(props.serviceName),
+      containerPort: mesh.serviceDiscovery.base.port,
+      service: mesh.serviceDiscovery.getCloudMapService(props.serviceName),
     });
   }
 }

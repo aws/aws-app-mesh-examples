@@ -3,26 +3,26 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
 
 export class MeshStack extends Stack {
-  mesh: appmesh.Mesh;
-  virtualNodeListender: appmesh.VirtualNodeListener;
+  readonly mesh: appmesh.Mesh;
+  readonly virtualNodeListender: appmesh.VirtualNodeListener;
 
-  backendV1VirtualNode: appmesh.VirtualNode;
-  backendV2VirtualNode: appmesh.VirtualNode;
-  backendVirtualRouter: appmesh.VirtualRouter;
-  backendVirtualService: appmesh.VirtualService;
-  backendRoute: appmesh.Route;
+  readonly backendV1VirtualNode: appmesh.VirtualNode;
+  readonly backendV2VirtualNode: appmesh.VirtualNode;
+  readonly backendVirtualRouter: appmesh.VirtualRouter;
+  readonly backendVirtualService: appmesh.VirtualService;
+  readonly backendRoute: appmesh.Route;
 
-  frontendVirtualNode: appmesh.VirtualNode;
-  frontendVirtualService: appmesh.VirtualService;
+  readonly frontendVirtualNode: appmesh.VirtualNode;
+  readonly frontendVirtualService: appmesh.VirtualService;
 
-  sd: ServiceDiscoveryStack;
+  readonly serviceDiscovery: ServiceDiscoveryStack;
 
-  constructor(sd: ServiceDiscoveryStack, id: string, props?: StackProps) {
-    super(sd, id, props);
+  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: StackProps) {
+    super(serviceDiscovery, id, props);
 
-    this.sd = sd;
+    this.serviceDiscovery = serviceDiscovery;
 
-    this.mesh = new appmesh.Mesh(this, `${this.stackName}Mesh`, { meshName: sd.base.MESH_NAME });
+    this.mesh = new appmesh.Mesh(this, `${this.stackName}Mesh`, { meshName: serviceDiscovery.base.meshName });
 
     this.virtualNodeListender = appmesh.VirtualNodeListener.http({
       port: 80,
@@ -31,19 +31,19 @@ export class MeshStack extends Stack {
     this.backendV1VirtualNode = new appmesh.VirtualNode(
       this,
       `${this.stackName}BackendV1VirtualNode`,
-      this.buildVirtualNodeProps(this.sd.base.SERVICE_BACKEND)
+      this.buildVirtualNodeProps(this.serviceDiscovery.base.serviceBackend)
     );
 
     this.backendV2VirtualNode = new appmesh.VirtualNode(
       this,
       `${this.stackName}BackendV2VirtualNode`,
-      this.buildVirtualNodeProps(this.sd.base.SERVICE_BACKEND_1)
+      this.buildVirtualNodeProps(this.serviceDiscovery.base.serviceBackend1)
     );
 
     this.frontendVirtualNode = new appmesh.VirtualNode(
       this,
       `${this.stackName}FrontendVirtualNode`,
-      this.buildVirtualNodeProps(this.sd.base.SERVICE_FRONTEND)
+      this.buildVirtualNodeProps(this.serviceDiscovery.base.serviceFrontend)
     );
 
     this.backendVirtualRouter = new appmesh.VirtualRouter(this, `${this.stackName}BackendVirtualRouter`, {
@@ -86,7 +86,7 @@ export class MeshStack extends Stack {
       mesh: this.mesh,
       virtualNodeName: `${serviceName}-vn`,
       listeners: [this.virtualNodeListender],
-      serviceDiscovery: this.sd.getAppMeshServiceDiscovery(serviceName),
+      serviceDiscovery: this.serviceDiscovery.getAppMeshServiceDiscovery(serviceName),
     };
   };
 }

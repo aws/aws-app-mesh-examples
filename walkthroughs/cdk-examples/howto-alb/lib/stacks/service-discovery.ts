@@ -7,11 +7,11 @@ import { Stack, StackProps, Duration } from "aws-cdk-lib";
 import { BaseStack } from "./base";
 
 export class ServiceDiscoveryStack extends Stack {
-  base: BaseStack;
-  frontendLoadBalancer: elbv2.ApplicationLoadBalancer;
-  backendV1LoadBalancer: elbv2.ApplicationLoadBalancer;
-  backendRecordSet: route53.RecordSet;
-  backendV2CloudMapService: service_discovery.Service;
+  readonly base: BaseStack;
+  readonly frontendLoadBalancer: elbv2.ApplicationLoadBalancer;
+  readonly backendV1LoadBalancer: elbv2.ApplicationLoadBalancer;
+  readonly backendRecordSet: route53.RecordSet;
+  readonly backendV2CloudMapService: service_discovery.Service;
 
   constructor(base: BaseStack, id: string, props?: StackProps) {
     super(base, id, props);
@@ -21,34 +21,29 @@ export class ServiceDiscoveryStack extends Stack {
     this.backendV1LoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
       `${this.stackName}BackendV1LoadBalancer`,
-      this.buildAlbProps(this.base.SERVICE_BACKEND_V1, false)
+      this.buildAlbProps(this.base.serviceBackend1, false)
     );
 
     this.backendRecordSet = new route53.RecordSet(this, `${this.stackName}BackendRecordSet`, {
       recordType: route53.RecordType.A,
       zone: this.base.dnsHostedZone,
-      target: route53.RecordTarget.fromAlias(
-        new route53_targets.LoadBalancerTarget(this.backendV1LoadBalancer)
-      ),
+      target: route53.RecordTarget.fromAlias(new route53_targets.LoadBalancerTarget(this.backendV1LoadBalancer)),
       recordName: `backend.${this.base.dnsHostedZone.zoneName}`,
     });
 
-    this.backendV2CloudMapService = this.base.dnsNameSpace.createService(
-      `${this.stackName}BackendV2CloudMapService`,
-      {
-        name: this.base.SERVICE_BACKEND_V2,
-        dnsRecordType: service_discovery.DnsRecordType.A,
-        dnsTtl: Duration.seconds(300),
-        customHealthCheck: {
-          failureThreshold: 1,
-        },
-      }
-    );
+    this.backendV2CloudMapService = this.base.dnsNameSpace.createService(`${this.stackName}BackendV2CloudMapService`, {
+      name: this.base.serviceBackend2,
+      dnsRecordType: service_discovery.DnsRecordType.A,
+      dnsTtl: Duration.seconds(300),
+      customHealthCheck: {
+        failureThreshold: 1,
+      },
+    });
 
     this.frontendLoadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
       `${this.stackName}FrontendLoadBalancer`,
-      this.buildAlbProps(this.base.SERVICE_FRONTEND, true)
+      this.buildAlbProps(this.base.serviceFrontend, true)
     );
   }
 
@@ -62,9 +57,9 @@ export class ServiceDiscoveryStack extends Stack {
 
   public getAlbForService = (serviceName: string): elbv2.ApplicationLoadBalancer => {
     switch (serviceName) {
-      case this.base.SERVICE_BACKEND_V1:
+      case this.base.serviceBackend1:
         return this.backendV1LoadBalancer;
-      case this.base.SERVICE_FRONTEND:
+      case this.base.serviceFrontend:
         return this.frontendLoadBalancer;
       default:
         return this.backendV1LoadBalancer;
@@ -73,11 +68,11 @@ export class ServiceDiscoveryStack extends Stack {
 
   public getServiceDiscovery(serviceName: string): appmesh.ServiceDiscovery {
     switch (serviceName) {
-      case this.base.SERVICE_BACKEND_V1:
+      case this.base.serviceBackend1:
         return appmesh.ServiceDiscovery.dns(this.backendV1LoadBalancer.loadBalancerDnsName);
-      case this.base.SERVICE_BACKEND_V2:
+      case this.base.serviceBackend2:
         return appmesh.ServiceDiscovery.cloudMap(this.backendV2CloudMapService);
-      case this.base.SERVICE_FRONTEND:
+      case this.base.serviceFrontend:
         return appmesh.ServiceDiscovery.dns(this.frontendLoadBalancer.loadBalancerDnsName);
       default:
         return appmesh.ServiceDiscovery.dns(this.backendV1LoadBalancer.loadBalancerDnsName);

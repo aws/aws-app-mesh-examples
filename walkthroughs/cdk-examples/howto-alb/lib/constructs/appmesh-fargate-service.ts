@@ -7,32 +7,30 @@ import { MeshStack } from "../stacks/mesh-components";
 import { AppMeshFargateServiceProps, ServiceDiscoveryType } from "../utils";
 
 export class AppMeshFargateService extends Construct {
-  taskDefinition: ecs.FargateTaskDefinition;
-  service: ecs.FargateService;
-  securityGroup: ec2.SecurityGroup;
-  envoySidecar: ecs.ContainerDefinition;
-  xrayContainer: ecs.ContainerDefinition;
-  appContainer: ecs.ContainerDefinition;
+  readonly taskDefinition: ecs.FargateTaskDefinition;
+  readonly service: ecs.FargateService;
+  readonly securityGroup: ec2.SecurityGroup;
+  readonly envoySidecar: ecs.ContainerDefinition;
+  readonly xrayContainer: ecs.ContainerDefinition;
+  readonly appContainer: ecs.ContainerDefinition;
 
-  constructor(ms: MeshStack, id: string, props: AppMeshFargateServiceProps) {
-    super(ms, id);
+  constructor(mesh: MeshStack, id: string, props: AppMeshFargateServiceProps) {
+    super(mesh, id);
 
     this.securityGroup = new ec2.SecurityGroup(this, `${props.serviceName}TaskSecurityGroup`, {
-      vpc: ms.sd.base.vpc,
+      vpc: mesh.serviceDiscovery.base.vpc,
     });
-    this.allowIpv4IngressForTcpPorts(this.securityGroup, [80, 8080]);
+    this.allowIpv4IngressForTcpPorts([80, 8080]);
 
     const proxyConfiguration =
-      props.envoyConfiguration &&
-      props.envoyConfiguration.container &&
-      props.envoyConfiguration.proxyConfiguration
+      props.envoyConfiguration && props.envoyConfiguration.container && props.envoyConfiguration.proxyConfiguration
         ? props.envoyConfiguration.proxyConfiguration
         : undefined;
 
     this.taskDefinition = new ecs.FargateTaskDefinition(this, `${props.serviceName}TaskDefinition`, {
       proxyConfiguration: proxyConfiguration,
-      executionRole: ms.sd.base.executionRole,
-      taskRole: ms.sd.base.taskRole,
+      executionRole: mesh.serviceDiscovery.base.executionRole,
+      taskRole: mesh.serviceDiscovery.base.taskRole,
       family: props.taskDefinitionFamily,
     });
 
@@ -76,26 +74,26 @@ export class AppMeshFargateService extends Construct {
 
     this.service = new ecs.FargateService(this, `${props.serviceName}Service`, {
       serviceName: props.serviceName,
-      cluster: ms.sd.base.cluster,
+      cluster: mesh.serviceDiscovery.base.cluster,
       taskDefinition: this.taskDefinition,
       securityGroups: [this.securityGroup],
     });
 
     if (props.serviceDiscoveryType == ServiceDiscoveryType.DNS) {
-      const loadBalancer = ms.sd.getAlbForService(props.serviceName);
+      const loadBalancer = mesh.serviceDiscovery.getAlbForService(props.serviceName);
       const listener = loadBalancer.addListener(`${props.serviceName}Listener`, {
-        port: props.serviceName == ms.sd.base.SERVICE_FRONTEND ? 80 : ms.sd.base.PORT,
+        port: props.serviceName == mesh.serviceDiscovery.base.serviceFrontend ? 80 : mesh.serviceDiscovery.base.port,
         open: true,
       });
       this.service.registerLoadBalancerTargets({
         containerName: this.appContainer.containerName,
-        containerPort: ms.sd.base.PORT,
+        containerPort: mesh.serviceDiscovery.base.port,
         newTargetGroupId: `${props.serviceName}TargetGroup`,
         listener: ecs.ListenerConfig.applicationListener(listener, {
           protocol: elbv2.ApplicationProtocol.HTTP,
           healthCheck: {
             path: "/ping",
-            port: ms.sd.base.PORT.toString(),
+            port: mesh.serviceDiscovery.base.port.toString(),
             interval: Duration.seconds(60),
           },
         }),
@@ -103,12 +101,12 @@ export class AppMeshFargateService extends Construct {
     } else if (props.serviceDiscoveryType == ServiceDiscoveryType.CLOUDMAP) {
       this.service.associateCloudMapService({
         container: this.appContainer,
-        containerPort: ms.sd.base.PORT,
-        service: ms.sd.backendV2CloudMapService,
+        containerPort: mesh.serviceDiscovery.base.port,
+        service: mesh.serviceDiscovery.backendV2CloudMapService,
       });
     }
   }
-  private allowIpv4IngressForTcpPorts = (securityGroup: ec2.SecurityGroup, ports: number[]): void => {
-    ports.forEach((port) => securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(port)));
+  private allowIpv4IngressForTcpPorts = (ports: number[]): void => {
+    ports.forEach((port) => this.securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(port)));
   };
 }

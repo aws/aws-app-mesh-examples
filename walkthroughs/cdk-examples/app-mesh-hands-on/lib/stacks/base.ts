@@ -14,20 +14,20 @@ export class BaseStack extends Stack {
   readonly executionRole: iam.Role;
   readonly taskRole: iam.Role;
 
-  readonly PROJECT_NAME: string;
-  readonly PORT: number;
-  readonly MESH_NAME: string;
+  readonly projectName: string;
+  readonly port: number;
+  readonly meshName: string;
 
-  public readonly SERVICE_BACKEND = "backend";
-  public readonly SERVICE_BACKEND_1 = "backend-1";
-  public readonly SERVICE_FRONTEND = "frontend";
+  readonly serviceBackend = "backend";
+  readonly serviceBackend1 = "backend-1";
+  readonly serviceFrontend = "frontend";
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    this.PROJECT_NAME = this.node.tryGetContext("PROJECT_NAME");
-    this.PORT = parseInt(this.node.tryGetContext("CONTAINER_PORT"), 10);
-    this.MESH_NAME = this.node.tryGetContext("MESH_NAME");
+    this.projectName = this.node.tryGetContext("PROJECT_NAME");
+    this.port = parseInt(this.node.tryGetContext("CONTAINER_PORT"), 10);
+    this.meshName = this.node.tryGetContext("MESH_NAME");
 
     this.taskRole = new iam.Role(this, `${this.stackName}TaskRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
@@ -56,7 +56,7 @@ export class BaseStack extends Stack {
     });
 
     this.cluster = new ecs.Cluster(this, `${this.stackName}Cluster`, {
-      clusterName: this.PROJECT_NAME,
+      clusterName: this.projectName,
       vpc: this.vpc,
     });
 
@@ -66,7 +66,7 @@ export class BaseStack extends Stack {
     });
 
     this.logGroup = new logs.LogGroup(this, `${this.stackName}LogGroup`, {
-      logGroupName: this.PROJECT_NAME,
+      logGroupName: this.projectName,
       retention: logs.RetentionDays.ONE_DAY,
       removalPolicy: RemovalPolicy.DESTROY,
     });

@@ -1,5 +1,5 @@
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import { StackProps, Stack, CfnOutput } from "aws-cdk-lib";
+import { StackProps, Stack } from "aws-cdk-lib";
 import { MeshStack } from "./mesh-components";
 import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
 import { EnvoySidecar } from "../constructs/envoy-sidecar";
@@ -7,38 +7,38 @@ import { XrayContainer } from "../constructs/xray-container";
 import { ApplicationContainer } from "../constructs/application-container";
 
 export class EcsServicesStack extends Stack {
-  constructor(ms: MeshStack, id: string, props?: StackProps) {
-    super(ms, id, props);
+  constructor(mesh: MeshStack, id: string, props?: StackProps) {
+    super(mesh, id, props);
 
     const meshify = this.node.tryGetContext("meshify") === "true";
 
     // backend
-    const backend = new AppMeshFargateService(ms, `${this.stackName}BackendV1AppMeshFargateService`, {
-      serviceName: ms.sd.base.SERVICE_BACKEND,
-      taskDefinitionFamily: ms.sd.base.SERVICE_BACKEND,
+    const backend = new AppMeshFargateService(mesh, `${this.stackName}BackendV1AppMeshFargateService`, {
+      serviceName: mesh.serviceDiscovery.base.serviceBackend,
+      taskDefinitionFamily: mesh.serviceDiscovery.base.serviceBackend,
       envoyConfiguration: meshify
         ? {
-            container: new EnvoySidecar(ms, `${this.stackName}BackendV1EnvoySidecar`, {
-              logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND}-envoy`,
-              appMeshResourceArn: ms.backendV1VirtualNode.virtualNodeArn,
+            container: new EnvoySidecar(mesh, `${this.stackName}BackendV1EnvoySidecar`, {
+              logStreamPrefix: `${mesh.serviceDiscovery.base.serviceBackend}-envoy`,
+              appMeshResourceArn: mesh.backendV1VirtualNode.virtualNodeArn,
               enableXrayTracing: true,
             }),
-            proxyConfiguration: EnvoySidecar.buildAppMeshProxy(ms.sd.base.PORT),
+            proxyConfiguration: EnvoySidecar.buildAppMeshProxy(mesh.serviceDiscovery.base.port),
           }
         : undefined,
 
       xrayContainer: meshify
-        ? new XrayContainer(ms, `${this.stackName}BackendV1XrayOpts`, {
-            logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND}-xray`,
+        ? new XrayContainer(mesh, `${this.stackName}BackendV1XrayOpts`, {
+            logStreamPrefix: `${mesh.serviceDiscovery.base.serviceBackend}-xray`,
           })
         : undefined,
 
-      applicationContainer: new ApplicationContainer(ms, `${this.stackName}BackendV1AppOpts`, {
+      applicationContainer: new ApplicationContainer(mesh, `${this.stackName}BackendV1AppOpts`, {
         image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_BACKEND")),
-        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND}-app`,
+        logStreamPrefix: `${mesh.serviceDiscovery.base.serviceBackend}-app`,
         portMappings: [
           {
-            containerPort: ms.sd.base.PORT,
+            containerPort: mesh.serviceDiscovery.base.port,
             protocol: ecs.Protocol.TCP,
           },
         ],
@@ -46,31 +46,31 @@ export class EcsServicesStack extends Stack {
     });
 
     // backend-1
-    const backend1 = new AppMeshFargateService(ms, `${this.stackName}BackendV2AppMeshFargateService`, {
-      serviceName: ms.sd.base.SERVICE_BACKEND_1,
-      taskDefinitionFamily: ms.sd.base.SERVICE_BACKEND_1,
+    const backend1 = new AppMeshFargateService(mesh, `${this.stackName}BackendV2AppMeshFargateService`, {
+      serviceName: mesh.serviceDiscovery.base.serviceBackend1,
+      taskDefinitionFamily: mesh.serviceDiscovery.base.serviceBackend1,
       envoyConfiguration: meshify
         ? {
-            container: new EnvoySidecar(ms, `${this.stackName}BackendV2EnvoySidecar`, {
-              logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_1}-envoy`,
-              appMeshResourceArn: ms.backendV2VirtualNode.virtualNodeArn,
+            container: new EnvoySidecar(mesh, `${this.stackName}BackendV2EnvoySidecar`, {
+              logStreamPrefix: `${mesh.serviceDiscovery.base.serviceBackend1}-envoy`,
+              appMeshResourceArn: mesh.backendV2VirtualNode.virtualNodeArn,
               enableXrayTracing: true,
             }),
-            proxyConfiguration: EnvoySidecar.buildAppMeshProxy(ms.sd.base.PORT),
+            proxyConfiguration: EnvoySidecar.buildAppMeshProxy(mesh.serviceDiscovery.base.port),
           }
         : undefined,
 
       xrayContainer: meshify
-        ? new XrayContainer(ms, `${this.stackName}BackendV2XrayOpts`, {
-            logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_1}-xray`,
+        ? new XrayContainer(mesh, `${this.stackName}BackendV2XrayOpts`, {
+            logStreamPrefix: `${mesh.serviceDiscovery.base.serviceBackend1}-xray`,
           })
         : undefined,
-      applicationContainer: new ApplicationContainer(ms, `${this.stackName}BackendV2AppOpts`, {
+      applicationContainer: new ApplicationContainer(mesh, `${this.stackName}BackendV2AppOpts`, {
         image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_BACKEND_1")),
-        logStreamPrefix: `${ms.sd.base.SERVICE_BACKEND_1}-app`,
+        logStreamPrefix: `${mesh.serviceDiscovery.base.serviceBackend1}-app`,
         portMappings: [
           {
-            containerPort: ms.sd.base.PORT,
+            containerPort: mesh.serviceDiscovery.base.port,
             protocol: ecs.Protocol.TCP,
           },
         ],
@@ -78,29 +78,29 @@ export class EcsServicesStack extends Stack {
     });
 
     // frontend
-    const frontend = new AppMeshFargateService(ms, `${this.stackName}FrontendAppMeshFargateService`, {
-      serviceName: ms.sd.base.SERVICE_FRONTEND,
-      taskDefinitionFamily: ms.sd.base.SERVICE_FRONTEND,
+    const frontend = new AppMeshFargateService(mesh, `${this.stackName}FrontendAppMeshFargateService`, {
+      serviceName: mesh.serviceDiscovery.base.serviceFrontend,
+      taskDefinitionFamily: mesh.serviceDiscovery.base.serviceFrontend,
       envoyConfiguration: meshify
         ? {
-            container: new EnvoySidecar(ms, `${this.stackName}FrontendEnvoySidecar`, {
-              logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-envoy`,
-              appMeshResourceArn: ms.frontendVirtualNode.virtualNodeArn,
+            container: new EnvoySidecar(mesh, `${this.stackName}FrontendEnvoySidecar`, {
+              logStreamPrefix: `${mesh.serviceDiscovery.base.serviceFrontend}-envoy`,
+              appMeshResourceArn: mesh.frontendVirtualNode.virtualNodeArn,
               enableXrayTracing: true,
             }),
-            proxyConfiguration: EnvoySidecar.buildAppMeshProxy(ms.sd.base.PORT),
+            proxyConfiguration: EnvoySidecar.buildAppMeshProxy(mesh.serviceDiscovery.base.port),
           }
         : undefined,
 
       xrayContainer: meshify
-        ? new XrayContainer(ms, `${this.stackName}FrontendXrayOpts`, {
-            logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-xray`,
+        ? new XrayContainer(mesh, `${this.stackName}FrontendXrayOpts`, {
+            logStreamPrefix: `${mesh.serviceDiscovery.base.serviceFrontend}-xray`,
           })
         : undefined,
-      applicationContainer: new ApplicationContainer(ms, `${this.stackName}AppOpts`, {
+      applicationContainer: new ApplicationContainer(mesh, `${this.stackName}AppOpts`, {
         image: ecs.ContainerImage.fromRegistry(this.node.tryGetContext("IMAGE_FRONTEND")),
-        logStreamPrefix: `${ms.sd.base.SERVICE_FRONTEND}-app`,
-        portMappings: [{ containerPort: ms.sd.base.PORT, protocol: ecs.Protocol.TCP }],
+        logStreamPrefix: `${mesh.serviceDiscovery.base.serviceFrontend}-app`,
+        portMappings: [{ containerPort: mesh.serviceDiscovery.base.port, protocol: ecs.Protocol.TCP }],
       }),
     });
 
