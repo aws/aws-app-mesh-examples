@@ -52,7 +52,7 @@ describe(`When I create ${serviceDiscovery.stackName}`, () => {
 
   test("The name of the record set should be properly configured", () => {
     serviceDiscoveryTemplate.hasResourceProperties("AWS::Route53::RecordSet", {
-      Name: `backend.${base.PROJECT_NAME}.hosted.local.`,
+      Name: `backend.${base.projectName}.hosted.local.`,
     });
   });
 });
@@ -69,19 +69,19 @@ describe(`When I create ${mesh.stackName}`, () => {
 
   test("The name of the virtual nodes should be properly configured", () => {
     meshTemplate.hasResourceProperties("AWS::AppMesh::VirtualNode", {
-      VirtualNodeName: `${base.PROJECT_NAME}-${base.SERVICE_BACKEND_V1}-node`,
+      VirtualNodeName: `${base.projectName}-${base.serviceBackend1}-node`,
     });
     meshTemplate.hasResourceProperties("AWS::AppMesh::VirtualNode", {
-      VirtualNodeName: `${base.PROJECT_NAME}-${base.SERVICE_BACKEND_V2}-node`,
+      VirtualNodeName: `${base.projectName}-${base.serviceBackend1}-node`,
     });
     meshTemplate.hasResourceProperties("AWS::AppMesh::VirtualNode", {
-      VirtualNodeName: `${base.PROJECT_NAME}-${base.SERVICE_FRONTEND}-node`,
+      VirtualNodeName: `${base.projectName}-${base.serviceBackend1}-node`,
     });
   });
 
   test("The name of the virtual service should be properly configured", () => {
     meshTemplate.hasResourceProperties("AWS::AppMesh::VirtualService", {
-      VirtualServiceName: `backend.${base.PROJECT_NAME}.hosted.local`,
+      VirtualServiceName: `backend.${base.projectName}.hosted.local`,
     });
   });
 
