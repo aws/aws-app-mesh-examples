@@ -2,6 +2,13 @@ import * as appmesh from "aws-cdk-lib/aws-appmesh";
 import { StackProps, Stack } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
 import { MeshUpdateChoice } from "../utils";
+import { AcmStack } from "./acm-stack";
+
+
+interface MeshStackProps extends StackProps {
+  acmStackRef: AcmStack;
+}
+
 
 export class MeshStack extends Stack {
   readonly serviceDiscovery: ServiceDiscoveryStack;
@@ -11,7 +18,7 @@ export class MeshStack extends Stack {
   readonly virtualGateway: appmesh.VirtualGateway;
   readonly virtualService: appmesh.VirtualService;
 
-  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: StackProps) {
+  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: MeshStackProps) {
     super(serviceDiscovery, id, props);
 
     this.serviceDiscovery = serviceDiscovery;
@@ -39,12 +46,12 @@ export class MeshStack extends Stack {
       virtualGatewayName: "ColorGateway",
       listeners: [appmesh.VirtualGatewayListener.http({ port: 9080 })],
       backendDefaults:
-        meshUpdateChoice == MeshUpdateChoice.ADD_GREEN_VN
+        meshUpdateChoice == MeshUpdateChoice.NO_TLS
           ? undefined
           : {
               tlsClientPolicy: {
                 validation: {
-                  trust: appmesh.TlsValidationTrust.file(this.fetchClientTlsCert(meshUpdateChoice)),
+                  trust:
                 },
               },
             },
@@ -69,9 +76,18 @@ export class MeshStack extends Stack {
       }),
     });
   }
-  private fetchClientTlsCert = (meshUpdateChoice: MeshUpdateChoice): string => {
-    return meshUpdateChoice == MeshUpdateChoice.ADD_BUNDLE ? this.bundleCertPath : this.ca1CertPath;
+  private fetchClientTlsCert = (choice: MeshUpdateChoice): appmesh.TlsValidationTrust => {
+    
   };
+
+  private fetchVirtualNodeTls = (choice: MeshUpdateChoice): appmesh.ListenerTlsOptions | undefined => {
+    if(choice == MeshUpdateChoice.NO_TLS){
+      return undefined;
+    }
+
+    return 
+
+  }
 
   private buildTlsEnabledVirtualNode = (
     virtualNodeName: string,
