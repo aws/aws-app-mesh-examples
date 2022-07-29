@@ -11,11 +11,10 @@ export class AppMeshFargateService extends Construct {
   taskDefinition: ecs.FargateTaskDefinition;
   service: ecs.FargateService;
   securityGroup: ec2.SecurityGroup;
+
   envoySidecar: ecs.ContainerDefinition;
   xrayContainer: ecs.ContainerDefinition;
-
   appContainer: ecs.ContainerDefinition;
-  cfnService: ecs.CfnService;
 
   constructor(mesh: MeshStack, id: string, props: AppMeshFargateServiceProps) {
     super(mesh, id);
