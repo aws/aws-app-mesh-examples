@@ -122,7 +122,7 @@ To store these certficates in Envoy, we build a custom Docker Image `src/customE
 
 This image stores certfiicates in the `/keys` directory, which will be referenced by the virtual nodes for TLS encryption.
 
-## Testing the SSL Handshake
+## Step 1: Testing the SSL Handshake
 
 - Run the following command.
 
@@ -141,7 +141,7 @@ listener.0.0.0.0_15000.ssl.handshake: 1
 
 - To exit from the Bastion Host, type `exit` and hit Enter.
 
-## White Color Teller Response
+## Step 2: White Color Teller Response
 
 - Let's query the gateway load balancer.
 
@@ -152,7 +152,7 @@ WHITE%
 
 - We can see that the White Color Teller returns a response.
 
-## Client TLS Validation
+## Step 3: Client TLS Validation
 
 Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the Color Gateway should also be responsible for defining what certificate authorities are trusted.
 
@@ -173,7 +173,7 @@ curl $URL/color
 WHITE%
 ```
 
-## Adding TLS Validation to the Virtual Gateway
+## Step 4: Adding TLS Validation to the Virtual Gateway
 
 As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Virtual Gateway was able to communicate with it no problem.
 
@@ -184,7 +184,7 @@ If you recall, the Green Color Teller certificates were signed by a different CA
 - To update the mesh such that the virtual gateway only trusts CA 1, we will provision another deployment.
 
 ```bash
-cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=add-ca1
+cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=trust-only-ca1
 ```
 
 - Once the deployment is done, lets try getting the response from the two virtual nodes. You may have to run the command below multiple times a response from both nodes.
@@ -198,14 +198,14 @@ upstream connect error or disconnect/reset before headers. reset reason: connect
 
 - Since the client only trusts CA 1, we can see that we are not able to trust the Green Color Teller node since it is signed by CA 2. This results in a TLS error.
 
-## Restoring Communication with the Green Color Teller
+## Step 5: Restoring Communication with the Green Color Teller
 
 We can restore communication by changing the certificate chain in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instruct Envoy to accept certificates signed by both CA 1 and CA 2.
 
 - To update the mesh such that the virtual gateway trusts CA 1 and CA 2, we will provision another deployment.
 
 ```bash
-cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=add-bundle
+cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=trust-ca1-ca2
 ```
 
 - Once the deployment is complete, lets try getting the response from the two virtual nodes. You may have to run the command below multiple times a response from both nodes.
@@ -369,30 +369,11 @@ this.customEnvoyImageAsset = this.buildImageAsset(
 
 The `context` can also be used to pass in runtime parameters like `--context mesh-update=add-ca1` that can allow us to provision infrastructure dynamically. We also make use of this in the `SecretsStack` to generate new certificates.
 
-```bash
-cdk deploy --all --require-approval never --context make-certs=true
-```
-
-```c
-// secrets.ts
-if (this.node.tryGetContext("make-certs") === "true") {
-      this.generateNewCertificates();
-      Object.entries(this.fetchCertificateContents()).forEach(([certName, certContent]) => {
-        new secrets_mgr.Secret(this, `${this.stackName}${certName}`, {
-          secretName: certName,
-          description: `Plaintext secret: ${certName}`,
-          secretStringValue: SecretValue.unsafePlainText(certContent),
-          removalPolicy: RemovalPolicy.DESTROY,
-        });
-      });
-    }
-  }
-```
-
 </details>
 
 # Learn more about App Mesh
 
+- [TLS in App Mesh](https://docs.aws.amazon.com/app-mesh/latest/userguide/tls.html)
 - [Product Page](https://aws.amazon.com/app-mesh/?nc2=h_ql_prod_nt_appm&aws-app-mesh-blogs.sort-by=item.additionalFields.createdDate&aws-app-mesh-blogs.sort-order=desc&whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc)
 - [App Mesh under the hood](https://www.youtube.com/watch?v=h3syq1vbplE)
 - [App Mesh CDK API Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_appmesh-readme.html)

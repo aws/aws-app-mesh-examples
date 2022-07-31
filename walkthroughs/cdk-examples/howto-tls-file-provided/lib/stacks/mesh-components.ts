@@ -127,7 +127,7 @@ export class MeshStack extends Stack {
     });
   }
   private fetchClientTlsCert = (meshUpdateChoice: MeshUpdateChoice): string => {
-    return meshUpdateChoice == MeshUpdateChoice.ADD_BUNDLE ? this.bundleCertPath : this.ca1CertPath;
+    return meshUpdateChoice == MeshUpdateChoice.TRUST_CA1_CA2 ? this.bundleCertPath : this.ca1CertPath;
   };
 
   private buildTlsEnabledVirtualNode = (
