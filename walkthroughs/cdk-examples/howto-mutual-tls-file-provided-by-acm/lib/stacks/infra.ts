@@ -88,7 +88,8 @@ export class InfraStack extends Stack {
 
     this.colorTellerImageAsset = this.buildImageAsset(
       path.join(__dirname, this.appDir, "colorteller"),
-      "ColorTellerImage"
+      "ColorTellerImage",
+      { GO_PROXY: this.node.tryGetContext("GO_PROXY") }
     );
   }
 

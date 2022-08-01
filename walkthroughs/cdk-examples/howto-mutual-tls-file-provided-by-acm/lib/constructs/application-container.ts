@@ -16,6 +16,7 @@ export class ApplicationContainer extends Construct {
       }),
       environment: props.env,
       portMappings: props.portMappings,
+      secrets: props.secrets,
     };
   }
 }

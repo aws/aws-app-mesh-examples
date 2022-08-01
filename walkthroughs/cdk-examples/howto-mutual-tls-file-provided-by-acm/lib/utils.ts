@@ -2,6 +2,11 @@ import * as ecs from "aws-cdk-lib/aws-ecs";
 import { StackProps } from "aws-cdk-lib";
 import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
+import { AcmStack } from "./stacks/acm";
+
+export interface CustomStackProps extends StackProps {
+  acmStack: AcmStack;
+}
 
 export enum MeshUpdateChoice {
   NO_TLS = "no-tls",
@@ -12,6 +17,11 @@ export enum MeshUpdateChoice {
 export enum ServiceDiscoveryType {
   DNS = "DNS",
   CLOUDMAP = "CLOUDMAP",
+}
+
+export enum LambdaType {
+  INIT_CERT = "initcert",
+  ROTATE_CERT = "rotatecert",
 }
 
 export interface CustomContainerProps {
@@ -25,12 +35,14 @@ export interface CustomStackProps extends StackProps {
 export interface EnvoyContainerProps extends CustomContainerProps {
   appMeshResourceArn: string;
   enableXrayTracing?: boolean;
+  secrets?: { [key: string]: ecs.Secret };
 }
 
 export interface ApplicationContainerProps extends CustomContainerProps {
   image: ecs.ContainerImage;
   env?: { [key: string]: string };
   portMappings: ecs.PortMapping[];
+  secrets?: { [key: string]: ecs.Secret };
 }
 
 export interface EnvoyConfiguration {

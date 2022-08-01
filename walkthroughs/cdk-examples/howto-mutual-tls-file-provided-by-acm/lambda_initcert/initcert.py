@@ -15,6 +15,14 @@ acc_id = os.environ['AWS_ACCOUNT']
 secret = os.environ['SECRET']
 
 
+print('gate_cm -> ', gate_cm)
+print('teller_cm -> ', teller_cm)
+print('teller_pca_cm -> ', teller_pca_cm)
+print('gateway_pca_cm -> ', gateway_pca_cm)
+print('acc_id -> ', acc_id)
+print('secret -> ', secret)
+
+
 def lambda_handler(event, context):
     print(json.dumps(event))
     if (event['RequestType'] == 'Delete') or (event['RequestType'] == 'Update'):

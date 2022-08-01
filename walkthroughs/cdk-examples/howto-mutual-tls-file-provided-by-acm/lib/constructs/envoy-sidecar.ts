@@ -19,7 +19,7 @@ export class EnvoySidecar extends Construct {
       environment: {
         ENVOY_LOG_LEVEL: "debug",
         APPMESH_RESOURCE_ARN: props.appMeshResourceArn,
-        CERTIFICATE_NAME: props.certificateName,
+        AWS_REGION: process.env.CDK_DEFAULT_REGION!,
       },
       user: "1337",
       healthCheck: {
@@ -42,6 +42,7 @@ export class EnvoySidecar extends Construct {
           protocol: ecs.Protocol.TCP,
         },
       ],
+      secrets: props.secrets,
     };
   }
   public static buildAppMeshProxy = (...appPorts: number[]): ecs.AppMeshProxyConfiguration => {

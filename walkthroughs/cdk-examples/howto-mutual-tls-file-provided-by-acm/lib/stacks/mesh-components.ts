@@ -1,14 +1,9 @@
 import * as appmesh from "aws-cdk-lib/aws-appmesh";
+import * as acm_pca from "aws-cdk-lib/aws-acmpca";
 import { StackProps, Stack } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
-import { MeshUpdateChoice } from "../utils";
-import { AcmStack } from "./acm-stack";
-
-
-interface MeshStackProps extends StackProps {
-  acmStackRef: AcmStack;
-}
-
+import { CustomStackProps, MeshUpdateChoice } from "../utils";
+import { Mesh, TlsMode } from "aws-cdk-lib/aws-appmesh";
 
 export class MeshStack extends Stack {
   readonly serviceDiscovery: ServiceDiscoveryStack;
@@ -18,7 +13,10 @@ export class MeshStack extends Stack {
   readonly virtualGateway: appmesh.VirtualGateway;
   readonly virtualService: appmesh.VirtualService;
 
-  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: MeshStackProps) {
+  readonly gatewayCertChainPath: string = "/keys/colorgateway_endpoint_cert_chain.pem";
+  readonly gatwayPrivateKeyPath: string = "/keys/colorgateway_endpoint_dec_pri_key.pem";
+
+  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: CustomStackProps) {
     super(serviceDiscovery, id, props);
 
     this.serviceDiscovery = serviceDiscovery;
@@ -45,23 +43,14 @@ export class MeshStack extends Stack {
       mesh: this.mesh,
       virtualGatewayName: "ColorGateway",
       listeners: [appmesh.VirtualGatewayListener.http({ port: 9080 })],
-      backendDefaults:
-        meshUpdateChoice == MeshUpdateChoice.NO_TLS
-          ? undefined
-          : {
-              tlsClientPolicy: {
-                validation: {
-                  trust:
-                },
-              },
-            },
+      backendDefaults: this.buildGatewayBackendDefaults(meshUpdateChoice, props!),
     });
 
-    this.virtualNode = this.buildTlsEnabledVirtualNode(
+    this.virtualNode = this.buildVirtualNode(
       "ColorTellerWhite",
       this.serviceDiscovery.infra.serviceColorTeller,
-      this.whiteCertChainPath,
-      this.whitePrivateKeyPath
+      meshUpdateChoice,
+      props!
     );
 
     this.virtualService = new appmesh.VirtualService(this, `${this.stackName}VirtualService`, {
@@ -76,24 +65,38 @@ export class MeshStack extends Stack {
       }),
     });
   }
-  private fetchClientTlsCert = (choice: MeshUpdateChoice): appmesh.TlsValidationTrust => {
-    
+
+  private buildGatewayBackendDefaults = (
+    choice: string,
+    props: CustomStackProps
+  ): appmesh.BackendDefaults | undefined => {
+    return choice == MeshUpdateChoice.NO_TLS
+      ? undefined
+      : {
+          tlsClientPolicy: {
+            enforce: true,
+            validation: {
+              trust: appmesh.MutualTlsValidationTrust.acm([
+                acm_pca.CertificateAuthority.fromCertificateAuthorityArn(
+                  this,
+                  `${this.stackName}Trust`,
+                  props.acmStack.colorTellerRootCa.attrArn
+                ),
+              ]),
+            },
+            mutualTlsCertificate:
+              choice == MeshUpdateChoice.MUTUAL_TLS
+                ? appmesh.MutualTlsCertificate.file(this.gatewayCertChainPath, this.gatwayPrivateKeyPath)
+                : undefined,
+          },
+        };
   };
 
-  private fetchVirtualNodeTls = (choice: MeshUpdateChoice): appmesh.ListenerTlsOptions | undefined => {
-    if(choice == MeshUpdateChoice.NO_TLS){
-      return undefined;
-    }
-
-    return 
-
-  }
-
-  private buildTlsEnabledVirtualNode = (
+  private buildVirtualNode = (
     virtualNodeName: string,
     serviceName: string,
-    certChainPath: string,
-    privateKeyPath: string
+    choice: MeshUpdateChoice,
+    props: CustomStackProps
   ): appmesh.VirtualNode => {
     return new appmesh.VirtualNode(this, `${this.stackName}${virtualNodeName}`, {
       mesh: this.mesh,
@@ -101,16 +104,20 @@ export class MeshStack extends Stack {
       serviceDiscovery: this.serviceDiscovery.getAppMeshServiceDiscovery(serviceName),
       listeners: [
         appmesh.VirtualNodeListener.http({
-          port: 80,
-          healthCheck: appmesh.HealthCheck.http({
-            healthyThreshold: 2,
-            unhealthyThreshold: 3,
-            path: "/ping",
-          }),
-          tls: {
-            mode: appmesh.TlsMode.STRICT,
-            certificate: appmesh.TlsCertificate.file(certChainPath, privateKeyPath),
-          },
+          port: 9080,
+          tls:
+            choice == MeshUpdateChoice.NO_TLS
+              ? undefined
+              : {
+                  mode: TlsMode.STRICT,
+                  certificate: appmesh.MutualTlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
+                  mutualTlsValidation:
+                    choice == MeshUpdateChoice.MUTUAL_TLS
+                      ? {
+                          trust: appmesh.MutualTlsValidationTrust.file(this.gatewayCertChainPath),
+                        }
+                      : undefined,
+                },
         }),
       ],
     });
