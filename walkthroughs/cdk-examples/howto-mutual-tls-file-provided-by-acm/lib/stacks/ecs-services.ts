@@ -3,6 +3,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
+import * as assets from "aws-cdk-lib/aws-ecr-assets";
 import { Stack, CfnOutput, Duration } from "aws-cdk-lib";
 import { MeshStack } from "./mesh-components";
 import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
@@ -30,7 +31,7 @@ export class EcsServicesStack extends Stack {
         image: ecs.ContainerImage.fromDockerImageAsset(mesh.serviceDiscovery.infra.colorTellerImageAsset),
         logStreamPrefix: colorTellerServiceName,
         env: {
-          SERVER_PORT: "9080",
+          PORT: "9080",
           COLOR: "YELLOW",
         },
         portMappings: [{ containerPort: 9080, protocol: ecs.Protocol.TCP }],
@@ -40,6 +41,7 @@ export class EcsServicesStack extends Stack {
         container: new EnvoySidecar(mesh, `${this.stackName}WhiteEnvoySidecar`, {
           logStreamPrefix: `${colorTellerServiceName}-envoy`,
           appMeshResourceArn: mesh.virtualNode.virtualNodeArn,
+          secrets: certSecret,
         }),
         proxyConfiguration: EnvoySidecar.buildAppMeshProxy(9080),
       },
@@ -63,27 +65,33 @@ export class EcsServicesStack extends Stack {
       managedPolicies: [
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
-          "EcsLambdaInitCertSsm",
+          "LambdaRotCertSsmPca",
+          "arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAFullAccess"
+        ),
+        iam.ManagedPolicy.fromManagedPolicyArn(
+          this,
+          "LambdaRotCertSsm",
           "arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess"
         ),
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
-          "EcsLambdaInitCertSd2",
+          "LambdaRotCertSd2",
           "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         ),
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
-          "EcsLambdaInitCertSs33m",
+          "LambdaRotCertSs33m",
           "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
         ),
       ],
     });
 
-    this.rotateCertFunc = new lambda.Function(this, `${this.stackName}InitCertFunc`, {
-      runtime: lambda.Runtime.PYTHON_3_9,
-      handler: "rotatecert.lambda_handler",
+    this.rotateCertFunc = new lambda.DockerImageFunction(this, `${this.stackName}RotateCertFunc`, {
+      functionName: "rotate-cert",
       timeout: Duration.seconds(900),
-      code: lambda.Code.fromAsset(path.join(__dirname, "../../lambda_rotatecert")),
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_rotatecert"), {
+        platform: assets.Platform.LINUX_AMD64,
+      }),
       role: this.rotateCertRole,
       environment: {
         COLOR_GATEWAY_ACM_ARN: props!.acmStack.colorGatewayEndpointCert.certificateArn,

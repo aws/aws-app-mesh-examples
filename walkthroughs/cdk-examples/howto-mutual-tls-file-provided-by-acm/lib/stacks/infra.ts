@@ -48,7 +48,7 @@ export class InfraStack extends Stack {
     this.taskRole = new iam.Role(this, `${this.stackName}TaskRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
       managedPolicies: this.addManagedPolices(
-        1,
+        "taskRole",
         "CloudWatchFullAccess",
         "AWSAppMeshFullAccess",
         "SecretsManagerReadWrite",
@@ -58,7 +58,11 @@ export class InfraStack extends Stack {
 
     this.executionRole = new iam.Role(this, `${this.stackName}ExecutionRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-      managedPolicies: this.addManagedPolices(2, "AmazonEC2ContainerRegistryReadOnly", "CloudWatchLogsFullAccess"),
+      managedPolicies: this.addManagedPolices(
+        "execRole",
+        "AmazonEC2ContainerRegistryReadOnly",
+        "CloudWatchLogsFullAccess"
+      ),
     });
 
     this.bastionSecurityGroup = new ec2.SecurityGroup(this, `${this.stackName}BastionSecurityGroup`, {
@@ -104,13 +108,13 @@ export class InfraStack extends Stack {
       buildArgs: args,
     });
   };
-  private addManagedPolices = (logicalId: number, ...policyNames: string[]): iam.IManagedPolicy[] => {
+  private addManagedPolices = (cfnLogicalName: string, ...policyNames: string[]): iam.IManagedPolicy[] => {
     const policies: iam.IManagedPolicy[] = [];
     policyNames.forEach((policyName) =>
       policies.push(
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
-          `${policyName}${logicalId}Arn`,
+          `${policyName}${cfnLogicalName}Arn`,
           `arn:aws:iam::aws:policy/${policyName}`
         )
       )

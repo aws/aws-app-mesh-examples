@@ -1,13 +1,14 @@
 import * as secrets_mgr from "aws-cdk-lib/aws-secretsmanager";
 import * as acm_pca from "aws-cdk-lib/aws-acmpca";
 import * as cert_mgr from "aws-cdk-lib/aws-certificatemanager";
+import * as cr from "@aws-cdk/custom-resources";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import { StackProps, Stack, SecretValue, RemovalPolicy, Fn, Duration } from "aws-cdk-lib";
+import { StackProps, Stack, RemovalPolicy, Duration } from "aws-cdk-lib";
+import * as assets from "aws-cdk-lib/aws-ecr-assets";
+import { triggers } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import * as fs from "fs";
 import * as path from "path";
-import * as shell from "child_process";
 
 export class AcmStack extends Stack {
   readonly colorTellerRootCa: acm_pca.CfnCertificateAuthority;
@@ -24,7 +25,10 @@ export class AcmStack extends Stack {
   readonly certificateSecret: secrets_mgr.Secret;
 
   readonly initCertRole: iam.Role;
-  readonly initCertFunc: lambda.Function;
+  readonly initCertFunc: lambda.DockerImageFunction;
+  readonly initCertTrigger: triggers.Trigger;
+
+  readonly initCertTriggerFunc: triggers.TriggerFunction;
 
   readonly signingAlgorithm: string = "SHA256WITHRSA";
   readonly keyAlgorithm: string = "RSA_2048";
@@ -95,6 +99,11 @@ export class AcmStack extends Stack {
       managedPolicies: [
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
+          "LambdaInitCertSsmPca",
+          "arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAFullAccess"
+        ),
+        iam.ManagedPolicy.fromManagedPolicyArn(
+          this,
           "LambdaInitCertSsm",
           "arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess"
         ),
@@ -111,12 +120,12 @@ export class AcmStack extends Stack {
       ],
     });
 
-    this.initCertFunc = new lambda.Function(this, `${this.stackName}InitCertFunc`, {
-      runtime: lambda.Runtime.PYTHON_3_9,
+    this.initCertFunc = new lambda.DockerImageFunction(this, `${this.stackName}InitCertFunc`, {
       functionName: "init-cert",
-      handler: "initcert.lambda_handler",
       timeout: Duration.seconds(900),
-      code: lambda.Code.fromAsset(path.join(__dirname, "../../lambda_initcert")),
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_initcert"), {
+        platform: assets.Platform.LINUX_AMD64,
+      }),
       role: this.initCertRole,
       environment: {
         COLOR_GATEWAY_ACM_ARN: this.colorGatewayEndpointCert.certificateArn,
@@ -126,6 +135,12 @@ export class AcmStack extends Stack {
         AWS_ACCOUNT: process.env.CDK_DEFAULT_ACCOUNT!,
         SECRET: this.certificateSecret.secretArn,
       },
+    });
+
+    this.initCertTrigger = new triggers.Trigger(this, `${this.stackName}InitCertTrigger`, {
+      handler: this.initCertFunc,
+      executeAfter: [this.colorTellerEndpointCert, this.colorGatewayEndpointCert, this.certificateSecret],
+      executeOnHandlerChange: false,
     });
   }
 

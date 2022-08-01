@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const defaultPort = "8080"
+const defaultPort = "9080"
 const defaultColor = "yellow"
 
 func getServerPort() string {

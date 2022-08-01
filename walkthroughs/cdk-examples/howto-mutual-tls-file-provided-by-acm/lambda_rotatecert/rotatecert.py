@@ -13,16 +13,16 @@ gate_cm = os.environ['COLOR_GATEWAY_ACM_ARN']
 teller_cm = os.environ['COLOR_TELLER_ACM_ARN']
 secret = os.environ['SECRET']
 
-print('ecs_cluster -> ', ecs_cluster)
-print('color_gateway_svc -> ', color_gateway_svc)
-print('color_teller_svc -> ', color_teller_svc)
-print('gate_cm -> ', gate_cm)
-print('teller_cm -> ', teller_cm)
-print('secret -> ', secret)
-
 
 def lambda_handler(event, context):
-    print(json.dumps(event))
+    # print(json.dumps(event))
+
+    print('ecs_cluster -> ', ecs_cluster)
+    print('color_gateway_svc -> ', color_gateway_svc)
+    print('color_teller_svc -> ', color_teller_svc)
+    print('gate_cm -> ', gate_cm)
+    print('teller_cm -> ', teller_cm)
+    print('secret -> ', secret)
 
     cm.renew_certificate(CertificateArn=teller_cm)
     cm.renew_certificate(CertificateArn=gate_cm)

@@ -76,7 +76,7 @@ export class MeshStack extends Stack {
           tlsClientPolicy: {
             enforce: true,
             validation: {
-              trust: appmesh.MutualTlsValidationTrust.acm([
+              trust: appmesh.TlsValidationTrust.acm([
                 acm_pca.CertificateAuthority.fromCertificateAuthorityArn(
                   this,
                   `${this.stackName}Trust`,
@@ -110,7 +110,7 @@ export class MeshStack extends Stack {
               ? undefined
               : {
                   mode: TlsMode.STRICT,
-                  certificate: appmesh.MutualTlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
+                  certificate: appmesh.TlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
                   mutualTlsValidation:
                     choice == MeshUpdateChoice.MUTUAL_TLS
                       ? {
