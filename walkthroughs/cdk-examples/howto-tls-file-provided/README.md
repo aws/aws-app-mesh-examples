@@ -71,8 +71,8 @@ ecs-services: creating CloudFormation changeset...
 ✨  Deployment time: 19.43s
 
 Outputs:
-infrasvcdscvrymeshecsservicesDCAA690C.BastionIP = XXX.XXX.XXX.XXX
-infrasvcdscvrymeshecsservicesDCAA690C.URL = gateway-XXXXXXXXXX.us-west-1.elb.amazonaws.com
+infrasvcdscvrymeshecsservicesDCAA690C.BastionIP = export BASTION_IP=XXX.XXX.XXX.XXX
+infrasvcdscvrymeshecsservicesDCAA690C.URL = export URL=gateway-XXXXXXXXXX.us-west-1.elb.amazonaws.com
 Stack ARN:
 arn:aws:cloudformation:us-west-1:XXXXXXXXXX:stack/ecs-services/XXXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXX
 
@@ -84,7 +84,7 @@ We can see that the deployment produces two outputs:
 - `URL` - which is the DNS name of the public Application Load Balancer (ALB).
 - `BastionIP` - which is the public IP address of the Bastion Host.
 
-Let's set these in our environment.
+Let's copy the ourputs and set them in our environment.
 
 ```bash
 export BASTION_IP=<BastionIP>
