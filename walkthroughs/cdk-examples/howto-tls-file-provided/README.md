@@ -93,9 +93,9 @@ export URL=<URL>
 
 ## Certficate Generation
 
-To encrypt traffic between our services, we generate certficates using the `SecretsStack` (`lib/stacks/secrets.ts`).
+To encrypt traffic between our services, we generate certficates using the `SecretsStack` ([`lib/stacks/secrets.ts`](./lib/stacks/secrets.ts)).
 
-Adding `--context make-certs=true` in the `cdk deploy` command runs the `./src/tlsCertificates/certs.sh` script as a `node` child process.
+Adding `--context make-certs=true` in the `cdk deploy` command runs the [`./src/tlsCertificates/certs.sh`](./src/tlsCertificates/certs.sh) script as a `node` child process.
 
 This `certs.sh` script generates a few different files:
 
@@ -118,7 +118,7 @@ You should see a response saying `OK`
 src/tlsCertificates/colorteller_white_cert.pem: OK
 ```
 
-To store these certficates in Envoy, we build a custom Docker Image `src/customEnvoyImage/Dockerfile` and deploy it to Amazon Elastic Container Registry (ECR). To do this, we make use of the [`aws-ecr-assets.DockerImageAsset`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr_assets.DockerImageAsset.html) construct in the `InfraStack` (`lib/stacks/infra.ts`).
+To store these certficates in Envoy, we build a custom Docker Image [`src/customEnvoyImage/Dockerfile`](./src/customEnvoyImage/Dockerfile) and deploy it to Amazon Elastic Container Registry (ECR). To do this, we make use of the [`aws-ecr-assets.DockerImageAsset`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr_assets.DockerImageAsset.html) construct in the `InfraStack` ([`lib/stacks/infra.ts`](./lib/stacks/infra.ts)).
 
 This image stores certfiicates in the `/keys` directory, which will be referenced by the virtual nodes for TLS encryption.
 
@@ -238,13 +238,13 @@ There are a total of 5 Stacks that provision all the infrastructure for the exam
 
 _Note - The `cdk bootstrap` command provisions a `CDKToolkit` Stack to deploy AWS CDK apps into your cloud enviroment._
 
-1. `SecretsStack` - provisions the generated certficates as plaintext secrets in AWS Secrets Manager.
-1. `InfraStack` - provisions the network infrastructure like the VPC, ECS Cluster, IAM Roles and the Docker images that are pushed to the ECR Repository.
-1. `ServiceDiscoveryStack` - provisions 3 CloudMap services that are used for service discovery by App Mesh.
-1. `MeshStack` - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual gateway.
-1. `EcsServicesStack` - this stack provisions the 3 Fargate services using a custom construct `AppMeshFargateService` which encapsulates the application container and Envoy sidecar/proxy into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
+1. [`SecretsStack`](./lib//stacks/secrets.ts) - provisions the generated certficates as plaintext secrets in AWS Secrets Manager.
+1. [`InfraStack`](./lib//stacks/infra.ts) - provisions the network infrastructure like the VPC, ECS Cluster, IAM Roles and the Docker images that are pushed to the ECR Repository.
+1. [`ServiceDiscoveryStack`](./lib/stacks/service-discovery.ts) - provisions 3 CloudMap services that are used for service discovery by App Mesh.
+1. [`MeshStack`](./lib/stacks/mesh-components.ts)- provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual gateway.
+1. [`EcsServicesStack`](./lib/stacks/ecs-services.ts) - this stack provisions the 3 Fargate services using a custom construct [`AppMeshFargateService`](./lib/constructs/appmesh-fargate-service.ts) which encapsulates the application container and Envoy sidecar/proxy into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
 
-Two more constructs - `EnvoySidecar` and `ApplicationContainer` bundle the common container options used by these Fargate service task definitions.
+Two more constructs - [`EnvoySidecar`](./lib/constructs/envoy-sidecar.ts) and [`ApplicationContainer`](./lib/constructs/application-container.ts) bundle the common container options used by these Fargate service task definitions.
 
 <p align="center">
   <img src="assets/stacks_tls.png">
@@ -262,7 +262,7 @@ const serviceDiscovery = new ServiceDiscoveryStack(infra, "svc-dscvry", { stackN
 
 ## App Mesh CDK Constructs
 
-To easily define Fargate services with Envoy proxies, we make use of the `AppMeshFargateService` construct mentioned above. The main purpose of this construct is to bundle the application containers with the Envoy sidecar and proxy. To do so, we define a set of custom props in `lib/utils.ts` called `AppMeshFargateServiceProps`.
+To easily define Fargate services with Envoy proxies, we make use of the [`AppMeshFargateService`](./lib/constructs/appmesh-fargate-service.ts) construct mentioned above. The main purpose of this construct is to bundle the application containers with the Envoy sidecar and proxy. To do so, we define a set of custom props in [`lib/utils.ts`](./lib/utils.ts) called `AppMeshFargateServiceProps`.
 
 ```c
 // utils.ts
@@ -282,9 +282,9 @@ export interface AppMeshFargateServiceProps {
 
 ```
 
-Note that the `proxyConfiguration` prop in `EnvoyConfiguration` is separate because the Envoy sidecar container can exist own its own without acting as a proxy, but for it to act as a proxy there must be a running container with the name mentioned in the proxy configuration. These props are passed to instantiate Fargate Services in the `EcsServicesStack`. Once the attributes are passed to the construct, simple conditional checks can be used to add container dependencies and appropriate service discovery mechanisms for the different services.
+Note that the `proxyConfiguration` prop in `EnvoyConfiguration` is separate because the Envoy sidecar container can exist own its own without acting as a proxy, but for it to act as a proxy there must be a running container with the name mentioned in the proxy configuration. These props are passed to instantiate Fargate Services in the [`EcsServicesStack`](./lib/stacks/ecs-services.ts). Once the attributes are passed to the construct, simple conditional checks can be used to add container dependencies and appropriate service discovery mechanisms for the different services.
 
-The crux of the mesh infrastructure lies in the `MeshStack`. We can create resources like virtual nodes using appropriate CDK constructs. In this case, since we are building 2 TLS enabled virtual nodes, we can define a common method to instantiate them.
+The crux of the mesh infrastructure lies in the [`MeshStack`](./lib/stacks/mesh-components.ts). We can create resources like virtual nodes using appropriate CDK constructs. In this case, since we are building 2 TLS enabled virtual nodes, we can define a common method to instantiate them.
 
 ```c
 // mesh-components.ts
