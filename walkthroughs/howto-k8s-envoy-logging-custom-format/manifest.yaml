@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: howto-k8s-envoy-logging-custom-format
+  labels:
+    mesh: howto-k8s-envoy-logging-custom-format
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: howto-k8s-envoy-logging-custom-format
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: howto-k8s-envoy-logging-custom-format
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-blue
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: color
+    version: blue
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  ports:
+    - port: 8080
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+    spec:
+      containers:
+        - name: app
+          image: 927633306431.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-envoy-logging-custom-format/feapp
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "HOST"
+              value: "color.howto-k8s-envoy-logging-custom-format.svc.cluster.local:8080"
+            - name: "PORT"
+              value: "8080"
+            - name: "NAMESPACE"
+              value: "howto-k8s-envoy-logging-custom-format"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  selector:
+    matchLabels:
+      app: color
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: color
+        version: blue
+    spec:
+      containers:
+        - name: app
+          image: 927633306431.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-envoy-logging-custom-format/colorapp
+          ports:
+            - containerPort: 8080
+          env:
+            - name: "COLOR"
+              value: "blue"
+            - name: "PORT"
+              value: "8080"
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  awsName: color.howto-k8s-envoy-logging-custom-format.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: blue
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: front
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  podSelector:
+    matchLabels:
+      app: front
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: color
+  serviceDiscovery:
+    dns:
+      hostname: front.howto-k8s-envoy-logging-custom-format.svc.cluster.local
+  logging:
+    accessLog:
+      file:
+        path: "/dev/stdout"
+        format:
+          text: "texttestingtesting %PROTOCOL%:%DURATION%\n"
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: blue
+  namespace: howto-k8s-envoy-logging-custom-format
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+      version: blue
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-blue.howto-k8s-envoy-logging-custom-format.svc.cluster.local
+  logging:
+    accessLog:
+      file:
+        path: "/dev/stdout"
+        format:
+          json:
+            - key: "protocol"
+              value: "jsontestingtesting %PROTOCOL%"
