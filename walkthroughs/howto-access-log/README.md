@@ -30,26 +30,40 @@ export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-1
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
+export AWS_PROFILE=default
+export AWS_DEFAULT_REGION=us-west-2
+export ENVIRONMENT_NAME=LOGGING
+export MESH_NAME=appmesh-mesh-logging
+export SERVICES_DOMAIN=logging.local
 ```
 This example is based on color app with Virtual Node on both EC2 and Fargate instance. Follow the color app example in aws-app-mesh-examples/examples/apps/colorapp/
 then follow walkthrough in aws-app-mesh-examples/walkthroughs/fargate/ to the step where you have 2 active virtual nodes blue (on EC2) and green (on fargate).
 
-## Step 3: Update virtual node with logging format
+Or you can follow the following steps:
 
 We'll start by setting up the basic infrastructure for our services.
 
-First, create the VPC.
+1. create the VPC.
 
 ```bash
 ./infrastructure/vpc.sh
 ```
+2. Create the Mesh
 
-Next, create the ECS cluster and ECR repositories.
+```bash
+./infrastructure/appmesh-mesh.sh
+```
+3. create the ECS cluster
 
 ```bash
 ./infrastructure/ecs-cluster.sh
-./infrastructure/ecr-repositories.sh
 ```
+4. create mesh resources
+
+```bash
+./colorapp-ecs/appmesh-colorapp.sh
+```
+5.Deploy service to ECS
 
 Next, build and deploy the colorteller and wrktool images.
 
