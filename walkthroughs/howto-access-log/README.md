@@ -29,12 +29,14 @@ Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' 
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-1
-export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
+export ENVOY_IMAGE=840364872350.dkr.ecr.<region-code>.amazonaws.com/aws-appmesh-envoy:v1.22.2.0-prod
 export AWS_PROFILE=default
 export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=LOGGING
 export MESH_NAME=appmesh-mesh-logging
 export SERVICES_DOMAIN=logging.local
+export GOPROXY=direct
+export GO_PROXY=direct
 ```
 This example is based on color app with Virtual Node on both EC2 and Fargate instance. Follow the color app example in aws-app-mesh-examples/examples/apps/colorapp/
 then follow walkthrough in aws-app-mesh-examples/walkthroughs/fargate/ to the step where you have 2 active virtual nodes blue (on EC2) and green (on fargate).
@@ -63,245 +65,74 @@ We'll start by setting up the basic infrastructure for our services.
 ```bash
 ./colorapp-ecs/appmesh-colorapp.sh
 ```
-5.Deploy service to ECS
-
-Next, build and deploy the colorteller and wrktool images.
+5. Deploy service to ECS
 
 ```bash
-./src/colorteller/deploy.sh
+aws ecr create-repository --repository-name=gateway
+export COLOR_GATEWAY_IMAGE=$(aws ecr describe-repositories --repository-names=gateway --query 'repositories[0].repositoryUri' --output text)
+./colorapp-ecs/gateway/deploy.sh
 ```
-and 
 
 ```bash
-./src/wrktool/deploy.sh
+aws ecr create-repository --repository-name=colorteller
+export COLOR_TELLER_IMAGE=$(aws ecr describe-repositories --repository-names=colorteller --query 'repositories[0].repositoryUri' --output text)
+./colorapp-ecs/colorteller/deploy.sh
 ```
-
-**_Note_** that the example app uses go modules. If you have trouble accessing https://proxy.golang.org during the deployment you can override the GOPROXY by setting `GO_PROXY=direct`
 
 ```bash
-GO_PROXY=direct ./src/colorteller/deploy.sh
+./colorapp-ecs/ecs-colorapp.sh
 ```
 
-Finally, let's create the mesh.
+To test:
 
 ```bash
-./mesh/mesh.sh up
+colorapp=$(aws cloudformation describe-stacks --region=$AWS_DEFAULT_REGION --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text)
+curl $colorapp/color
 ```
-
-
-## Step 4: Deploy services and Verify
-
-Our next step is to deploy the service in ECS and test it out.
+6. deploy new virtual node on fargat instance
 
 ```bash
-./infrastructure/ecs-service.sh
+./colorapp-ecs/fargate/appmesh-colorapp.sh
+./colorapp-ecs/fargate/fargate-colorteller.sh
 ```
 
-1. After a few minutes, the applications should be deployed and you will see an output such as:
+To test:
 
-	```bash
-	Successfully created/updated stack - ${ENVIRONMENT_NAME}-ecs-service
-	Bastion endpoint:
-	123.45.67.89
-	ColorApp endpoint:
-	http://howto-Publi-55555555.us-west-2.elb.amazonaws.com
-	```
+```bash
+colorapp=$(aws cloudformation --region=$AWS_DEFAULT_REGION describe-stacks --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text)
+curl $colorapp/color
+```
 
-	Export the public endpoint to access the gateway
+## Step 3: Update logging format and Verify
 
-	```bash
-	export COLORAPP_ENDPOINT=<your_https_colorApp_endpoint e.g. https://howto-Publi-55555555.us-west-2.elb.amazonaws.com>
-	```
-	And export the bastion endpoint for later use.
+Our next step is to update the logging format and test it out.
 
-	```bash
-	export BASTION_IP=<your_bastion_endpoint e.g. 12.245.6.189>
-	```
+1. check meshes is deployed
 
-2. Let's issue a request to the color gateway with gatewayRoute prefix as `/color1` and backend service route prefix as `/tell`.
+```bash
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal list-meshes
+```
+2. check virtual node green (on fargate)
 
-	```bash
-	curl "${COLORAPP_ENDPOINT}/color1/tell"
-	```
-	If you run the above command, you should see a successful `white` response back.
+```bash
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal describe-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME
+```
 
-	Similarly, let's issue a request to the gateway with gatewayRoute prefix as `/color2` and backend service route prefix as `/tell`.
+3. update virtual node with text logging format in it
 
-	```bash
-	curl "${COLORAPP_ENDPOINT}/color2/tell"
-	```
-	In this case, you should receive a successful `black` response back.
+```bash
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-text-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-text-format.json
+```
 
-## Step 5: Testing Connection Pool settings
-1. Now let's log into the bastion host and verify that our `wrk` tool is setup
+4. update virtual node with json logging format in it
 
-	```bash
-	ssh -i <key_pair_location> -l ec2-user ${BASTION_IP}
-	```
+```bash
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-json-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-json-format.json
+```
+## Step 4: Clean Up
 
-    We'll curl `wrk` tool's endpoint and verify that it's up and running
-    ```bash
-	curl -s http://wrk-tool.default.svc.cluster.local/wrk
-	```
-	You should receive an `Alive!` response back.
-
-2. Now let's test the default circuit breaking in Envoy (Currently Envoy defaults are 1024, which will soon change to AppMesh defaults of 2147483647)
-    *You'll need multiple bastion host terminals to test this*
-    *Note*: You might want to change the `default.svc.cluster.local` in the following commands based on your SERVICES_DOMAIN env variable.
-
-    ```bash
-	ssh -i <key_pair_location> -l ec2-user ${BASTION_IP}
-	```
-
-    Let's `watch` the Virtual Gateway stats:
-    ```bash
-    watch -n 0.2 "curl -s colorgateway.default.svc.cluster.local:9901/stats | grep -E '(circuit_breakers.default|cx_active|rq_active|rq_pending_active|overflow|5xx)'"
-    ```
-
-    In another bastion window, we are going to use the `wrk` tool we've setup to send more than 1024 connections:
-    ```bash
-    curl -i -X POST \
-        -H "Content-Type:application/json" \
-        -d '{"connections":"1050", "rate": "10000", "duration": "120", "url":"http://colorgateway.default.svc.cluster.local:9080/color1/tell"}' \
-        http://wrk-tool.default.svc.cluster.local/wrk
-    ```
-
-    In the window that you're watching for stats, look for the following counters and gauges:
-
-    **_Note:_** The following stats are also pushed to CloudWatch using the cwagent container.
-
-    Incoming requests:
-    ```
-    http.ingress.downstream_cx_active: 1050
-    ```
-
-    Connection limit:
-    ```
-    cluster.cds_ingress_cb-mesh_colorgateway-vg_self_redirect_http_15001.upstream_cx_active: 1024
-    cluster.cds_ingress_cb-mesh_colorgateway-vg_self_redirect_http_15001.circuit_breakers.default.cx_open: 1
-    ```
-
-    Requests limit:
-    ```
-    cluster.cds_egress_cb-mesh_colorteller-white-vn_http_9080.upstream_rq_active: 1024
-    cluster.cds_egress_cb-mesh_colorteller-white-vn_http_9080.circuit_breakers.default.rq_open: 1
-    ```
-
-    In case you missed any of the stats, you can send the requests to `wrk` tool with a higher duration `"duration": "300"` (Unit is in seconds).
-
-3. Now let's set the HTTP connection pool settings on Virtual Gateway to the following:
-    ```bash
-    "connectionPool": {
-        "http": {
-            "maxConnections": 100,
-            "maxPendingRequests": 10000
-        }
-    }
-    ```
-
-    Update the Virtual Gateway (using the file `./mesh/colorgateway-vg-update.json`):
-    ```bash
-    ./mesh/mesh.sh update vgateway colorgateway
-    ```
-
-    Let's `watch` the Virtual Gateway stats:
-    ```bash
-    watch -n 0.2 "curl -s colorgateway.default.svc.cluster.local:9901/stats | grep -E '(circuit_breakers.default|cx_active|rq_active|rq_pending_active|overflow|5xx)'"
-    ```
-
-    In another bastion window, we are going to use the `wrk` tool to send more than 100 connections:
-    ```bash
-    curl -i -X POST \
-        -H "Content-Type:application/json" \
-        -d '{"connections":"101", "rate": "5000", "duration": "60", "url":"http://colorgateway.default.svc.cluster.local:9080/color1/tell"}' \
-        http://wrk-tool.default.svc.cluster.local/wrk
-    ```
-
-    In the window that you're watching for stats, look for the following counters and gauges (notice when the `cx_open` gauge flips):
-    ```
-    http.ingress.downstream_cx_active: 101
-    cluster.cds_ingress_cb-mesh_colorgateway-vg_self_redirect_http_15001.upstream_cx_active: 100
-    cluster.cds_ingress_cb-mesh_colorgateway-vg_self_redirect_http_15001.circuit_breakers.default.cx_open: 1
-    ```
-
-4. Now let's set the HTTP connection pool settings on `colorteller-white` Virtual Node to the following value:
-    ```bash
-    "connectionPool": {
-        "http": {
-            "maxConnections": 10,
-            "maxPendingRequests": 5
-        }
-    }
-    ```
-
-    Update the Virtual Node (using the file `./mesh/colorteller-white-vn-update.json`):
-    ```bash
-    ./mesh/mesh.sh update vnode colorteller-white
-    ```
-
-    Let's `watch` the `colorteller-white` Virtual Node stats:
-    ```bash
-    watch -n 0.2 "curl -s colorteller-white.default.svc.cluster.local:9901/stats | grep -E '(circuit_breakers.default|cx_active|rq_active|rq_pending_active|overflow|5xx)'"
-    ```
-
-    In another bastion window, we are going to use the `wrk` tool to send 50 connections:
-    ```bash
-    curl -i -X POST \
-        -H "Content-Type:application/json" \
-        -d '{"connections":"50", "rate": "5000", "duration": "60", "url":"http://colorgateway.default.svc.cluster.local:9080/color1/tell"}' \
-        http://wrk-tool.default.svc.cluster.local/wrk
-    ```
-
-    In the window that you're watching for stats, look for the following counters and gauges:
-
-    Connection limit:
-    ```
-    http.ingress.downstream_cx_active: 50
-    cluster.cds_ingress_cb-mesh_colorteller-white-vn_http_9080.upstream_cx_active: 11
-    cluster.cds_ingress_cb-mesh_colorteller-white-vn_http_9080.circuit_breakers.default.cx_open: 1
-    ```
-
-    Pending requests limit:
-    ```
-    cluster.cds_ingress_cb-mesh_colorteller-white-vn_http_9080.upstream_rq_pending_active: 5
-    cluster.cds_ingress_cb-mesh_colorteller-white-vn_http_9080.circuit_breakers.default.rq_pending_open: 1
-    ```
-
-5. Now let's set the HTTP2 connection pool settings on `colorteller-black` Virtual Node to the following value:
-    ```bash
-    "connectionPool": {
-        "http2": {
-            "maxRequests": 10
-        }
-    }
-    ```
-
-    Update the Virtual Node (using the file `./mesh/colorteller-black-vn-update.json`):
-    ```bash
-    ./mesh/mesh.sh update vnode colorteller-black
-    ```
-
-    Let's `watch` the `colorteller-black` Virtual Node stats:
-    ```bash
-    watch -n 0.2 "curl -s colorteller-black.default.svc.cluster.local:9901/stats | grep -E '(circuit_breakers.default|cx_active|rq_active|rq_pending_active|overflow|5xx)'"
-    ```
-
-    In another bastion window, we are going to use the `wrk` tool to send 50 connections and a request rate of 5000:
-    ```bash
-    curl -i -X POST \
-        -H "Content-Type:application/json" \
-        -d '{"connections":"50", "rate": "5000", "duration": "60", "url":"http://colorgateway.default.svc.cluster.local:9080/color2/tell"}' \
-        http://wrk-tool.default.svc.cluster.local/wrk
-    ```
-
-    In the window that you're watching for stats, look for the following counters and gauges:
-    ```bash
-    http.ingress.downstream_rq_active: 10
-    cluster.cds_ingress_cb-mesh_colorteller-black-vn_http2_9080.upstream_rq_active: 10
-    cluster.cds_ingress_cb-mesh_colorteller-black-vn_http2_9080.circuit_breakers.default.rq_open: 1
-    ```
-
-## Step 6: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
 Run the following commands to clean up and tear down the resources that we’ve created.
