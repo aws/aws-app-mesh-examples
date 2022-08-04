@@ -19,11 +19,9 @@ In this feature, we add support for different logging format like text_format_so
 
 4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 5. Install Docker. It is needed to build the demo application images.
-6. This example is based on color app with Virtual Node on both EC2 and Fargate instance. Follow the color app example in aws-app-mesh-examples/examples/apps/colorapp/
-then follow walkthrough in aws-app-mesh-examples/walkthroughs/fargate/ to the step where you have 2 active virtual nodes blue (on EC2) and green (on fargate). 
 
 
-## Step 2: Set Environment Variables
+## Step 2: Set Environment Variables and deploy color app
 We need to set a few environment variables before provisioning the infrastructure.
 Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' and `ENVOY_IMAGE` below.
 
@@ -33,6 +31,8 @@ export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-1
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 ```
+This example is based on color app with Virtual Node on both EC2 and Fargate instance. Follow the color app example in aws-app-mesh-examples/examples/apps/colorapp/
+then follow walkthrough in aws-app-mesh-examples/walkthroughs/fargate/ to the step where you have 2 active virtual nodes blue (on EC2) and green (on fargate).
 
 ## Step 3: Update virtual node with logging format
 
