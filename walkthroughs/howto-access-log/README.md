@@ -20,7 +20,7 @@ In this feature, we add support for different logging format like text_format_so
 4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 5. Install Docker. It is needed to build the demo application images.
 
-![](/fargate.png)
+![](fargate.png)
 ## Step 2: Set Environment Variables and deploy color app
 We need to set a few environment variables before provisioning the infrastructure.
 Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' and `ENVOY_IMAGE` below.
