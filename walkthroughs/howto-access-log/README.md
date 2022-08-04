@@ -20,7 +20,7 @@ In this feature, we add support for different logging format like text_format_so
 4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 5. Install Docker. It is needed to build the demo application images.
 
-
+![](/fargate.png)
 ## Step 2: Set Environment Variables and deploy color app
 We need to set a few environment variables before provisioning the infrastructure.
 Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' and `ENVOY_IMAGE` below.
@@ -124,6 +124,12 @@ aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com
 aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-text-format.json
 aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-text-format.json
 ```
+If you go to ECS -> Green/Blue backend task -> log -> envoy and search for Green/Blue
+You should see logs like this:
+
+```
+BlueTestLog::200:path=/ping
+```
 
 4. update virtual node with json logging format in it
 
@@ -131,6 +137,26 @@ aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com
 aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-json-format.json
 aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-json-format.json
 ```
+
+If you go to ECS -> Green/Blue backend task -> log -> envoy and search for Green/Blue
+You should see logs like this:
+
+```
+{"BlueTestLog":200,"protocol":"HTTP/1.1"}
+```
+
+5. update virtual node with no logging format in it
+
+```bash
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-no-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-no-format.json
+```
+Search for `colorteller-blue.logging.local` in console you and should see the default format like following
+```
+[2022-08-04T23:00:29.383Z] "GET /ping HTTP/1.1" 200 - 0 0 1 0 "-" "Envoy/HC" "05ba7454-fce2-9360-92e3-a4da997d4f44" "colorteller-blue.logging.local:9080" "127.0.0.1:9080"
+```
+6. change between different formats or change the pattern to find bugs!
+
 ## Step 4: Clean Up
 
 
@@ -146,10 +172,4 @@ aws ecr delete-repository --force --repository-name $COLOR_TELLER_IMAGE_NAME
 aws ecr delete-repository --force --repository-name $WRK_TOOL_IMAGE_NAME
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-ecr-repositories
 aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
-```
-
-Delete the Mesh:
-
-```bash
-./mesh/mesh.sh down
 ```
