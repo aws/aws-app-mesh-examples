@@ -1,17 +1,13 @@
-## ColorApp Setup
-For the Color App setup, an NLB is used to forward traffic to the Virtual Gateway (running a set of Envoys). We configure 2 Gateway Routes - color1 and color2 pointing to 2 Virtual Services (backed by a Virtual Node each). Virtual Service `colorteller-1.default.svc.cluster.local` points to `colorteller-white-vn` which listens on http port 9080. The Virtual Service `colorteller-2.default.svc.cluster.local` points to `colorteller-black-vn` which listens on http2 port 9080.
+## Access Log Format Feature Background
+Today App Mesh supports configuring access log file path (https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy-logs.html) for virtual nodes (https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual_nodes.html) and virtual gateways (https://docs.aws.amazon.com/app-mesh/latest/userguide/virtual_gateways.html). We apply the same configuration for all the listener filter chains in Envoy. If not specified, Envoy will output logs to /dev/stdout by default. 
 
-We go through the exercise of setting up connection pool settings at the Virtual Gateway and Virtual Node.
-
-![System Diagram](./howto-circuit-breakers.png "System Diagram")
+In this feature, we add support for different logging format like text_format_source or json_format. Following the walkthrough, you will be able to deploy color app with customized logging focusing on things that you really care about. It would also help if you want to export the logging file to other tools which requires a specific format or pattern to do further analysis. 
 
 ## Step 1: Prerequisites
 
-1. Clone this repository and navigate to the `walkthroughs/howto-circuit-breakers` folder, all the commands henceforth are assumed to be run from the same directory as this README.
+1. Make sure you have version 1.18.172 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.0.62 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
 
-2. Make sure you have version 1.18.172 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.0.62 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
-
-3. You'll need a keypair stored in AWS to access a bastion host.
+2. You'll need a keypair stored in AWS to access a bastion host.
    If you do not already have one, you can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
     ```bash
@@ -23,28 +19,22 @@ We go through the exercise of setting up connection pool settings at the Virtual
 
 4. Additionally, this walkthrough makes use of the unix command line utility `jq`. If you don't already have it, you can install it from [here](https://stedolan.github.io/jq/).
 5. Install Docker. It is needed to build the demo application images.
+6. This example is based on color app with Virtual Node on both EC2 and Fargate instance. Follow the color app example in aws-app-mesh-examples/examples/apps/colorapp/
+then follow walkthrough in aws-app-mesh-examples/walkthroughs/fargate/ to the step where you have 2 active virtual nodes blue (on EC2) and green (on fargate). 
+
 
 ## Step 2: Set Environment Variables
 We need to set a few environment variables before provisioning the infrastructure.
-Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, and `ENVOY_IMAGE` below.
+Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' and `ENVOY_IMAGE` below.
 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
-export AWS_DEFAULT_REGION=us-west-2
-export ENVIRONMENT_NAME=CircuitBreakers
-export MESH_NAME=circuit-breaker-mesh
+export AWS_DEFAULT_REGION=us-west-1
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
-export SERVICES_DOMAIN="default.svc.cluster.local"
-export COLOR_TELLER_IMAGE_NAME="howto-circuit-breakers/colorteller"
-export WRK_TOOL_IMAGE_NAME="howto-circuit-breakers/wrktool"
 ```
 
-You can change these ENV variables in `vars.env` file and then apply it using: 
-`source ./vars.env`
-
-
-## Step 3: Deploy Color App Infrastructure
+## Step 3: Update virtual node with logging format
 
 We'll start by setting up the basic infrastructure for our services.
 
