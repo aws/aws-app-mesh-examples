@@ -10,7 +10,7 @@ import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
 import { EnvoySidecar } from "../constructs/envoy-sidecar";
 import { ApplicationContainer } from "../constructs/application-container";
 import { CustomStackProps } from "../utils";
-import path = require("path");
+import * as path from "path";
 
 export class EcsServicesStack extends Stack {
   readonly rotateCertFunc: lambda.Function;

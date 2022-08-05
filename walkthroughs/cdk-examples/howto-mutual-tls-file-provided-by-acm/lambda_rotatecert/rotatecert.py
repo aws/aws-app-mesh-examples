@@ -15,7 +15,6 @@ secret = os.environ['SECRET']
 
 
 def lambda_handler(event, context):
-    # print(json.dumps(event))
 
     print('ecs_cluster -> ', ecs_cluster)
     print('color_gateway_svc -> ', color_gateway_svc)

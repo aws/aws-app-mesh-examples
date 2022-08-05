@@ -1,13 +1,11 @@
 import * as secrets_mgr from "aws-cdk-lib/aws-secretsmanager";
 import * as acm_pca from "aws-cdk-lib/aws-acmpca";
 import * as cert_mgr from "aws-cdk-lib/aws-certificatemanager";
-import * as cr from "@aws-cdk/custom-resources";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import { StackProps, Stack, RemovalPolicy, Duration } from "aws-cdk-lib";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
-import { triggers } from "aws-cdk-lib";
 import { Construct } from "constructs";
+import { StackProps, Stack, RemovalPolicy, Duration, triggers } from "aws-cdk-lib";
 import * as path from "path";
 
 export class AcmStack extends Stack {
@@ -36,6 +34,8 @@ export class AcmStack extends Stack {
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    // if(this.node.tryGetContext("init-deploy") === "true"){}
 
     // CAs
     this.colorTellerRootCa = this.buildCertificateAuthority("CtRootCA", "AcmPcaColorTeller");

@@ -52,7 +52,8 @@ export class InfraStack extends Stack {
         "CloudWatchFullAccess",
         "AWSAppMeshFullAccess",
         "SecretsManagerReadWrite",
-        "AWSCertificateManagerFullAccess"
+        "AWSCertificateManagerFullAccess",
+        "AWSCertificateManagerPrivateCAFullAccess"
       ),
     });
 

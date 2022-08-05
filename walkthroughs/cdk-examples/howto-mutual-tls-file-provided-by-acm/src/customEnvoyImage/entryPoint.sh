@@ -7,6 +7,8 @@ PASSPHRASE_B64=`echo -n $PASSPHRASE | base64`
 
 
 # -------- CollorGateway Cert ----------
+echo `The passphrase is ${PASSPHRASE}`
+echo `The passphrase b64 is ${PASSPHRASE_B64}`
 echo $CertSecret|jq -r '.GatewayCertificate' > /keys/colorgateway_endpoint_cert.pem
 echo $CertSecret|jq -r '.GatewayCertificateChain' > /keys/colorgateway_root_cert.pem
 echo $CertSecret|jq -r '.GatewayPrivateKey' > /keys/colorgateway_endpoint_enc_pri_key.pem 

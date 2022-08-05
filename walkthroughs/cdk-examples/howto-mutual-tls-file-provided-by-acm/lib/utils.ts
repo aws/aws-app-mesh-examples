@@ -3,6 +3,8 @@ import { StackProps } from "aws-cdk-lib";
 import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
 import { AcmStack } from "./stacks/acm";
+import { IManagedPolicy, ManagedPolicy } from "aws-cdk-lib/aws-iam";
+import { Construct } from "constructs";
 
 export interface CustomStackProps extends StackProps {
   acmStack: AcmStack;
@@ -56,4 +58,22 @@ export interface AppMeshFargateServiceProps {
   serviceDiscoveryType?: ServiceDiscoveryType;
   applicationContainer?: ApplicationContainer;
   envoyConfiguration?: EnvoyConfiguration;
+}
+
+export function addManagedPolices(
+  parentStack: Construct,
+  cfnLogicalName: string,
+  ...policyNames: string[]
+): IManagedPolicy[] {
+  const policies: IManagedPolicy[] = [];
+  policyNames.forEach((policyName) =>
+    policies.push(
+      ManagedPolicy.fromManagedPolicyArn(
+        parentStack,
+        `${policyName}${cfnLogicalName}Arn`,
+        `arn:aws:iam::aws:policy/${policyName}`
+      )
+    )
+  );
+  return policies;
 }

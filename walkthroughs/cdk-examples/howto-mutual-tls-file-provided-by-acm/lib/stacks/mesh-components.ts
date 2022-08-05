@@ -1,9 +1,8 @@
 import * as appmesh from "aws-cdk-lib/aws-appmesh";
 import * as acm_pca from "aws-cdk-lib/aws-acmpca";
-import { StackProps, Stack } from "aws-cdk-lib";
+import { Stack } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
 import { CustomStackProps, MeshUpdateChoice } from "../utils";
-import { Mesh, TlsMode } from "aws-cdk-lib/aws-appmesh";
 
 export class MeshStack extends Stack {
   readonly serviceDiscovery: ServiceDiscoveryStack;
@@ -109,7 +108,7 @@ export class MeshStack extends Stack {
             choice == MeshUpdateChoice.NO_TLS
               ? undefined
               : {
-                  mode: TlsMode.STRICT,
+                  mode: appmesh.TlsMode.STRICT,
                   certificate: appmesh.TlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
                   mutualTlsValidation:
                     choice == MeshUpdateChoice.MUTUAL_TLS

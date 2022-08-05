@@ -18,8 +18,6 @@ secret = os.environ['SECRET']
 
 def lambda_handler(event, context):
 
-    print('## EVENT ##', '\n', json.dumps(event))
-
     print('gate_cm -> ', gate_cm)
     print('teller_cm -> ', teller_cm)
     print('teller_pca_cm -> ', teller_pca_cm)
@@ -62,12 +60,7 @@ def lambda_handler(event, context):
         sm.put_secret_value(
             SecretId=secret, SecretString=json.dumps(sm_value))
 
-        print("Certificates loaded")
-
-        # cfnresponse.send(event={}, context=context, responseStatus=cfnresponse.SUCCESS, responseData={
-        #                  "message": "SUCCESS"})
+        print("Certificates loaded!")
 
     except Exception as e:
         print(f"Task failed due to exception: {e}")
-        # cfnresponse.send(event={}, context=context, responseStatus=cfnresponse.FAILED, responseData={
-        #                  "error": e.__cause__})
