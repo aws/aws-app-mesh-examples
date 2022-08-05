@@ -31,7 +31,6 @@ export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-1
 export ENVOY_IMAGE=840364872350.dkr.ecr.<region-code>.amazonaws.com/aws-appmesh-envoy:v1.22.2.0-prod
 export AWS_PROFILE=default
-export AWS_DEFAULT_REGION=us-west-2
 export ENVIRONMENT_NAME=LOGGING
 export MESH_NAME=appmesh-mesh-logging
 export SERVICES_DOMAIN=logging.local
