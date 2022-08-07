@@ -30,10 +30,6 @@ export interface CustomContainerProps {
   logStreamPrefix: string;
 }
 
-export interface CustomStackProps extends StackProps {
-  addMesh?: boolean;
-}
-
 export interface EnvoyContainerProps extends CustomContainerProps {
   appMeshResourceArn: string;
   enableXrayTracing?: boolean;
