@@ -28,7 +28,7 @@ Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' 
 ```bash
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
-export AWS_DEFAULT_REGION=us-west-1
+export AWS_DEFAULT_REGION=<your region here>
 export ENVOY_IMAGE=840364872350.dkr.ecr.<region-code>.amazonaws.com/aws-appmesh-envoy:v1.22.2.0-prod
 export AWS_PROFILE=default
 export ENVIRONMENT_NAME=LOGGING
