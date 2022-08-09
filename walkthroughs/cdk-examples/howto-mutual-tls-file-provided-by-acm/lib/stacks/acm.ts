@@ -4,8 +4,11 @@ import * as cert_mgr from "aws-cdk-lib/aws-certificatemanager";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
+
 import { Construct } from "constructs";
 import { StackProps, Stack, RemovalPolicy, Duration, triggers } from "aws-cdk-lib";
+import { getCertLambdaPolicies } from "../utils";
+
 import * as path from "path";
 
 export class AcmStack extends Stack {
@@ -59,23 +62,11 @@ export class AcmStack extends Stack {
       this.colorTellerRootCa.attrArn,
       this.colorTellerRootCert.attrCertificate
     );
-    this.colorGatewayCaActvn = this.buildCaActivation(
-      "GwActvn",
-      this.colorGatewayCa.attrArn,
-      this.colorGatewayCert.attrCertificate
-    );
+    this.colorGatewayCaActvn = this.buildCaActivation("GwActvn", this.colorGatewayCa.attrArn, this.colorGatewayCert.attrCertificate);
 
     // Endpoint certs
-    this.colorTellerEndpointCert = this.buildEnpointCertificate(
-      "CtEndpt",
-      this.colorTellerRootCa.attrArn,
-      "colorteller"
-    );
-    this.colorGatewayEndpointCert = this.buildEnpointCertificate(
-      "GwEndpt",
-      this.colorGatewayCa.attrArn,
-      "colorgateway"
-    );
+    this.colorTellerEndpointCert = this.buildEnpointCertificate("CtEndpt", this.colorTellerRootCa.attrArn, "colorteller");
+    this.colorGatewayEndpointCert = this.buildEnpointCertificate("GwEndpt", this.colorGatewayCa.attrArn, "colorgateway");
 
     this.colorGatewayEndpointCert.node.addDependency(this.colorGatewayCaActvn);
     this.colorTellerEndpointCert.node.addDependency(this.colorTellerRootCaActvn);
@@ -96,28 +87,7 @@ export class AcmStack extends Stack {
 
     this.initCertRole = new iam.Role(this, `${this.stackName}LambdaCertRole`, {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      managedPolicies: [
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaInitCertSsmPca",
-          "arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAFullAccess"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaInitCertSsm",
-          "arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaInitCertSd2",
-          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaInitCertSs33m",
-          "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
-        ),
-      ],
+      managedPolicies: getCertLambdaPolicies(this, "initCertPols"),
     });
 
     this.initCertFunc = new lambda.DockerImageFunction(this, `${this.stackName}InitCertFunc`, {
@@ -153,11 +123,7 @@ export class AcmStack extends Stack {
     });
   };
 
-  private buildRootCertificate = (
-    cfnLogicalName: string,
-    caArn: string,
-    signingRequest: string
-  ): acm_pca.CfnCertificate => {
+  private buildRootCertificate = (cfnLogicalName: string, caArn: string, signingRequest: string): acm_pca.CfnCertificate => {
     return new acm_pca.CfnCertificate(this, `${this.stackName}${cfnLogicalName}`, {
       certificateAuthorityArn: caArn,
       certificateSigningRequest: signingRequest,
@@ -170,26 +136,14 @@ export class AcmStack extends Stack {
     });
   };
 
-  private buildEnpointCertificate = (
-    cfnLogicalName: string,
-    caArn: string,
-    domainPrefix: string
-  ): cert_mgr.PrivateCertificate => {
+  private buildEnpointCertificate = (cfnLogicalName: string, caArn: string, domainPrefix: string): cert_mgr.PrivateCertificate => {
     return new cert_mgr.PrivateCertificate(this, `${this.stackName}${cfnLogicalName}`, {
       domainName: `${domainPrefix}.${this.namespace}`,
-      certificateAuthority: acm_pca.CertificateAuthority.fromCertificateAuthorityArn(
-        this,
-        `${this.stackName}${cfnLogicalName}CA`,
-        caArn
-      ),
+      certificateAuthority: acm_pca.CertificateAuthority.fromCertificateAuthorityArn(this, `${this.stackName}${cfnLogicalName}CA`, caArn),
     });
   };
 
-  private buildCaActivation = (
-    cfnLogicalName: string,
-    caArn: string,
-    certificate: string
-  ): acm_pca.CfnCertificateAuthorityActivation => {
+  private buildCaActivation = (cfnLogicalName: string, caArn: string, certificate: string): acm_pca.CfnCertificateAuthorityActivation => {
     return new acm_pca.CfnCertificateAuthorityActivation(this, `${this.stackName}${cfnLogicalName}`, {
       certificateAuthorityArn: caArn,
       certificate: certificate,

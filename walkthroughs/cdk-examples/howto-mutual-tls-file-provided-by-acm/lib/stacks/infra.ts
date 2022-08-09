@@ -8,6 +8,7 @@ import { RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
+import { addManagedPolicies } from "../utils";
 
 import * as path from "path";
 
@@ -25,8 +26,9 @@ export class InfraStack extends Stack {
   readonly taskRole: iam.Role;
   readonly executionRole: iam.Role;
 
-  readonly serviceColorTeller = "colorteller";
-  readonly serviceGateway = "gateway";
+  readonly serviceColorTeller: string = "colorteller";
+  readonly serviceGateway: string = "gateway";
+  readonly port: number = 9080;
 
   readonly appDir: string = "../../src";
 
@@ -47,7 +49,8 @@ export class InfraStack extends Stack {
 
     this.taskRole = new iam.Role(this, `${this.stackName}TaskRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-      managedPolicies: this.addManagedPolices(
+      managedPolicies: addManagedPolicies(
+        this,
         "taskRole",
         "CloudWatchFullAccess",
         "AWSAppMeshFullAccess",
@@ -59,11 +62,7 @@ export class InfraStack extends Stack {
 
     this.executionRole = new iam.Role(this, `${this.stackName}ExecutionRole`, {
       assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-      managedPolicies: this.addManagedPolices(
-        "execRole",
-        "AmazonEC2ContainerRegistryReadOnly",
-        "CloudWatchLogsFullAccess"
-      ),
+      managedPolicies: addManagedPolicies(this, "execRole", "AmazonEC2ContainerRegistryReadOnly", "CloudWatchLogsFullAccess"),
     });
 
     this.bastionSecurityGroup = new ec2.SecurityGroup(this, `${this.stackName}BastionSecurityGroup`, {
@@ -82,44 +81,21 @@ export class InfraStack extends Stack {
     });
     this.bastionHost.instance.instance.addPropertyOverride("KeyName", process.env.KEY_PAIR_NAME!);
 
-    this.customEnvoyImageAsset = this.buildImageAsset(
-      path.join(__dirname, this.appDir, "customEnvoyImage"),
-      "CustomEnvoyImage",
-      {
-        AWS_DEFAULT_REGION: process.env.CDK_DEFAULT_REGION!,
-        ENVOY_IMAGE: this.node.tryGetContext("ENVOY_IMAGE"),
-      }
-    );
+    this.customEnvoyImageAsset = this.buildImageAsset(path.join(__dirname, this.appDir, "customEnvoyImage"), "CustomEnvoyImage", {
+      AWS_DEFAULT_REGION: process.env.CDK_DEFAULT_REGION!,
+      ENVOY_IMAGE: this.node.tryGetContext("ENVOY_IMAGE"),
+    });
 
-    this.colorTellerImageAsset = this.buildImageAsset(
-      path.join(__dirname, this.appDir, "colorteller"),
-      "ColorTellerImage",
-      { GO_PROXY: this.node.tryGetContext("GO_PROXY") }
-    );
+    this.colorTellerImageAsset = this.buildImageAsset(path.join(__dirname, this.appDir, "colorteller"), "ColorTellerImage", {
+      GO_PROXY: this.node.tryGetContext("GO_PROXY"),
+    });
   }
 
-  private buildImageAsset = (
-    dockerFilePath: string,
-    name: string,
-    args?: { [key: string]: string }
-  ): assets.DockerImageAsset => {
+  private buildImageAsset = (dockerFilePath: string, name: string, args?: { [key: string]: string }): assets.DockerImageAsset => {
     return new assets.DockerImageAsset(this, `${this.stackName}${name}Asset`, {
       directory: dockerFilePath,
       platform: assets.Platform.LINUX_AMD64,
       buildArgs: args,
     });
-  };
-  private addManagedPolices = (cfnLogicalName: string, ...policyNames: string[]): iam.IManagedPolicy[] => {
-    const policies: iam.IManagedPolicy[] = [];
-    policyNames.forEach((policyName) =>
-      policies.push(
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          `${policyName}${cfnLogicalName}Arn`,
-          `arn:aws:iam::aws:policy/${policyName}`
-        )
-      )
-    );
-    return policies;
   };
 }

@@ -1,4 +1,5 @@
 import * as ecs from "aws-cdk-lib/aws-ecs";
+
 import { StackProps } from "aws-cdk-lib";
 import { ApplicationContainer } from "./constructs/application-container";
 import { EnvoySidecar } from "./constructs/envoy-sidecar";
@@ -56,20 +57,30 @@ export interface AppMeshFargateServiceProps {
   envoyConfiguration?: EnvoyConfiguration;
 }
 
-export function addManagedPolices(
-  parentStack: Construct,
-  cfnLogicalName: string,
-  ...policyNames: string[]
-): IManagedPolicy[] {
+export function addManagedPolicies(parentStack: Construct, cfnLogicalName: string, ...policyNames: string[]): IManagedPolicy[] {
   const policies: IManagedPolicy[] = [];
-  policyNames.forEach((policyName) =>
+
+  policyNames.forEach((policyName) => {
+    const randomStr = Math.random()
+      .toString(36)
+      .replace(/[^a-z]+/g, "")
+      .substring(0, 7);
+
     policies.push(
-      ManagedPolicy.fromManagedPolicyArn(
-        parentStack,
-        `${policyName}${cfnLogicalName}Arn`,
-        `arn:aws:iam::aws:policy/${policyName}`
-      )
-    )
-  );
+      ManagedPolicy.fromManagedPolicyArn(parentStack, `${cfnLogicalName}${randomStr}Pol`, `arn:aws:iam::aws:policy/${policyName}`)
+    );
+  });
   return policies;
+}
+
+export function getCertLambdaPolicies(parentStack: Construct, cfnLogicalName: string): IManagedPolicy[] {
+  return addManagedPolicies(
+    parentStack,
+    cfnLogicalName,
+    "AWSCertificateManagerPrivateCAFullAccess",
+    "AWSCertificateManagerFullAccess",
+    "AmazonECS_FullAccess",
+    "service-role/AWSLambdaBasicExecutionRole",
+    "SecretsManagerReadWrite"
+  );
 }

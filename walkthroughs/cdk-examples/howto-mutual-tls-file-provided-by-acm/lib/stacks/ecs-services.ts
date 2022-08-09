@@ -4,12 +4,14 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
+
 import { Stack, CfnOutput, Duration } from "aws-cdk-lib";
 import { MeshStack } from "./mesh-components";
 import { AppMeshFargateService } from "../constructs/appmesh-fargate-service";
 import { EnvoySidecar } from "../constructs/envoy-sidecar";
 import { ApplicationContainer } from "../constructs/application-container";
-import { CustomStackProps } from "../utils";
+import { CustomStackProps, getCertLambdaPolicies } from "../utils";
+
 import * as path from "path";
 
 export class EcsServicesStack extends Stack {
@@ -31,10 +33,10 @@ export class EcsServicesStack extends Stack {
         image: ecs.ContainerImage.fromDockerImageAsset(mesh.serviceDiscovery.infra.colorTellerImageAsset),
         logStreamPrefix: colorTellerServiceName,
         env: {
-          PORT: "9080",
+          PORT: mesh.serviceDiscovery.infra.port.toString(),
           COLOR: "YELLOW",
         },
-        portMappings: [{ containerPort: 9080, protocol: ecs.Protocol.TCP }],
+        portMappings: [{ containerPort: mesh.serviceDiscovery.infra.port, protocol: ecs.Protocol.TCP }],
         secrets: certSecret,
       }),
       envoyConfiguration: {
@@ -43,7 +45,7 @@ export class EcsServicesStack extends Stack {
           appMeshResourceArn: mesh.virtualNode.virtualNodeArn,
           secrets: certSecret,
         }),
-        proxyConfiguration: EnvoySidecar.buildAppMeshProxy(9080),
+        proxyConfiguration: EnvoySidecar.buildAppMeshProxy(mesh.serviceDiscovery.infra.port),
       },
     });
 
@@ -62,28 +64,7 @@ export class EcsServicesStack extends Stack {
 
     this.rotateCertRole = new iam.Role(this, `${this.stackName}LambdaCertRole`, {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      managedPolicies: [
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaRotCertSsmPca",
-          "arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAFullAccess"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaRotCertSsm",
-          "arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaRotCertSd2",
-          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        ),
-        iam.ManagedPolicy.fromManagedPolicyArn(
-          this,
-          "LambdaRotCertSs33m",
-          "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
-        ),
-      ],
+      managedPolicies: getCertLambdaPolicies(this, "rotateCertPols"),
     });
 
     this.rotateCertFunc = new lambda.DockerImageFunction(this, `${this.stackName}RotateCertFunc`, {
@@ -108,10 +89,7 @@ export class EcsServicesStack extends Stack {
       eventPattern: {
         detailType: ["ACM Certificate Approaching Expiration"],
         source: ["aws.acm"],
-        resources: [
-          props!.acmStack.colorGatewayEndpointCert.certificateArn,
-          props!.acmStack.colorTellerEndpointCert.certificateArn,
-        ],
+        resources: [props!.acmStack.colorGatewayEndpointCert.certificateArn, props!.acmStack.colorTellerEndpointCert.certificateArn],
       },
     });
 
@@ -120,5 +98,8 @@ export class EcsServicesStack extends Stack {
 
     new CfnOutput(this, "BastionIP", { value: mesh.serviceDiscovery.infra.bastionHost.instancePublicIp });
     new CfnOutput(this, "URL", { value: mesh.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName });
+    new CfnOutput(this, "BastionEnvoyQuery", {
+      value: `curl -s ${this.node.tryGetContext("SERVICES_DOMAIN")}:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'`,
+    });
   }
 }
