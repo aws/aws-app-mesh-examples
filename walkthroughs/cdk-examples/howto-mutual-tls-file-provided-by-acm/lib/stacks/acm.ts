@@ -4,6 +4,7 @@ import * as cert_mgr from "aws-cdk-lib/aws-certificatemanager";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
+import * as logs from "aws-cdk-lib/aws-logs";
 
 import { Construct } from "constructs";
 import { StackProps, Stack, RemovalPolicy, Duration, triggers } from "aws-cdk-lib";
@@ -37,8 +38,6 @@ export class AcmStack extends Stack {
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-
-    // if(this.node.tryGetContext("init-deploy") === "true"){}
 
     // CAs
     this.colorTellerRootCa = this.buildCertificateAuthority("CtRootCA", "AcmPcaColorTeller");
@@ -92,6 +91,7 @@ export class AcmStack extends Stack {
 
     this.initCertFunc = new lambda.DockerImageFunction(this, `${this.stackName}InitCertFunc`, {
       functionName: "init-cert",
+      logRetention: logs.RetentionDays.ONE_DAY,
       timeout: Duration.seconds(900),
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_initcert"), {
         platform: assets.Platform.LINUX_AMD64,

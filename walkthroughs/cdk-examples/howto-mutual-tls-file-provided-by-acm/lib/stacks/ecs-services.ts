@@ -4,6 +4,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
+import * as logs from "aws-cdk-lib/aws-logs";
 
 import { Stack, CfnOutput, Duration } from "aws-cdk-lib";
 import { MeshStack } from "./mesh-components";
@@ -69,6 +70,7 @@ export class EcsServicesStack extends Stack {
 
     this.rotateCertFunc = new lambda.DockerImageFunction(this, `${this.stackName}RotateCertFunc`, {
       functionName: "rotate-cert",
+      logRetention: logs.RetentionDays.ONE_DAY,
       timeout: Duration.seconds(900),
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_rotatecert"), {
         platform: assets.Platform.LINUX_AMD64,
@@ -92,14 +94,15 @@ export class EcsServicesStack extends Stack {
         resources: [props!.acmStack.colorGatewayEndpointCert.certificateArn, props!.acmStack.colorTellerEndpointCert.certificateArn],
       },
     });
-
     this.rotateCertExpriationEvent.addTarget(new targets.LambdaFunction(this.rotateCertFunc));
+    
     gateway.node.addDependency(colorTeller);
-
-    new CfnOutput(this, "BastionIP", { value: mesh.serviceDiscovery.infra.bastionHost.instancePublicIp });
-    new CfnOutput(this, "URL", { value: mesh.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName });
-    new CfnOutput(this, "BastionEnvoyQuery", {
-      value: `curl -s ${this.node.tryGetContext("SERVICES_DOMAIN")}:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'`,
+    const colorTellerServiceDns = `${mesh.serviceDiscovery.infra.serviceColorTeller}.${this.node.tryGetContext("SERVICES_DOMAIN")}`;
+    
+    new CfnOutput(this, "BastionIP", { value: `export BASTION_IP=${mesh.serviceDiscovery.infra.bastionHost.instancePublicIp}` });
+    new CfnOutput(this, "URL", { value: `export URL=${mesh.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName}` });
+    new CfnOutput(this, "BastionEndpoint", {
+      value: `curl -s ${colorTellerServiceDns}:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'`,
     });
   }
 }

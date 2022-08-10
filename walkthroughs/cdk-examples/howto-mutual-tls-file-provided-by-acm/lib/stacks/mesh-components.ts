@@ -3,10 +3,11 @@ import * as appmesh from "aws-cdk-lib/aws-appmesh";
 import * as acm_pca from "aws-cdk-lib/aws-acmpca";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
+import * as logs from "aws-cdk-lib/aws-logs";
 
 import { Stack, Duration, triggers } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
-import { addManagedPolicies, CustomStackProps, getCertLambdaPolicies, MeshUpdateChoice } from "../utils";
+import { CustomStackProps, getCertLambdaPolicies, MeshUpdateChoice } from "../utils";
 
 import * as path from "path";
 
@@ -25,7 +26,7 @@ export class MeshStack extends Stack {
   readonly gatewayCertChainPath: string = "/keys/colorgateway_endpoint_cert_chain.pem";
   readonly gatwayPrivateKeyPath: string = "/keys/colorgateway_endpoint_dec_pri_key.pem";
 
-  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props?: CustomStackProps) {
+  constructor(serviceDiscovery: ServiceDiscoveryStack, id: string, props: CustomStackProps) {
     super(serviceDiscovery, id, props);
 
     this.serviceDiscovery = serviceDiscovery;
@@ -36,7 +37,7 @@ export class MeshStack extends Stack {
       meshName: this.node.tryGetContext("MESH_NAME"),
     });
 
-    if (meshUpdateChoice != undefined && !Object.values(MeshUpdateChoice).includes(meshUpdateChoice)) {
+    if (meshUpdateChoice != undefined && !this.isValidUpdate(meshUpdateChoice, false)) {
       meshUpdateChoice = MeshUpdateChoice.MUTUAL_TLS;
       console.log("\n\n -------------------------------------------------------- \n\n");
       console.log("Invalid choice for mesh-update, valid choices are: \n", Object.values(MeshUpdateChoice));
@@ -48,10 +49,22 @@ export class MeshStack extends Stack {
       mesh: this.mesh,
       virtualGatewayName: "ColorGateway",
       listeners: [appmesh.VirtualGatewayListener.http({ port: this.serviceDiscovery.infra.port })],
-      backendDefaults: this.buildGatewayBackendDefaults(meshUpdateChoice, props!),
+      backendDefaults: this.buildGatewayTls(meshUpdateChoice, props),
     });
 
-    this.virtualNode = this.buildVirtualNode("ColorTellerWhite", this.serviceDiscovery.infra.serviceColorTeller, meshUpdateChoice, props!);
+    this.virtualNode = new appmesh.VirtualNode(this, `${this.stackName}ColorTellerVn`, {
+      mesh: this.mesh,
+      virtualNodeName: "color-teller",
+      serviceDiscovery: this.serviceDiscovery.getAppMeshServiceDiscovery(this.serviceDiscovery.infra.serviceColorTeller),
+      listeners: [
+        appmesh.VirtualNodeListener.http({
+          port: this.serviceDiscovery.infra.port,
+          tls: this.buildVirtualNodeTls(meshUpdateChoice, props),
+        }),
+      ],
+    });
+
+    this.virtualGateway.node.addDependency(this.virtualNode);
 
     this.virtualService = new appmesh.VirtualService(this, `${this.stackName}VirtualService`, {
       virtualServiceName: `colorteller.${this.node.tryGetContext("SERVICES_DOMAIN")}`,
@@ -72,6 +85,7 @@ export class MeshStack extends Stack {
 
     this.updateServicesFunc = new lambda.DockerImageFunction(this, `${this.stackName}InitCertFunc`, {
       functionName: "update-ecs-services",
+      logRetention: logs.RetentionDays.ONE_DAY,
       timeout: Duration.seconds(900),
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_update_svc"), {
         platform: assets.Platform.LINUX_AMD64,
@@ -85,13 +99,23 @@ export class MeshStack extends Stack {
       },
     });
 
+    this.updateServicesFunc.currentVersion.grantInvoke(new iam.ServicePrincipal("lambda.amazonaws.com"));
+    console.log("Adding Trigger to Update ECS Services");
     this.updateServicesTrigger = new triggers.Trigger(this, `${this.stackName}UpdateSvcTrg`, {
       handler: this.updateServicesFunc,
-      executeAfter: [this.virtualGateway, this.virtualNode],
+      executeAfter: [this.virtualGateway],
+      executeOnHandlerChange: false,
     });
+    this.updateServicesTrigger.node.addDependency(this.updateServicesFunc);
   }
 
-  private buildGatewayBackendDefaults = (choice: string, props: CustomStackProps): appmesh.BackendDefaults | undefined => {
+  private isValidUpdate = (choice: MeshUpdateChoice, onlyTls: boolean): boolean => {
+    return onlyTls
+      ? choice == MeshUpdateChoice.ONE_WAY_TLS || choice == MeshUpdateChoice.MUTUAL_TLS
+      : Object.values(MeshUpdateChoice).includes(choice);
+  };
+
+  private buildGatewayTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.BackendDefaults | undefined => {
     return choice == MeshUpdateChoice.NO_TLS
       ? undefined
       : {
@@ -114,34 +138,18 @@ export class MeshStack extends Stack {
         };
   };
 
-  private buildVirtualNode = (
-    virtualNodeName: string,
-    serviceName: string,
-    choice: MeshUpdateChoice,
-    props: CustomStackProps
-  ): appmesh.VirtualNode => {
-    return new appmesh.VirtualNode(this, `${this.stackName}${virtualNodeName}`, {
-      mesh: this.mesh,
-      virtualNodeName: virtualNodeName,
-      serviceDiscovery: this.serviceDiscovery.getAppMeshServiceDiscovery(serviceName),
-      listeners: [
-        appmesh.VirtualNodeListener.http({
-          port: this.serviceDiscovery.infra.port,
-          tls:
-            choice == MeshUpdateChoice.NO_TLS
-              ? undefined
-              : {
-                  mode: appmesh.TlsMode.STRICT,
-                  certificate: appmesh.TlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
-                  mutualTlsValidation:
-                    choice == MeshUpdateChoice.MUTUAL_TLS
-                      ? {
-                          trust: appmesh.MutualTlsValidationTrust.file(this.gatewayCertChainPath),
-                        }
-                      : undefined,
-                },
-        }),
-      ],
-    });
+  private buildVirtualNodeTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.ListenerTlsOptions | undefined => {
+    return choice == MeshUpdateChoice.NO_TLS
+      ? undefined
+      : {
+          mode: appmesh.TlsMode.STRICT,
+          certificate: appmesh.TlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
+          mutualTlsValidation:
+            choice == MeshUpdateChoice.MUTUAL_TLS
+              ? {
+                  trust: appmesh.MutualTlsValidationTrust.file(this.gatewayCertChainPath),
+                }
+              : undefined,
+        };
   };
 }
