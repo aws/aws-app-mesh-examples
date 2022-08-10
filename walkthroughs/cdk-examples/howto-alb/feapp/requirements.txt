@@ -1,4 +1,0 @@
-flask
-requests
-aws-xray-sdk
-gunicorn==19.9.
