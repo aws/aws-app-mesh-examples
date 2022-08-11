@@ -17,6 +17,8 @@ secret = os.environ['SECRET']
 def lambda_handler(event, context):
 
     try:
+        print("Trying to generate secrets...")
+
         pca.create_permission(
             CertificateAuthorityArn=teller_pca_cm,
             Principal='acm.amazonaws.com',
@@ -52,7 +54,7 @@ def lambda_handler(event, context):
         sm.put_secret_value(
             SecretId=secret, SecretString=json.dumps(sm_value))
 
-        print("Certificates loaded!")
+        print("Secrets generated")
 
     except Exception as e:
         print(f"Task failed due to exception: {e}")
