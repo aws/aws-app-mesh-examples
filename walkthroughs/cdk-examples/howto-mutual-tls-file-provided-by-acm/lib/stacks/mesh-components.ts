@@ -37,7 +37,7 @@ export class MeshStack extends Stack {
       meshName: this.node.tryGetContext("MESH_NAME"),
     });
 
-    if (meshUpdateChoice != undefined && Object.values(MeshUpdateChoice).includes(meshUpdateChoice)) {
+    if (meshUpdateChoice != undefined && !Object.values(MeshUpdateChoice).includes(meshUpdateChoice)) {
       meshUpdateChoice = MeshUpdateChoice.MUTUAL_TLS;
       console.log("\n\n -------------------------------------------------------- \n\n");
       console.log("Invalid choice for mesh-update, valid choices are: \n", Object.values(MeshUpdateChoice));

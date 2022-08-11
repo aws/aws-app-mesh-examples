@@ -1,11 +1,18 @@
 # About
 
-In this walkthrough we'll enable TLS encryption between two services in App Mesh using X.509 certificates packaged with your Envoy container. This example demonstrates how AWS CDK (v2) can be used to provision App Mesh infrastructure.
-A non CDK version of this walkthrough is available [here](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/howto-tls-file-provided).
+In this walkthrough, we'll enable TLS encryption with mutual (two-way) authentication between two endpoints in App Mesh using X.509 certificates derived from ACM Private CA (ACM PCA). To provision infrastructure, we make use of the AWS Cloud Development Kit (CDK) V2. A non CDK version of this walkthrough is avaiable [here](https://github.com/aws/aws-app-mesh-examples/tree/main/walkthroughs/howto-mutual-tls-file-provided-by-acm).
 
 In App Mesh, traffic encryption works between virtual nodes and virtual gateways, and thus between Envoys in your service mesh. This means your application code is not responsible for negotiating a TLS-encrypted session, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
 
-In this guide, we will be configuring App Mesh to use the file based strategy of providing TLS certificates to Envoy.
+## Mutual TLS in App Mesh
+
+In App Mesh, traffic encryption is originated and terminated by the Envoy proxy. This means your application code is not responsible for negotiating a TLS-encrypted connection, instead allowing the local proxy to negotiate and terminate TLS on your application's behalf.
+In a basic TLS encryption scenario (for example, when your browser originates an HTTPS connection), the server would present a certificate to any client. **In Mutual TLS, both the client and the server present a certificate to each other, and both validate the peer's certificate.**
+
+Validation typically involves checking at least that the certificate is signed by a trusted Certificate Authority, and that the certificate is still within its validity period.
+
+In this guide, we will be configuring Envoy proxies using certificates sourced from ACM Private CA. The server-side certificate will be sourced internally between App Mesh and ACM PCA using the native integration between the two services.
+The client-side certificate will be exported from ACM, stored in AWS Secrets Manager, and will be retrieved by a modified Envoy image during startup. Our Color App example uses a virtual gateway (ColorGateway) and a virtual node (ColorTeller) in App Mesh. The two services will be configured with separate Certificate Authorities (CAs) to demonstrate the full extent of cross-CA certificate validation in mTLS exchange.
 
 # Prerequisites
 
@@ -47,6 +54,8 @@ chmod 400 ~/.ssh/$KEY_PAIR_NAME.pem
 
 Optional: Note that the example apps use Go modules. By default `"GO_PROXY": "direct"` in `cdk.json`. You can change this to `"GO_PROXY": "https://proxy.golang.org"`.
 
+## Step 1: Deploying the App without TLS
+
 We can now provision our infrastructure through CDK.
 
 ```bash
@@ -54,168 +63,151 @@ cdk bootstrap
 ```
 
 ```bash
-cdk deploy --all --require-approval never --context make-certs=true
+cdk deploy --all --require-approval never --context mesh-update=no-tls
 ```
 
 Once the entire infrastructure has been provisioned, you will see the following message on your terminal.
 
 ```c
-infra/svc-dscvry/mesh/ecs-services (ecs-services)
-infra/svc-dscvry/mesh/ecs-services (ecs-services): deploying...
-[0%] start: Publishing 159a00f0e099adcb2e62fed7a5a5587841d20f99327cb01ed8e22b9ad003442f:current_account-current_region
-[100%] success: Published 159a00f0e099adcb2e62fed7a5a5587841d20f99327cb01ed8e22b9ad003442f:current_account-current_region
-ecs-services: creating CloudFormation changeset...
+✅  infra/svc-dscry/mesh/ecs-servcies (ecs-services)
 
- ✅  infra/svc-dscvry/mesh/ecs-services (ecs-services)
-
-✨  Deployment time: 19.43s
+✨  Deployment time: 184.42s
 
 Outputs:
-infrasvcdscvrymeshecsservicesDCAA690C.BastionIP = XXX.XXX.XXX.XXX
-infrasvcdscvrymeshecsservicesDCAA690C.URL = gateway-XXXXXXXXXX.us-west-1.elb.amazonaws.com
+infrasvcdscrymeshecsservcies72069B44.BastionEndpoint = curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+infrasvcdscrymeshecsservcies72069B44.BastionIP = export BASTION_IP=XX.XX.XXX.XXX
+infrasvcdscrymeshecsservcies72069B44.URL = export URL=gateway-XXXXXXXXX.us-west-1.elb.amazonaws.com
 Stack ARN:
-arn:aws:cloudformation:us-west-1:XXXXXXXXXX:stack/ecs-services/XXXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXX
+arn:aws:cloudformation:us-west-1:XXXXXXXXXX:stack/ecs-services/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXX
 
-✨  Total time: 22.52s
+✨  Total time: 187.14s
 ```
 
-We can see that the deployment produces two outputs:
+We can see that the deployment produces three outputs:
 
 - `URL` - which is the DNS name of the public Application Load Balancer (ALB).
 - `BastionIP` - which is the public IP address of the Bastion Host.
+- `BastionEndpoint` - we will use this to query the Virtual Service from the Bastion Host.
 
-Let's set these in our environment.
+Let's set the `URL` and `BASTION_IP` in our environment.
 
 ```bash
 export BASTION_IP=<BastionIP>
 export URL=<URL>
 ```
 
-## Certficate Generation
-
-To encrypt traffic between our services, we generate certficates using the `SecretsStack` (`lib/stacks/secrets.ts`).
-
-Adding `--context make-certs=true` in the `cdk deploy` command runs the `./src/tlsCertificates/certs.sh` script as a `node` child process.
-
-This `certs.sh` script generates a few different files:
-
-- \*\_cert.pem: These files are the public side of the certificates
-- \*\_key.pem: These files are the private key for the certificates
-- \*\_cert_chain: These files are an ordered list of the public certificates used to sign a private key
-- ca_1_ca_2_bundle.pem: This file contains the public certificates for both CAs.
-
-Once generated, these are deployed to AWS Secrets Manager. For this demo, we are going to set up two separate Certificate Authorities, CA 1 and CA 2. The first one will be used to sign the certificate for the White Color Teller, the second will be used to sign the certificate for the Green Color Teller.
-
-You can verify that the White Color Teller certificate was signed by CA 1 using this command.
-
-```bash
-openssl verify -verbose -CAfile src/tlsCertificates/ca_1_cert.pem  src/tlsCertificates/colorteller_white_cert.pem
-```
-
-You should see a response saying `OK`
-
-```bash
-src/tlsCertificates/colorteller_white_cert.pem: OK
-```
-
-To store these certficates in Envoy, we build a custom Docker Image `src/customEnvoyImage/Dockerfile` and deploy it to Amazon Elastic Container Registry (ECR). To do this, we make use of the [`aws-ecr-assets.DockerImageAsset`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr_assets.DockerImageAsset.html) construct in the `InfraStack` (`lib/stacks/infra.ts`).
-
-This image stores certfiicates in the `/keys` directory, which will be referenced by the virtual nodes for TLS encryption.
-
-## Testing the SSL Handshake
-
-- Run the following command.
-
-```bash
-ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
-```
-
-- After following the prompts, run the following command in the Bastion Host to get the SSL Handshake status from the White Color Teller Envoy proxy.
-
-```bash
-curl -s http://colorteller.default.svc.cluster.local:9901/stats | grep ssl.handshake
-listener.0.0.0.0_15000.ssl.handshake: 1
-```
-
-- You should see an output similar to `listener.0.0.0.0_15000.ssl.handshake: 1` indicating a successful handshake.
-
-- To exit from the Bastion Host, type `exit` and hit Enter.
-
-## White Color Teller Response
+### Color Teller Response
 
 - Let's query the gateway load balancer.
 
 ```bash
 curl $URL/color
-WHITE%
+YELLOW%
 ```
 
-- We can see that the White Color Teller returns a response.
+- We can see that the Color Teller node returns a response
 
-## Client TLS Validation
+### Bastion Host Response
 
-Enabling TLS communication from your virtual node is the first step to securing your traffic. In a zero trust system, the Color Gateway should also be responsible for defining what certificate authorities are trusted.
-
-App Mesh allows you to configure Envoy with information on what CAs you trust to vend certificates. We will demonstrate this by adding a new color teller to our service that has a TLS certificate vended from a different CA than the first.
-
-- To update the mesh such that traffic is routed to the Green Color Teller node, we need to perform another deployment. Since we have already generated the certficates, we don't need to deploy them again.
+- To verify the TLS status, we can query the Envoy sidecar for stats about the certficate and handshake status.
+- Enter the Bastion Host with the following command.
 
 ```bash
-cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=add-green-vn
+ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
 ```
 
-- Once the deployment is done, we can verify that traffic is also being routed to the Green Color Teller Node. You may have to run the command below multiple times a response from both virtual nodes.
+- After following the prompts, copy the `BastionEndpoint` output and run it in the Bastion Host.
 
 ```bash
-curl $URL/color
-GREEN%
-curl $URL/color
-WHITE%
+[ec2-user@ip-XX-X-XX-XXX ~]$ curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+[ec2-user@ip-XX-X-XX-XXX ~]$
 ```
 
-## Adding TLS Validation to the Virtual Gateway
+- Since there is no TLS encyption in the mesh, Envoy will not emit any stats and no results will be displayed.
 
-As you just saw, we were able to add a new Virtual Node with TLS to our mesh and the Virtual Gateway was able to communicate with it no problem.
+- Type `exit` and hit enter to exit the Bastion Host.
 
-In the client/server relationship, if the server decides to turn on TLS, App Mesh configures the client Envoys to accept the certificate offered. However, clients should also validate that the certificate offered by the server is from a certificate authority they trust. App Mesh allows you to define a client policy for TLS validation to ensure that the certificate is valid and issued from a trustworthy source.
+## Step 2: Enabling Strict TLS Termination
 
-If you recall, the Green Color Teller certificates were signed by a different CA than the White Color Teller certificates. Perhaps this is not the intended behavior and we want to reject certificates from any CA that is not CA 1.
-
-- To update the mesh such that the virtual gateway only trusts CA 1, we will provision another deployment.
+- Let us provision another deployment with TLS enabled in the mesh. This update will add TLS termination to the Virtual Node and Gateway.
 
 ```bash
-cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=add-ca1
+cdk deploy --all --require-approval never --context mesh-update=one-way-tls
 ```
 
-- Once the deployment is done, lets try getting the response from the two virtual nodes. You may have to run the command below multiple times a response from both nodes.
+- On the AWS console, wait for the services to finish updating with a new deployment.
 
-```bash
-curl $URL/color
-WHITE%
-curl $URL/color
-upstream connect error or disconnect/reset before headers. reset reason: connection failure, transport failure reason: TLS error: 268435581:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED%
-```
+- The ColorTeller Virtual node fetches the certificate from the ACM PCA.
+- The ColorGateway validates the request using the Root CA, also provided by ACM PCA.
 
-- Since the client only trusts CA 1, we can see that we are not able to trust the Green Color Teller node since it is signed by CA 2. This results in a TLS error.
+### Color Teller Response
 
-## Restoring Communication with the Green Color Teller
-
-We can restore communication by changing the certificate chain in the backend group to be `ca_1_ca_2_bundle.pem`. This contains both the public certificates for CA 1 and CA 2, which will instruct Envoy to accept certificates signed by both CA 1 and CA 2.
-
-- To update the mesh such that the virtual gateway trusts CA 1 and CA 2, we will provision another deployment.
-
-```bash
-cdk deploy --all --require-approval never --context make-certs=false --context mesh-update=add-bundle
-```
-
-- Once the deployment is complete, lets try getting the response from the two virtual nodes. You may have to run the command below multiple times a response from both nodes.
+- Let's query the gateway load balancer.
 
 ```bash
 curl $URL/color
-WHITE%
-curl $URL/color
-GREEN%
+YELLOW%
 ```
+
+- We can see that the Color Teller node returns a response
+
+### Bastion Host Response
+
+- Let us once again query the `BastionEndpoint` to get the TLS stats emitted by the Envoy sidecar.
+
+```bash
+ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
+```
+
+```bash
+[ec2-user@ip-XX-X-XX-XXX ~]$ curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+listener.0.0.0.0_15000.ssl.handshake: 1
+listener.0.0.0.0_15000.ssl.no_certificate: 1
+```
+
+- This time, Envoy emits stats that show the handshake status `listener.0.0.0.0_15000.ssl.handshake: 1`
+- Note that `listener.0.0.0.0_15000.ssl.no_certificate` returns a non-zero response. This stat shows the number of successfull connections in which no client side certificate was provided. Right now, both these metrics should return this same non-zero value. This will change once we add client side validation using mTLS.
+
+## Step 3: Enabling Client Validation with Mutual TLS
+
+- Let us provision another deployment with TLS enabled in the mesh. This update will add TLS termination to the Virtual Node and Gateway.
+
+```bash
+cdk deploy --all --require-approval never --context mesh-update=mtls
+```
+
+- On the AWS console, wait for the services to finish updating with a new deployment.
+
+- The ColorTeller Virtual Node and ColorGateway Virtual Gateway will both validate the certificates provided by ACM PCA authorities.
+- The client-side certificate will be exported from ACM, stored in AWS Secrets Manager, and will be retrieved by a modified Envoy image during startup.
+- App Mesh does not support an integration with ACM for mTLS at this time. This walkthrough integrates ACM with ACM-PCA and allows the certificates to be rotated upon expiry using the RenewCertificate API from AWS ACM. After the certificate is rotated, the AWS Secrets Manager updates the services to fetch the renewed certificates.
+
+### Color Teller Response
+
+- Let's query the gateway load balancer.
+
+```bash
+curl $URL/color
+YELLOW%
+```
+
+- We can see that the Color Teller node returns a response
+
+### Bastion Host Response
+
+- Let us once again query the `BastionEndpoint` to get the TLS stats emitted by the Envoy sidecar.
+
+```bash
+ssh -i ~/.ssh/$KEY_PAIR_NAME.pem ec2-user@$BASTION_IP
+```
+
+```bash
+[ec2-user@ip-XX-X-XX-XXX ~]$ curl -s colorteller.mtls.svc.cluster.local:9901/stats | grep -E 'ssl.handshake|ssl.no_certificate'
+listener.0.0.0.0_15000.ssl.handshake: 1
+listener.0.0.0.0_15000.ssl.no_certificate: 0
+```
+
+- This time, since both entities are validating each other, we can see that the `listener.0.0.0.0_15000.ssl.no_certificate` emits 0. This means that successfull mTLS authentication was added to the service mesh.
 
 # Cleanup
 
@@ -277,77 +269,13 @@ export interface AppMeshFargateServiceProps {
   serviceDiscoveryType?: ServiceDiscoveryType;
   applicationContainer: ApplicationContainer;
   envoyConfiguration?: EnvoyConfiguration;
-  xrayContainer?: XrayContainer;
 }
 
 ```
 
 Note that the `proxyConfiguration` prop in `EnvoyConfiguration` is separate because the Envoy sidecar container can exist own its own without acting as a proxy, but for it to act as a proxy there must be a running container with the name mentioned in the proxy configuration. These props are passed to instantiate Fargate Services in the `EcsServicesStack`. Once the attributes are passed to the construct, simple conditional checks can be used to add container dependencies and appropriate service discovery mechanisms for the different services.
 
-The crux of the mesh infrastructure lies in the `MeshStack`. We can create resources like virtual nodes using appropriate CDK constructs. In this case, since we are building 2 TLS enabled virtual nodes, we can define a common method to instantiate them.
-
-```c
-// mesh-components.ts
-this.virtualNodeWhite = this.buildTlsEnabledVirtualNode(
-      "ColorTellerWhite",
-      this.serviceDiscovery.infra.serviceWhite,
-      this.whiteCertChainPath,
-      this.whitePrivateKeyPath
-    );
-
-
-// private method in MeshStack
-private buildTlsEnabledVirtualNode = (
-    virtualNodeName: string,
-    serviceName: string,
-    certChainPath: string,
-    privateKeyPath: string
-  ): appmesh.VirtualNode => {
-    return new appmesh.VirtualNode(this, `${this.stackName}${virtualNodeName}`, {
-      mesh: this.mesh,
-      virtualNodeName: virtualNodeName,
-      serviceDiscovery: this.serviceDiscovery.getAppMeshServiceDiscovery(serviceName),
-      listeners: [
-        appmesh.VirtualNodeListener.http({
-          port: 80,
-          healthCheck: appmesh.HealthCheck.http({
-            healthyThreshold: 2,
-            unhealthyThreshold: 3,
-            path: "/ping",
-          }),
-          tls: {
-            mode: appmesh.TlsMode.STRICT,
-            certificate: appmesh.TlsCertificate.file(certChainPath, privateKeyPath),
-          },
-        }),
-      ],
-    });
-  };
-}
-```
-
-Once we define the virtual nodes, the routing logic of the mesh can be defined using the `aws-appmesh.RouteSpec` and `aws-appmesh.Route` constructs. The `aws-appmesh.RouteSpec` registers virtual nodes as weighted targets to route traffic to.
-
-```c
-// mesh-components.ts
-this.route = new appmesh.Route(this, `${this.stackName}BackendRoute`, {
-      mesh: this.mesh,
-      virtualRouter: this.virtualRouter,
-      routeName: "ColorTellerRoute",
-      routeSpec: appmesh.RouteSpec.http({
-        weightedTargets: [
-          {
-            virtualNode: this.virtualNodeWhite,
-            weight: whiteVnWeight,
-          },
-          {
-            virtualNode: this.virtualNodeGreen,
-            weight: greenVnWeight,
-          },
-        ],
-      }),
-    });
-```
+The crux of the mesh infrastructure lies in the `Mesh` stack.
 
 ## Project Structure & Context
 
@@ -355,44 +283,11 @@ The skeleton of the project is generated using the `cdk init app --language type
 
 The `cdk.json` file allows us to populate configuration variables in the `context`. In this example, you can see the `ENVOY_IMAGE` variable is defined here and then fetched in the `InfraStack` using the `tryGetContext` method.
 
-```c
-//infra.ts
-this.customEnvoyImageAsset = this.buildImageAsset(
-      path.join(__dirname, this.appDir, "customEnvoyImage"),
-      "CustomEnvoyImage",
-      {
-        AWS_DEFAULT_REGION: process.env.CDK_DEFAULT_REGION!,
-        ENVOY_IMAGE: this.node.tryGetContext("ENVOY_IMAGE"),
-      }
-    );
-```
-
-The `context` can also be used to pass in runtime parameters like `--context mesh-update=add-ca1` that can allow us to provision infrastructure dynamically. We also make use of this in the `SecretsStack` to generate new certificates.
-
-```bash
-cdk deploy --all --require-approval never --context make-certs=true
-```
-
-```c
-// secrets.ts
-if (this.node.tryGetContext("make-certs") === "true") {
-      this.generateNewCertificates();
-      Object.entries(this.fetchCertificateContents()).forEach(([certName, certContent]) => {
-        new secrets_mgr.Secret(this, `${this.stackName}${certName}`, {
-          secretName: certName,
-          description: `Plaintext secret: ${certName}`,
-          secretStringValue: SecretValue.unsafePlainText(certContent),
-          removalPolicy: RemovalPolicy.DESTROY,
-        });
-      });
-    }
-  }
-```
-
 </details>
 
 # Learn more about App Mesh
 
+- [How to use ACM Private CA for enabling mTLS in AWS App Mesh](https://aws.amazon.com/blogs/security/how-to-use-acm-private-ca-for-enabling-mtls-in-aws-app-mesh/)
 - [Product Page](https://aws.amazon.com/app-mesh/?nc2=h_ql_prod_nt_appm&aws-app-mesh-blogs.sort-by=item.additionalFields.createdDate&aws-app-mesh-blogs.sort-order=desc&whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc)
 - [App Mesh under the hood](https://www.youtube.com/watch?v=h3syq1vbplE)
 - [App Mesh CDK API Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_appmesh-readme.html)
