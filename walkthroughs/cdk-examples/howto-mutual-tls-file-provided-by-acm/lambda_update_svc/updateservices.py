@@ -22,12 +22,3 @@ def lambda_handler(event, context):
             cluster=ecs_cluster,
             service=svc,
             forceNewDeployment=True)
-
-    # Wait for the services to be stable
-    # print("Waiting for the services to be stable...")
-    # waiter = ecs.get_waiter('services_stable')
-    # waiter.wait(cluster=ecs_cluster, services=[
-    #             color_gateway_svc, color_teller_svc])
-
-    print("Services stable")
-    return

@@ -5,7 +5,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as assets from "aws-cdk-lib/aws-ecr-assets";
 import * as logs from "aws-cdk-lib/aws-logs";
 
-import { Stack, Duration, triggers } from "aws-cdk-lib";
+import { Stack, Duration, triggers, CustomResourceProvider } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
 import { CustomStackProps, getCertLambdaPolicies, MeshUpdateChoice } from "../utils";
 
@@ -99,14 +99,25 @@ export class MeshStack extends Stack {
       },
     });
 
-    this.updateServicesFunc.currentVersion.grantInvoke(new iam.ServicePrincipal("lambda.amazonaws.com"));
-    console.log("Adding Trigger to Update ECS Services");
     this.updateServicesTrigger = new triggers.Trigger(this, `${this.stackName}UpdateSvcTrg`, {
       handler: this.updateServicesFunc,
       executeAfter: [this.virtualGateway],
       executeOnHandlerChange: false,
     });
-    this.updateServicesTrigger.node.addDependency(this.updateServicesFunc);
+
+    // Workaround
+    const provider = this.node.findChild("AWSCDK.TriggerCustomResourceProviderCustomResourceProvider") as CustomResourceProvider;
+    new iam.Policy(this, "Policy", {
+      force: true,
+      roles: [iam.Role.fromRoleArn(this, "Role", provider.roleArn)],
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["lambda:InvokeFunction"],
+          resources: [`${this.updateServicesFunc.functionArn}*`],
+        }),
+      ],
+    });
   }
 
   private isValidUpdate = (choice: MeshUpdateChoice, onlyTls: boolean): boolean => {
