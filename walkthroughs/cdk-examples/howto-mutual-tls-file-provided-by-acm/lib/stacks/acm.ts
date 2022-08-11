@@ -93,8 +93,10 @@ export class AcmStack extends Stack {
       functionName: "init-cert",
       logRetention: logs.RetentionDays.ONE_DAY,
       timeout: Duration.seconds(900),
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_initcert"), {
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambdas/"), {
         platform: assets.Platform.LINUX_AMD64,
+        cmd: ["initcert.lambda_handler"],
+        buildArgs: { FILE: "initcert.py" },
       }),
       role: this.initCertRole,
       environment: {

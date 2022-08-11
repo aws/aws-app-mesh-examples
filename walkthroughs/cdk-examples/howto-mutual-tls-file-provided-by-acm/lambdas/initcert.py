@@ -2,8 +2,6 @@ import json
 import boto3
 import base64
 import os
-import logging
-import cfnresponse
 
 sm = boto3.client('secretsmanager')
 cm = boto3.client('acm')
@@ -18,12 +16,6 @@ secret = os.environ['SECRET']
 
 def lambda_handler(event, context):
 
-    print('gate_cm -> ', gate_cm)
-    print('teller_cm -> ', teller_cm)
-    print('teller_pca_cm -> ', teller_pca_cm)
-    print('gateway_pca_cm -> ', gateway_pca_cm)
-    print('acc_id -> ', acc_id)
-    print('secret -> ', secret)
     try:
         pca.create_permission(
             CertificateAuthorityArn=teller_pca_cm,

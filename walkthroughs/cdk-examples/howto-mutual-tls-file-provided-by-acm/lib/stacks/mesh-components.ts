@@ -7,7 +7,7 @@ import * as logs from "aws-cdk-lib/aws-logs";
 
 import { Stack, Duration, triggers, CustomResourceProvider } from "aws-cdk-lib";
 import { ServiceDiscoveryStack } from "./service-discovery";
-import { CustomStackProps, getCertLambdaPolicies, MeshUpdateChoice } from "../utils";
+import { addManagedPolicies, CustomStackProps, MeshUpdateChoice } from "../utils";
 
 import * as path from "path";
 
@@ -80,15 +80,17 @@ export class MeshStack extends Stack {
 
     this.updateServicesRole = new iam.Role(this, `${this.stackName}UpdateSvcsRole`, {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      managedPolicies: getCertLambdaPolicies(this, "updateLambdaPol"),
+      managedPolicies: addManagedPolicies(this, "updateScvPols", "AmazonECS_FullAccess", "service-role/AWSLambdaBasicExecutionRole"),
     });
 
     this.updateServicesFunc = new lambda.DockerImageFunction(this, `${this.stackName}InitCertFunc`, {
       functionName: "update-ecs-services",
       logRetention: logs.RetentionDays.ONE_DAY,
       timeout: Duration.seconds(900),
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_update_svc"), {
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambdas/"), {
         platform: assets.Platform.LINUX_AMD64,
+        cmd: ["updateservices.lambda_handler"],
+        buildArgs: { FILE: "updateservices.py" },
       }),
       role: this.updateServicesRole,
       environment: {

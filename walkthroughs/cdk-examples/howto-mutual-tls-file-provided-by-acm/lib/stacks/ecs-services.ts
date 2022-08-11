@@ -72,8 +72,10 @@ export class EcsServicesStack extends Stack {
       functionName: "rotate-cert",
       logRetention: logs.RetentionDays.ONE_DAY,
       timeout: Duration.seconds(900),
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambda_rotatecert"), {
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../../lambdas/"), {
         platform: assets.Platform.LINUX_AMD64,
+        cmd: ["rotatecert.lambda_handler"],
+        buildArgs: { FILE: "rotatecert.py" },
       }),
       role: this.rotateCertRole,
       environment: {
@@ -95,10 +97,10 @@ export class EcsServicesStack extends Stack {
       },
     });
     this.rotateCertExpriationEvent.addTarget(new targets.LambdaFunction(this.rotateCertFunc));
-    
+
     gateway.node.addDependency(colorTeller);
     const colorTellerServiceDns = `${mesh.serviceDiscovery.infra.serviceColorTeller}.${this.node.tryGetContext("SERVICES_DOMAIN")}`;
-    
+
     new CfnOutput(this, "BastionIP", { value: `export BASTION_IP=${mesh.serviceDiscovery.infra.bastionHost.instancePublicIp}` });
     new CfnOutput(this, "URL", { value: `export URL=${mesh.serviceDiscovery.publicLoadBalancer.loadBalancerDnsName}` });
     new CfnOutput(this, "BastionEndpoint", {
