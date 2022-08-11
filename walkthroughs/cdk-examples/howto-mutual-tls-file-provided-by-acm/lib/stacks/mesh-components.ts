@@ -37,7 +37,7 @@ export class MeshStack extends Stack {
       meshName: this.node.tryGetContext("MESH_NAME"),
     });
 
-    if (meshUpdateChoice != undefined && !this.isValidUpdate(meshUpdateChoice, false)) {
+    if (meshUpdateChoice != undefined && Object.values(MeshUpdateChoice).includes(meshUpdateChoice)) {
       meshUpdateChoice = MeshUpdateChoice.MUTUAL_TLS;
       console.log("\n\n -------------------------------------------------------- \n\n");
       console.log("Invalid choice for mesh-update, valid choices are: \n", Object.values(MeshUpdateChoice));
@@ -107,11 +107,11 @@ export class MeshStack extends Stack {
       executeOnHandlerChange: false,
     });
 
-    // Workaround
+    // https://github.com/aws/aws-cdk/issues/19272#issuecomment-1091799069
     const provider = this.node.findChild("AWSCDK.TriggerCustomResourceProviderCustomResourceProvider") as CustomResourceProvider;
-    new iam.Policy(this, "Policy", {
+    new iam.Policy(this, `${this.stackName}Policy`, {
       force: true,
-      roles: [iam.Role.fromRoleArn(this, "Role", provider.roleArn)],
+      roles: [iam.Role.fromRoleArn(this, `${this.stackName}Role`, provider.roleArn)],
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
@@ -121,12 +121,6 @@ export class MeshStack extends Stack {
       ],
     });
   }
-
-  private isValidUpdate = (choice: MeshUpdateChoice, onlyTls: boolean): boolean => {
-    return onlyTls
-      ? choice == MeshUpdateChoice.ONE_WAY_TLS || choice == MeshUpdateChoice.MUTUAL_TLS
-      : Object.values(MeshUpdateChoice).includes(choice);
-  };
 
   private buildGatewayTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.BackendDefaults | undefined => {
     return choice == MeshUpdateChoice.NO_TLS
