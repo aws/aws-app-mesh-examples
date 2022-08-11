@@ -207,7 +207,7 @@ listener.0.0.0.0_15000.ssl.handshake: 1
 listener.0.0.0.0_15000.ssl.no_certificate: 0
 ```
 
-- This time, since both entities are validating each other, we can see that the `listener.0.0.0.0_15000.ssl.no_certificate` emits 0. This means that successfull mTLS authentication was added to the service mesh.
+- This time, since both entities are validating each other, we can see that the `listener.0.0.0.0_15000.ssl.no_certificate` emits `0`. This means that successfull mTLS authentication was added to the service mesh.
 
 # Cleanup
 
@@ -230,16 +230,16 @@ There are a total of 5 Stacks that provision all the infrastructure for the exam
 
 _Note - The `cdk bootstrap` command provisions a `CDKToolkit` Stack to deploy AWS CDK apps into your cloud enviroment._
 
-1. `SecretsStack` - provisions the generated certficates as plaintext secrets in AWS Secrets Manager.
+1. `AcmStack` - provisions the secrets, certificate authorities and certificates.
 1. `InfraStack` - provisions the network infrastructure like the VPC, ECS Cluster, IAM Roles and the Docker images that are pushed to the ECR Repository.
-1. `ServiceDiscoveryStack` - provisions 3 CloudMap services that are used for service discovery by App Mesh.
+1. `ServiceDiscoveryStack` - provisions CloudMap services that are used for service discovery by App Mesh.
 1. `MeshStack` - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual gateway.
-1. `EcsServicesStack` - this stack provisions the 3 Fargate services using a custom construct `AppMeshFargateService` which encapsulates the application container and Envoy sidecar/proxy into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
+1. `EcsServicesStack` - this stack provisions the Fargate services using a custom construct `AppMeshFargateService` which encapsulates the application container and Envoy sidecar/proxy into a single construct allowing us to easily spin up different 'meshified' Fargate Services.
 
 Two more constructs - `EnvoySidecar` and `ApplicationContainer` bundle the common container options used by these Fargate service task definitions.
 
 <p align="center">
-  <img src="assets/stacks_tls.png">
+  <img src="assets/stacks_mtls.png">
 </p>
 
 The order mentioned above also represents the dependency these Stacks have on eachother. In this case, since we are deploying the `EnvoySidecar` containers along with our application code, it is necessary for the mesh components to be provisioned before the services are running, so the Envoy proxy can locate them using the `APPMESH_RESOURCE_ARN` environment variable.
@@ -267,15 +267,133 @@ export interface AppMeshFargateServiceProps {
   serviceName: string;
   taskDefinitionFamily: string;
   serviceDiscoveryType?: ServiceDiscoveryType;
-  applicationContainer: ApplicationContainer;
+  applicationContainer?: ApplicationContainer;
   envoyConfiguration?: EnvoyConfiguration;
 }
 
 ```
 
-Note that the `proxyConfiguration` prop in `EnvoyConfiguration` is separate because the Envoy sidecar container can exist own its own without acting as a proxy, but for it to act as a proxy there must be a running container with the name mentioned in the proxy configuration. These props are passed to instantiate Fargate Services in the `EcsServicesStack`. Once the attributes are passed to the construct, simple conditional checks can be used to add container dependencies and appropriate service discovery mechanisms for the different services.
+Note that the `proxyConfiguration` prop in `EnvoyConfiguration` is separate because the Envoy sidecar container can exist own its own without acting as a proxy, but for it to act as a proxy there must be a running
+container with the name mentioned in the proxy configuration.
 
-The crux of the mesh infrastructure lies in the `Mesh` stack.
+These props are passed to instantiate Fargate Services in the `EcsServicesStack`. Once the attributes are passed to the construct, simple conditional checks can be used to add container dependencies and appropriate service discovery mechanisms for the different services.
+
+### Generating a Custom Envoy Image
+
+### TLS Configuration
+
+Since the `AcmStack` is deployed first, we can fetch the Certificates it generates in the `MeshStack` by passing in a reference in the `props`.
+
+During the deployment process we pass in a parameter called `mesh-update=one-way-tls` using the CDK `--context`. This parameter alters the mesh configuration to ensure that strict TLS termination is achieved in the Virtual Node and Virtual Gateway.
+
+Refer the code snippet below from the `MeshStack`.
+
+#### **Virtual Node**
+
+```c
+// mesh-components.ts
+this.virtualNode = new appmesh.VirtualNode(this, `${this.stackName}ColorTellerVn`, {
+      mesh: this.mesh,
+      virtualNodeName: "color-teller",
+      serviceDiscovery: this.serviceDiscovery.getAppMeshServiceDiscovery(this.serviceDiscovery.infra.serviceColorTeller),
+      listeners: [
+        appmesh.VirtualNodeListener.http({
+          port: this.serviceDiscovery.infra.port,
+          tls: this.buildVirtualNodeTls(meshUpdateChoice, props), // fetch TLS config. from this method based on the mesh-update
+        }),
+      ],
+    });
+
+// Method that adds TLS to the Virtual Node
+private buildVirtualNodeTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.ListenerTlsOptions | undefined => {
+    return choice == MeshUpdateChoice.NO_TLS
+      ? undefined
+      : {
+          mode: appmesh.TlsMode.STRICT, // one-way-tls
+          certificate: appmesh.TlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
+          ...
+```
+
+#### **Virtual Gateway**
+
+```c
+this.virtualGateway = new appmesh.VirtualGateway(this, `${this.stackName}VirtualGateway`, {
+      mesh: this.mesh,
+      virtualGatewayName: "ColorGateway",
+      listeners: [appmesh.VirtualGatewayListener.http({ port: this.serviceDiscovery.infra.port })],
+      backendDefaults: this.buildGatewayTls(meshUpdateChoice, props), // fetch TLS config. from this method based on the mesh-update
+    });
+
+private buildGatewayTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.BackendDefaults | undefined => {
+return choice == MeshUpdateChoice.NO_TLS
+  ? undefined
+  : {
+      tlsClientPolicy: { // one-way-tls
+        enforce: true,
+        validation: {
+          trust: appmesh.TlsValidationTrust.acm([
+            acm_pca.CertificateAuthority.fromCertificateAuthorityArn(
+              this,
+              `${this.stackName}Trust`,
+              props.acmStack.colorTellerRootCa.attrArn
+            ), // validate using the Root CA
+          ]),
+        },
+        ...
+```
+
+### Mutual TLS Configuration
+
+During the deployment process we pass in a parameter called `mesh-update=mtls` using the CDK `--context`. This parameter alters the mesh configuration to ensure that strict TLS termination is achieved in the Virtual Node and Virtual Gateway.
+
+Much of the configuration remains the same as the TLS Configuration section above, but we add validation to the Virtual Node and Virtual Gateway.
+
+**Virtual Node**
+
+```c
+// mesh-components.ts
+private buildVirtualNodeTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.ListenerTlsOptions | undefined => {
+    return choice == MeshUpdateChoice.NO_TLS
+      ? undefined
+      : {
+          mode: appmesh.TlsMode.STRICT,
+          certificate: appmesh.TlsCertificate.acm(props.acmStack.colorTellerEndpointCert),
+          mutualTlsValidation: // add mtls validation to the virtual node
+            choice == MeshUpdateChoice.MUTUAL_TLS
+              ? {
+                  trust: appmesh.MutualTlsValidationTrust.file(this.gatewayCertChainPath),
+                }
+              : undefined,
+        };
+  };
+```
+
+**Virtual Gateway**
+
+```c
+private buildGatewayTls = (choice: MeshUpdateChoice, props: CustomStackProps): appmesh.BackendDefaults | undefined => {
+  return choice == MeshUpdateChoice.NO_TLS
+    ? undefined
+    : {
+        tlsClientPolicy: {
+          enforce: true,
+          validation: {
+            trust: appmesh.TlsValidationTrust.acm([
+              acm_pca.CertificateAuthority.fromCertificateAuthorityArn(
+                this,
+                `${this.stackName}Trust`,
+                props.acmStack.colorTellerRootCa.attrArn
+              ),
+            ]),
+          },
+          mutualTlsCertificate: // add mtls validation to the virtual gateway
+            choice == MeshUpdateChoice.MUTUAL_TLS
+              ? appmesh.MutualTlsCertificate.file(this.gatewayCertChainPath, this.gatwayPrivateKeyPath)
+              : undefined,
+        },
+      };
+};
+```
 
 ## Project Structure & Context
 
