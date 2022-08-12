@@ -10,3 +10,7 @@ cdk.out
 # Certs
 *.pem
 *.generated
+
+# Go
+Gopkg.toml
+Gopkg.lock
