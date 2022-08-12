@@ -148,4 +148,3 @@ Resources:
           AWSCloudMap:
             NamespaceName: !Ref ServiceDomain
             ServiceName: colorteller
-            
