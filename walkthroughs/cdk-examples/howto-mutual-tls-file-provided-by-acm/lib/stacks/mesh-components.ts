@@ -107,6 +107,7 @@ export class MeshStack extends Stack {
       executeOnHandlerChange: false,
     });
 
+    // Addresses a workaround to avoid the IAM permissions issue for the trigger to invoke Lambdas
     // https://github.com/aws/aws-cdk/issues/19272#issuecomment-1091799069
     const provider = this.node.findChild("AWSCDK.TriggerCustomResourceProviderCustomResourceProvider") as CustomResourceProvider;
     new iam.Policy(this, `${this.stackName}Policy`, {
