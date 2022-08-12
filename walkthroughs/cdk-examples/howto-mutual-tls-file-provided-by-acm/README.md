@@ -257,7 +257,7 @@ _Note - The `cdk bootstrap` command provisions a `CDKToolkit` Stack to deploy AW
 1. [`MeshStack`](lib/stacks/mesh-components.ts) - provisions the different mesh components like the frontend and backend virtual nodes, virtual router and the backend virtual gateway. We also deploy a [Lambda](lambdas/updateservices.py), that updates the services each time the TLS configuration of the mesh is altered, so that the Envoy stats are refreshed.
 1. [`EcsServicesStack`](lib/stacks/ecs-service.ts) - this stack provisions the Fargate services using a custom construct [`AppMeshFargateService`](lib/constructs/appmesh-fargate-service.ts) which encapsulates the application container and Envoy sidecar/proxy into a single construct allowing us to easily spin up different 'meshified' Fargate Services. We also deploy a [Lambda](lambdas/rotatecert.py) that renews the certificates if they are approaching expiration.
 
-Two more constructs - [`EnvoySidecar`](lib/constructs/envoy-sidecar.ts) and `ApplicationContainer` bundle the common container options used by these Fargate service task definitions.
+Two more constructs - [`EnvoySidecar`](lib/constructs/envoy-sidecar.ts) and [`ApplicationContainer`](lib/constructs/application-container.ts)) bundle the common container options used by these Fargate service task definitions.
 
 <p align="center">
   <img src="assets/stacks_mtls.png">
@@ -301,7 +301,7 @@ These props are passed to instantiate Fargate Services in the [`EcsServicesStack
 
 ### Generating a Custom Envoy Image
 
-To load the secrets into the Envoy Sidecar, we create a [custom image](./src/customEnvoyImage/Dockerfile) that stores the secrets in the `keys` folder. The image is deployed into ECR using the `DockerImageAsset` construct in the [`InfraStack`](lib/stacks/infra.ts).
+To load the secrets into the Envoy Sidecar, we create a [custom image](./src/customEnvoyImage/Dockerfile) that stores the secrets in the `keys` folder. The image is deployed into ECR using the [`DockerImageAsset`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr_assets.DockerImageAsset.html) construct in the [`InfraStack`](lib/stacks/infra.ts).
 
 These secrets are then fetched by the mesh components in the [`MeshStack`](lib/stacks/mesh-components.ts) simply by hard-coding their location in Envoy sidecar.
 
