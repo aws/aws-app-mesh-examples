@@ -36,6 +36,8 @@ _Note - CDK uses default AWS credentials `~/.aws/credentials` and configuration 
 
 _Note - Standard AWS costs may apply when provisioning infrastructure._
 
+Code snippets relevant to the walkthrough are present in the CDK Code section below.
+
 - Open your terminal
 - Clone the repository `git clone https://github.com/aws/aws-app-mesh-examples.git`
 - Navigate to `aws-app-mesh-examples/walkthroughs/cdk-examples/howto-tls-file-provided/`
@@ -176,7 +178,7 @@ listener.0.0.0.0_15000.ssl.no_certificate: 1
 
 - This time, Envoy emits stats that show the handshake status `listener.0.0.0.0_15000.ssl.handshake: 1`
 - Note that `listener.0.0.0.0_15000.ssl.no_certificate` returns a non-zero response. This stat shows the number of successfull connections in which no client side certificate was provided. Right now, both these metrics should return the same non-zero value. This will change once we add client side validation using mTLS.
-- The code snippets for this section are available [below](https://github.com/srinivas-kini/aws-app-mesh-examples/tree/cdk-howto-mtls/walkthroughs/cdk-examples/howto-mutual-tls-file-provided-by-acm#tls-configuration).
+- Type `exit` and hit enter to exit the Bastion Host.
 
 ## Step 3: Enabling Client Validation with Mutual TLS
 
@@ -220,6 +222,7 @@ listener.0.0.0.0_15000.ssl.no_certificate: 0
 ```
 
 - This time, since both entities are validating each other, we can see that the `listener.0.0.0.0_15000.ssl.no_certificate` emits `0`. This means that successfull mTLS authentication was added to the service mesh.
+- Type `exit` and hit enter to exit the Bastion Host.
 
 # Cleanup
 
@@ -240,9 +243,7 @@ Are you sure you want to delete: infra/svc-dscvry/mesh/ecs-services, infra/svc-d
 
 # CDK Code
 
-<!--
-<details>
-<summary><b>Expand this section to learn more about provisioning App Mesh resources using custom CDK constructs</b></summary> -->
+<details><summary><b>Expand this section to learn more about provisioning App Mesh resources using custom CDK constructs</b></summary>
 
 ## Stacks and Constructs
 
