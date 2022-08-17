@@ -1,5 +1,5 @@
 ## Overview
-This example shows how http routes can use headers for matching incoming requests.
+This example shows how to custom format Envoy access logs using either json or custom string. 
 
 ## Prerequisites
 1. [Walkthrough: App Mesh with EKS](../eks/)
@@ -34,7 +34,7 @@ You can use v1beta1 example manifest with [aws-app-mesh-controller-for-k8s](http
 
 ## Test
 
-Port-forward pod for simulationg
+Port-forward pod to simulating requests
 
 ```
 kubectl port-forward deployment/front -n howto-k8s-envoy-logging-custom-format 8080:8080
