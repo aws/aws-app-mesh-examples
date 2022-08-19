@@ -154,8 +154,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/foodteller-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -303,8 +301,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/colorteller-vn'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
@@ -413,8 +409,6 @@ Resources:
           Environment:
             - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/tellergateway-vg'
-            - Name: 'APPMESH_PREVIEW'
-              Value: '1'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
             - Name: 'ENABLE_ENVOY_DOG_STATSD'
