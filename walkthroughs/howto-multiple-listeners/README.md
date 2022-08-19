@@ -13,8 +13,9 @@ Let's deploy a mesh with a multiple listener gateway, router and node.
 ## Step 1: Prerequisites
 
 1. Clone this repository and navigate to the `walkthroughs/howto-multiple-listeners` folder, all the commands henceforth are assumed to be run from the same directory as this README.
-2. Make sure you have version 1.25.57 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.7.25 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed. 
-3. You'll need a keypair stored in AWS to access a bastion host.
+2. Make sure you have version 1.25.57 or higher of the [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed or you have version 2.7.25 or higher of the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
+3. This walkthrough makes use of the unix command line utility `jq`. If you don't already have it, [you can install it from here](https://stedolan.github.io/jq/).
+4. You'll need a keypair stored in AWS to access a bastion host.
    If you do not already have one, you can create a keypair using the command below if you don't have one. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
     ```bash
@@ -23,8 +24,6 @@ Let's deploy a mesh with a multiple listener gateway, router and node.
     ```
 
     This command creates an Amazon EC2 Key Pair with name `color-app` and saves the private key at `~/.ssh/color-app.pem`.
-4. This walkthrough makes use of the unix command line utility `jq`. If you don't already have it, [you can install it from here](https://stedolan.github.io/jq/).
-
 5. Install Docker. It is needed to build the demo application images.
 
 ## Step 2: Set Environment Variables
