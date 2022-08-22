@@ -1,10 +1,10 @@
-# Configuring TLS with AWS Certificate Manager
+# Configuring a mesh to connect to external service/API
 
-In this walkthrough we'll show you how to allow your application to connect to external API outside of your mesh. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorapp).
+In this walkthrough we'll show you how to allow your application to connect to external service/API outside of your mesh. This walkthrough will be a simplified version of the [Color App Example](https://github.com/aws/aws-app-mesh-examples/tree/main/examples/apps/colorapp).
 
 ## Introduction
 
-When using a service mesh, some services within the mesh might need to connect to external or open API's.
+When using a service mesh, some services within the mesh might need to connect to external or open services/APIs.
 
 In App Mesh, we have two ways of doing that.
 
@@ -12,9 +12,20 @@ In App Mesh, we have two ways of doing that.
 
 The first option is to set the [egress filter](https://docs.aws.amazon.com/app-mesh/latest/APIReference/API_EgressFilter.html) on the mesh resource to ``ALLOW_ALL``. This setting will allow any service within the mesh to communicate with any destination IP address inside or outside of the mesh.
 
-### 2. Model the external service as a virtual service backed up by a virtaul node
+### 2. Model the external service as a virtual service backed up by a virtaul node with egress filter set to ``DROP_ALL``
 
-We can keep the egree filter as ``DROP_ALL`` which is default for a mesh and we need to model the external service as a virtual service backed up by a virtaul node. Then virtual node itself needs to set its service discovery method to dns with the hostname as the actual hostname of the external service. Note that if the external service's hostname can be resolved as an IPv6 address while your set up, e.g. VPC, doesn't support that, you need to set IP preference to ``IPv4_ONLY`` to stop envoy from tyring to make IPv6 requests. Also note that if the application itself needs to make HTTPS requests, i.e. TLS connections are not handled by Envoy sidecar, the listener protocol should be set to ``tcp`` instead of ``http``.
+We can keep the egree filter as ``DROP_ALL`` which is default for a mesh and we need to model the external service as a virtual service backed up by a virtaul node. Then virtual node itself needs to set its service discovery method to dns with the hostname as the actual hostname of the external service. Note that if the external service's hostname can be resolved as an IPv6 address while your set up, e.g. VPC, doesn't support that, you need to set IP preference to ``IPv4_ONLY`` to stop envoy from trying to make IPv6 requests. For more detail, please refer to the virtual node spec in step 2 section. Also note that if the application itself needs to make HTTPS requests, i.e. TLS connections are not handled by Envoy sidecar, the listener protocol should be set to ``tcp`` instead of ``http``.
+
+The spec for the mesh looks like this:
+```yaml
+Mesh:
+  Type: AWS::AppMesh::Mesh
+  Properties:
+    MeshName: !Ref MeshName
+    Spec:
+      EgressFilter:
+        Type: DROP_ALL
+```
 
 Let's jump into a brief example of App Mesh external traffic in action.
 
@@ -179,3 +190,7 @@ aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 ```
 
 ## Frequently Asked Questions
+### 1. Can I configure multiple external services for the same mesh?
+With egress filter set to ``ALLOW_ALL``, you don't need to confiugre any external services because the mesh will allow all outgoing traffic.
+
+With egress filter set to ``DROP_ALL``, that depends on the situation. If you want to model multiple external services as TCP virtual nodes with the same ports, e.g. 443, then you cannot do that. Please refer to [the troubleshotting doc](https://docs.aws.amazon.com/app-mesh/latest/userguide/troubleshooting-connectivity.html#ts-connectivity-virtual-node-router) for more detail. If these TCP virtual nodes don't share the same port or you are using HTTP virtual nodes, even sharing the same port, you can do that.
