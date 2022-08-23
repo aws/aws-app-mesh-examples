@@ -54,7 +54,7 @@ infrastructure. Please change the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`, a
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=us-west-2
-export ENVIRONMENT_NAME=AppMeshExternalTrafficExample
+export ENVIRONMENT_NAME=AppMeshExternalExample
 export MESH_NAME=ColorApp-External-Traffic
 export ENVOY_IMAGE=<get the latest from https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html>
 export SERVICES_DOMAIN="default.svc.cluster.local"
