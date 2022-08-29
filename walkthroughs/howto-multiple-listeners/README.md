@@ -8,7 +8,7 @@ Note: Normally customers would likely use the same port from end to end, but we'
 
 Let's deploy a mesh with a multiple listener gateway, router and node.
 
-![System Diagram](./howto-multiple-listeners.png "System Diagram")
+![System Diagram](./howto-ml-walkthrough.png "System Diagram")
 
 ## Step 1: Prerequisites
 
