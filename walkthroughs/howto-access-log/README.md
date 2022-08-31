@@ -29,7 +29,7 @@ Please set the value for `AWS_ACCOUNT_ID`, `KEY_PAIR_NAME`,'AWS_DEFAULT_REGION' 
 export AWS_ACCOUNT_ID=<your account id>
 export KEY_PAIR_NAME=<color-app or your SSH key pair stored in AWS>
 export AWS_DEFAULT_REGION=<your region here>
-export ENVOY_IMAGE=840364872350.dkr.ecr.<region-code>.amazonaws.com/aws-appmesh-envoy:latest
+export ENVOY_IMAGE=840364872350.dkr.ecr.<region-code>.amazonaws.com/aws-appmesh-envoy:v1.22.2.1-prod
 export AWS_PROFILE=default
 export ENVIRONMENT_NAME=LOGGING
 export MESH_NAME=appmesh-mesh-logging
@@ -88,7 +88,7 @@ To test:
 colorapp=$(aws cloudformation describe-stacks --region=$AWS_DEFAULT_REGION --stack-name=$ENVIRONMENT_NAME-ecs-colorapp --query="Stacks[0].Outputs[?OutputKey=='ColorAppEndpoint'].OutputValue" --output=text)
 curl $colorapp/color
 ```
-6. deploy new virtual node on fargat instance
+6. deploy new virtual node on fargate instance
 
 ```bash
 ./colorapp-ecs/fargate/appmesh-colorapp.sh
@@ -120,8 +120,8 @@ aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com
 3. update virtual node with text logging format in it
 
 ```bash
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-text-format.json
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-text-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-text-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-text-format.json
 ```
 If you go to ECS -> Green/Blue backend task -> log -> envoy and search for Green/Blue
 You should see logs like this:
@@ -133,8 +133,8 @@ BlueTestLog::200:path=/ping
 4. update virtual node with json logging format in it
 
 ```bash
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-json-format.json
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-json-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-json-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-json-format.json
 ```
 
 If you go to ECS -> Green/Blue backend task -> log -> envoy and search for Green/Blue
@@ -147,8 +147,8 @@ You should see logs like this:
 5. update virtual node with no logging format in it
 
 ```bash
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-no-format.json
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-no-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh update-virtual-node --virtual-node-name colorteller-blue-vn --mesh-name $MESH_NAME --cli-input-json file://src/blue-no-format.json
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh update-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME --cli-input-json file://src/green-no-format.json
 ```
 Search for `colorteller-blue.logging.local` in console you and should see the default format like following
 ```
