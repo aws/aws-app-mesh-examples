@@ -109,12 +109,12 @@ Our next step is to update the logging format and test it out.
 1. check meshes is deployed
 
 ```bash
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal list-meshes
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh list-meshes
 ```
 2. check virtual node green (on fargate)
 
 ```bash
-aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh-internal describe-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME
+aws --endpoint-url https://frontend.$AWS_DEFAULT_REGION.prod.lattice.aws.a2z.com --region $AWS_DEFAULT_REGION appmesh describe-virtual-node --virtual-node-name colorteller-green-vn --mesh-name $MESH_NAME
 ```
 
 3. update virtual node with text logging format in it
