@@ -43,3 +43,5 @@ export EXTERNAL_IP2=$(kubectl get svc/colors-gw-2 -n colors -o go-template='{{(i
 curl $EXTERNAL_IP1
 curl $EXTERNAL_IP2
 ```
+
+* using two load balancers because it requires manual setup to create two listeners (see https://github.com/kubernetes-sigs/aws-load-balancer-controller/issues/2234)
