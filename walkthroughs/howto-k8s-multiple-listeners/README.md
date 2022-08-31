@@ -4,7 +4,7 @@ This example illustrates usage of multiple listeners using AppMesh on EKS. This 
 ## Prerequisites
 1. [Walkthrough: App Mesh with EKS](../eks/)
 
-2. The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+2. The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.6.1](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```
 kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
@@ -12,7 +12,7 @@ kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".sp
 3. Install Docker
 
 ## Setup
-1. Clone this repository and navigate to the walkthrough/howto-k8s-egress folder, all commands will be ran from this location
+1. Clone this repository and navigate to the walkthrough/howto-k8s-multiple-listeners folder, all commands will be ran from this location
 
 2. Your AWS account id:
 
@@ -40,8 +40,14 @@ Validate port 8080 and port 8090 are accepted
 export EXTERNAL_IP1=$(kubectl get svc/colors-gw-1 -n colors -o go-template='{{(index .status.loadBalancer.ingress 0).hostname}}'
 export EXTERNAL_IP2=$(kubectl get svc/colors-gw-2 -n colors -o go-template='{{(index .status.loadBalancer.ingress 0).hostname}}'
 
-curl $EXTERNAL_IP1
-curl $EXTERNAL_IP2
+curl $EXTERNAL_IP1 | grep 8080
+curl $EXTERNAL_IP2 | grep 8090
 ```
 
 * using two load balancers because it requires manual setup to create two listeners (see https://github.com/kubernetes-sigs/aws-load-balancer-controller/issues/2234)
+
+## Cleanup
+
+```
+kubectl delete -f manifest.yaml
+```

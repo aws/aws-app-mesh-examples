@@ -73,7 +73,7 @@ spec:
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: white
+  name: multi-colors
   namespace: colors
 spec:
   podSelector:
@@ -138,7 +138,7 @@ spec:
         action:
           weightedTargets:
             - virtualNodeRef:
-                name: white
+                name: multi-colors
               weight: 1
               port: 8080
     - name: color-route-black
@@ -149,7 +149,7 @@ spec:
         action:
           weightedTargets:
             - virtualNodeRef:
-                name: white
+                name: multi-colors
               weight: 1
               port: 8090
 ---

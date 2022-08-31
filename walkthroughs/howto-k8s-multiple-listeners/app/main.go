@@ -14,7 +14,7 @@ func startServer(port string) {
 
 	mux.Handle("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello world")
+		fmt.Fprintf(w, "Hello world %s\n", port)
 	}))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), mux))
