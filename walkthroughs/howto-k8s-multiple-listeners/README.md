@@ -4,7 +4,7 @@ This example illustrates usage of multiple listeners using AppMesh on EKS. This 
 ## Prerequisites
 1. [Walkthrough: App Mesh with EKS](../eks/)
 
-2. The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.6.1](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
+2. The manifest in this walkthrough requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.7.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.7.0). Run the following to check the version of controller you are running.
 ```
 kubectl get deployment -n appmesh-system appmesh-controller -o json | jq -r ".spec.template.spec.containers[].image" | cut -f2 -d ':'|tail -n1
 ```
