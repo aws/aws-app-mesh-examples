@@ -1,0 +1,261 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: colors
+  labels:
+    mesh: colors
+    gateway: colors-gw
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: colors
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: colors
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: colors-gw
+  namespace: colors
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: colors-gw
+  podSelector:
+    matchLabels:
+      app: colors-gw
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+    - portMapping:
+        port: 8090
+        protocol: http
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route-main
+  namespace: colors
+spec:
+  httpRoute:
+    match:
+      prefix: /
+      port: 8090
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-headers
+        port: 8090
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route-misc
+  namespace: colors
+spec:
+  httpRoute:
+    match:
+      prefix: /
+      port: 8080
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: color-headers
+        port: 8080
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: multi-colors
+  namespace: colors
+spec:
+  podSelector:
+    matchLabels:
+      app: color
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+    - portMapping:
+        port: 8090
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: '/ping'
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: color-white.colors.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: color-headers
+  namespace: colors
+spec:
+  awsName: color-headers.colors.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: color-headers
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: colors
+  name: color-headers
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+    - portMapping:
+        port: 8090
+        protocol: http
+  routes:
+    - name: color-route-white
+      httpRoute:
+        match:
+          prefix: /
+          port: 8080
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: multi-colors
+              weight: 1
+              port: 8080
+    - name: color-route-black
+      httpRoute:
+        match:
+          prefix: /
+          port: 8090
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: multi-colors
+              weight: 1
+              port: 8090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-white
+  namespace: colors
+spec:
+  ports:
+    - port: 8080
+      name: main
+    - port: 8090
+      name: misc
+  selector:
+    app: color
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: white
+  namespace: colors
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: color
+  template:
+    metadata:
+      labels:
+        app: color
+    spec:
+      containers:
+        - name: app
+          image: public.ecr.aws/b7m0w2t6/multiportapp:1.2.0
+          ports:
+            - containerPort: 8080
+              name: main
+            - containerPort: 8090
+              name: misc
+          env:
+            - name: "PORT1"
+              value: "8080"
+            - name: "PORT2"
+              value: "8090"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color-headers
+  namespace: colors
+spec:
+  ports:
+    - port: 8080
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colors-gw-1
+  namespace: colors
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: colors-gw
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colors-gw-2
+  namespace: colors
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8090
+  selector:
+    app: colors-gw
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: colors-gw
+  namespace: colors
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: colors-gw
+  template:
+    metadata:
+      labels:
+        app: colors-gw
+    spec:
+      containers:
+        - name: envoy
+          image: 840364872350.dkr.ecr.region-code.amazonaws.com/aws-appmesh-envoy # public envoy image
+          ports:
+            - containerPort: 8080
+              name: main
+            - containerPort: 8090
+              name: misc
