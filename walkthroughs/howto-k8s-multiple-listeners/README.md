@@ -1,5 +1,5 @@
 ## Overview
-This example illustrates usage of multiple listeners using AppMesh on EKS. This walkthrough will create two NLBs that we will route requests to a Virtual Gateway with two listeners on port 8080 and 8090. The Virtual Gateway will route these requests through a Virtual Router that ports those over to a Virtual Node. We should be able to receive "hello world" responses on both ports 8080 and 8090.
+This example illustrates usage of multiple listeners using AppMesh on EKS. This walkthrough will create two NLBs (see issue https://github.com/kubernetes-sigs/aws-load-balancer-controller/issues/2234 as to why we create two NLBs) that will route requests to a Virtual Gateway with two listeners on port 8080 and 8090. The Virtual Gateway will route these requests through a Virtual Router that ports those over to a Virtual Node. We should be able to receive "hello world" responses on both ports 8080 and 8090.
 
 ## Prerequisites
 1. [Walkthrough: App Mesh with EKS](../eks/)
