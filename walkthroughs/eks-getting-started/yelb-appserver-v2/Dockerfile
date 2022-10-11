@@ -1,6 +1,11 @@
 FROM public.ecr.aws/bitnami/ruby:latest
 MAINTAINER massimo@it20.info
 
+## Oct 10 2022: 
+## Changed all the flags from --no-ri --no-rdoc  to --no-document 
+## install zlib1g and zlib1g-dev packages 
+## install puma
+
 ################## BEGIN INSTALLATION ######################
 
 # Set the working directory to /app
@@ -14,15 +19,16 @@ ENV LANG=en_us.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV RACK_ENV=production
 
-RUN gem install sinatra --no-ri --no-rdoc
-RUN gem install redis --no-ri --no-rdoc
+RUN gem install sinatra --no-document
+RUN gem install redis --no-document
 ### hack to allow the setup of the pg gem (which would fail otherwise)
 RUN apt-get update
-RUN apt-get install libpq-dev -y
+RUN apt-get install libpq-dev zlib1g zlib1g-dev -y
 ### end of hack (this would require additional research and optimization)
-RUN gem install pg --no-ri --no-rdoc
+RUN gem install pg --no-document
 ### this installs the AWS SDK for DynamoDB (so that appserver can talk to DDB Vs the default Postgres/Redis)
-RUN gem install aws-sdk-dynamodb pg --no-ri --no-rdoc
+RUN gem install aws-sdk-dynamodb pg puma --no-document
+
 # Set the working directory to /
 WORKDIR /
 ADD startup.sh startup.sh
