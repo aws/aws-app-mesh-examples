@@ -559,7 +559,7 @@ Now, we should see a successful SSL handshake between `front` and `green` apps. 
 Note: It might take about 15 secs for the cluster to turn healthy.
 
 ```bash
-kubectl exec -it $FRONT_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://localhost:9901/clusters | grep green.*health
+kubectl exec -it $FRONT_POD -n howto-k8s-mtls-sds-based -c envoy -- curl http://localhost:9901/clusters | grep 'green.*health'
 
 cds_egress_howto-k8s-mtls-sds-based_green_howto-k8s-mtls-sds-based_http_8080::10.100.121.235:8080::health_flags::healthy
 ```
