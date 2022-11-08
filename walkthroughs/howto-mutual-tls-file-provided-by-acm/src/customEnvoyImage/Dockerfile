@@ -3,7 +3,7 @@ FROM ${ENVOY_IMAGE} as envoy
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG AWS_DEFAULT_REGION
 RUN yum update -y && \
-    yum install -y jq curl unzip less && \
+    yum install -y jq curl openssl unzip less && \
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
