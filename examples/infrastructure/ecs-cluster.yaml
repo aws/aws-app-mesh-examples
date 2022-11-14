@@ -33,7 +33,7 @@ Parameters:
   ECSAmi:
     Description: ECS AMI ID
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: "/aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id"
+    Default: "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 
   EC2Ami:
     Description: EC2 AMI ID
@@ -188,7 +188,7 @@ Resources:
                 files:
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 files:
