@@ -1,0 +1,4 @@
+flask
+aws-xray-sdk
+emoji
+gunicorn==19.9.0
