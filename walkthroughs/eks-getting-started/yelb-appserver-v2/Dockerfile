@@ -1,11 +1,6 @@
 FROM public.ecr.aws/bitnami/ruby:latest
 MAINTAINER massimo@it20.info
 
-## Oct 10 2022: 
-## Changed all the flags from --no-ri --no-rdoc  to --no-document 
-## install zlib1g and zlib1g-dev packages 
-## install puma
-
 ################## BEGIN INSTALLATION ######################
 
 # Set the working directory to /app
