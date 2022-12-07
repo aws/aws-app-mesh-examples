@@ -2,7 +2,8 @@
     "spec": {
         "httpRoute" : {
             "match" : {
-                "port": 1111
+                "port": 1111,
+                "prefix": "/fruit"
             },
             "action" : {
                 "target" : {
