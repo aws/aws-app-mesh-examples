@@ -1,0 +1,20 @@
+{
+  "IsTLSEnabled": true,
+  "IsmTLSEnabled": false,
+  "ReplicasPerVirtualNode": 1,
+  "ConnectivityCheckPerURL": 400,
+  "backends_map": {
+                    "0":[]
+                },
+  "load_tests": [
+    {"test_name": "experiment16-qps50000-t10-c400", "url": "http://service-0.tls-e2e.svc.cluster.local:9080/", "qps": "50000", "t": "10s", "c":"400"}
+  ],
+  "metrics": {
+    "envoy_ingress_rate_by_replica_set": "sum(rate(envoy_cluster_upstream_rq{job=\"appmesh-envoy\",kubernetes_pod_name=~\"node-.*\",envoy_cluster_name=~\"cds_ingress.*\"}[10s])) by (kubernetes_pod_name)",
+    "envoy_2xx_requests_rate_by_replica_set": "sum(rate(envoy_cluster_upstream_rq{job=\"appmesh-envoy\",kubernetes_pod_name=~\"node-.*\",envoy_response_code=~\"2.*\",envoy_cluster_name=~\"cds_ingress.*\"}[10s])) by (kubernetes_pod_name)",
+    "envoy_4xx_requests_rate_by_replica_set": "sum(rate(envoy_cluster_upstream_rq{job=\"appmesh-envoy\",kubernetes_pod_name=~\"node-.*\",envoy_response_code=~\"4.*\",envoy_cluster_name=~\"cds_ingress.*\"}[10s])) by (kubernetes_pod_name)",
+    "envoy_5xx_requests_rate_by_replica_set": "sum(rate(envoy_cluster_upstream_rq{job=\"appmesh-envoy\",kubernetes_pod_name=~\"node-.*\",envoy_response_code=~\"5.*\",envoy_cluster_name=~\"cds_ingress.*\"}[10s])) by (kubernetes_pod_name)",
+    "envoy_memory_MB_by_replica_set": "sum(label_replace(container_memory_working_set_bytes{container=\"envoy\",pod=~\"node-.*\"}, \"replica_set\", \"$1\", \"pod\", \"(node-.*-.*)-.*\")) by (replica_set) / (1024*1024)",
+    "envoy_cpu_usage_seconds_by_replica_set": "sum(label_replace(container_cpu_usage_seconds_total{container=\"envoy\",pod=~\"node-.*\"}, \"replica_set\", \"$1\", \"pod\", \"(node-.*-.*)-.*\")) by (replica_set)"
+  }
+}
