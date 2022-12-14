@@ -7,4 +7,4 @@ FORTIO_RUN_ENDPOINT = 'http://localhost:9091/fortio/rest/run'
 PROMETHEUS_QUERY_ENDPOINT = 'http://localhost:9090/api/v1/query_range'
 
 # give your s3 bucket a unique name
-S3_BUCKET = "username-appmeshloadtester"
+S3_BUCKET = "<username-appmeshloadtester"
