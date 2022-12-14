@@ -9,7 +9,7 @@ metadata:
 nodeGroups:
   - name: ng-1
     instanceType: m5.4xlarge
-    desiredCapacity: 10
+    desiredCapacity: 4
     volumeSize: 80
     ssh:
       allow: true # will use ~/.ssh/id_rsa.pub as the default ssh key

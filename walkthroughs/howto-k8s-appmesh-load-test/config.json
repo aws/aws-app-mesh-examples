@@ -9,7 +9,7 @@
                     "2": ["4"]
                 },
   "load_tests": [
-    {"test_name": "experiment16-qps50000-t10-c400", "url": "http://service-0.tls-e2e.svc.cluster.local:9080/", "qps": "50000", "t": "10s", "c":"400"}
+    {"test_name": "experiment_x", "url": "http://service-0.tls-e2e.svc.cluster.local:9080/", "qps": "5000", "t": "10s", "c":"400"}
   ],
   "metrics": {
     "envoy_ingress_rate_by_replica_set": "sum(rate(envoy_cluster_upstream_rq{job=\"appmesh-envoy\",kubernetes_pod_name=~\"node-.*\",envoy_cluster_name=~\"cds_ingress.*\"}[10s])) by (kubernetes_pod_name)",

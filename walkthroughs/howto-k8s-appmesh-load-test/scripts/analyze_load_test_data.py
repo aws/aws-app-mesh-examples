@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import subprocess
+from collections import OrderedDict
 from pathlib import Path
 from pprint import pprint
 
@@ -28,7 +29,6 @@ def get_s3_data():
 
 
 def plot_graph(actual_QPS_list, node_0_mem_list):
-    node_0_mem_list = [float(x) for x in node_0_mem_list]
     Y = [x for _, x in sorted(zip(actual_QPS_list, node_0_mem_list))]
     X = sorted(actual_QPS_list)
     xpoints = np.array(X)
@@ -69,7 +69,7 @@ def read_load_test_data():
                     node_0_mem = []
                     for line in c:
                         if "node-0" in line[0]:
-                            node_0_mem.append(line[2])
+                            node_0_mem.append(float(line[2]))
                     max_mem = max(node_0_mem)
                     node_0_mem_list.append(max_mem)
                     attrb["max_mem"] = max_mem
@@ -77,8 +77,11 @@ def read_load_test_data():
             experiment_results[os.path.join(key.parts[-3], key.parts[-2])] = attrb
 
     # for research purpose
-    print("Experiment results:")
-    pprint(experiment_results)
+    sorted_experiment_results = OrderedDict()
+    for k, v in sorted(experiment_results.items(), key=lambda item: item[1]['max_mem']):
+        sorted_experiment_results[k] = v
+    print("Experiment results sorted:\n")
+    pprint(sorted_experiment_results)
 
     return actual_qps_list, node_0_mem_list
 

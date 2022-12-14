@@ -2,11 +2,18 @@
 This walkthrough demonstrates how to load test AppMesh on EKS. It can be used as a tool for further load testing in different mesh configuration. We use [Fortio](https://github.com/fortio/fortio) to generate the load. Currently, this walkthrough only focuses AppMesh on EKS. 
 
 ## Step 1: Prerequisites
-1. [Walkthrough: App Mesh with EKS](../eks/)
-   1. Make sure you have "appmesh-prometheus" installed. You may follow this [live docs](https://aws.github.io/aws-app-mesh-controller-for-k8s/) _Guide_ section for further installation support.
-   2. Alternatively, you can follow this doc: [Getting started with AWS App Mesh and Kubernetes](https://docs.aws.amazon.com/app-mesh/latest/userguide/getting-started-kubernetes.html) to install appmesh-controller and EKS cluster using `eksctl`.
-2. Clone this repository and navigate to the `walkthroughs/howto-k8s-appmesh-load-test` folder, all the commands henceforth are assumed to be run from the same directory as this README.
-3. Make sure you have the latest version of [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed.
+1. [Walkthrough: App Mesh with EKS](../eks/). Make sure you have:
+   1. Cloned the [AWS AppMesh controller repo](https://github.com/aws/aws-app-mesh-controller-for-k8s). We will need this controller repo path (`CONTROLLER_PATH`) in [step 2](##step-2:-set-environment-variables).
+   2. Created an EKS cluster and setup kubeconfig.
+   3. Installed "appmesh-prometheus". You may follow this [App Mesh Prometheus](https://github.com/aws/eks-charts/tree/master/stable/appmesh-prometheus) chart for installation support.
+   4. This load test uses [Ginkgo](https://github.com/onsi/ginkgo/tree/v1.16.4). Make sure you have ginkgo installed by running `ginkgo version`. If it's not, you may need to install it:
+      1. Install [Go](https://go.dev/doc/install), if you haven't already.
+      2. Install Ginkgo v1.16.4 (currently, AppMesh controller uses [ginkgo v1.16.4](https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/go.mod#L13))
+         1. `go get -u github.com/onsi/ginkgo/ginkgo@v1.16.5` or 
+         2. `go install github.com/onsi/ginkgo/ginkgo@v1.16.5` for GO version 1.17+
+   5. (Optional) You can follow this doc: [Getting started with AWS App Mesh and Kubernetes](https://docs.aws.amazon.com/app-mesh/latest/userguide/getting-started-kubernetes.html) to install appmesh-controller and EKS cluster using `eksctl`.
+2. Clone this repository and navigate to the `walkthroughs/howto-k8s-appmesh-load-test` folder, all the commands henceforth are assumed to be run from the same directory as this `README`.
+3. Make sure you have the latest version of [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) or [AWS CLI v1](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv1.html) installed.
 4. This test requires Python 3 or later (tested with Python 3.9.6). So make sure you have [Python 3](https://www.python.org/downloads/) installed.  
 5. Load test results will be stored into S3 bucket. So, in `scripts/constants.py` give your `S3_BUCKET` a unique name. 
 6. In case you get `AccessDeniedException` (or any kind of accessing AWS resource denied exception) while creating any AppMesh resources (e.g., VirtualNode), don't forget to authenticate with your AWS account.
@@ -16,7 +23,7 @@ This walkthrough demonstrates how to load test AppMesh on EKS. It can be used as
 We need to set a few environment variables before starting the load tests.
 
 ```bash
-export CONTROLLER_PATH=<Path to the controller directory e.g., /home/userName/workplace/appmesh-controller/aws-app-mesh-controller-for-k8s>
+export CONTROLLER_PATH=<Path to the controller repo we cloned in step 1, e.g., /home/userName/workplace/appmesh-controller/aws-app-mesh-controller-for-k8s>
 export CLUSTER_NAME=<Name of the EKS cluster, e.g., appmeshtest>
 export KUBECONFIG=<If eksctl is used to create the cluster, the KUBECONFIG will look like: ~/.kube/eksctl/clusters/cluster-name>
 export AWS_REGION=us-west-2

@@ -39,6 +39,17 @@ if [ -z "${VPC_ID}" ]; then
     err "VPC_ID is not set"
 fi
 
+# Check creds
+if [ -n "${USER}" ]; then
+  check_version "isengardcli version"
+  if [ $? -eq 0 ]
+  then
+    eval "$(isengardcli creds "$USER")"
+    status=$?
+    [ $status -eq 0 ] && echo "Ran isengard creds successfully!" || (err "isengard creds error.")
+  fi
+fi
+
 # Install python3 dependencies
 exec_command "python3 --version"
 
