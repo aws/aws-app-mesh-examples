@@ -35,12 +35,27 @@ export VPC_ID=<VPC ID of the cluster, can be found using:  aws eks describe-clus
 ## Step 3: Configuring the Load Test
 All parameters of the mesh, load tests, metrics can be specified in `config.json`
 
-`backends_map` -: The mapping from each Virtual Node to its backend Virtual Services. For each unique node name in `backends_map`, 
-a VirtualNode, Deployment, Service and VirtualService (with its VirtualNode as its target) are created at runtime.
+* `backends_map` -: The mapping from each Virtual Node to its backend Virtual Services. For each unique node name in `backends_map`, 
+a VirtualNode, Deployment, Service and VirtualService (with its VirtualNode as its target) are created at runtime. An example `backends_map` is following:
+   ```
+   "backends_map": {
+                       "0": ["1", "2"],
+                       "1": ["3"],
+                       "2": ["4"]
+                   },
+   ```
+   where the node names are `"0"`, `"1"`, `"2"`, `"3"` and `"4"`.
 
-`load_tests` -: Array of different test configurations that need to be run on the mesh. `url` is the service endpoint that Fortio (load generator) should hit.
+* `load_tests` -: Array of different test configurations that need to be run on the mesh. 
+  * `url`: is the service endpoint that Fortio (load generator) should hit. The `url` format is: `http://service-<virtual-node-name>.tls-e2e.svc.cluster.local:9080/`. 
+   For example, based on the above `backends_map`, if we want to send the load traffic to the first virtual node `"0"`, then the `ulr` will look like:
+   `http://service-0.tls-e2e.svc.cluster.local:9080/`.
+  * `qps`: Total Queries Per Seconds fortio sends to the endpoints. 
+  * `t`: How long the test will run.
+  * `c`: Number of parallel simultaneous connections to the endpoints fortio hits.
+  * Optionally, you can add more load generation parameter by following the [Forito documentation](https://github.com/fortio/fortio).  
 
-`metrics` -: Map of metric_name to the corresponding metric PromQL logic
+* `metrics` -: Map of metric_name to the corresponding metric [PromQL logic](https://prometheus.io/docs/prometheus/latest/querying/operators/).
 
 ## Step 4: Running the Load Test
 Run the driver script using the below command -:

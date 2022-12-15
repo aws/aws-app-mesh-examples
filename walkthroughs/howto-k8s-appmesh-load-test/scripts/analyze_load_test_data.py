@@ -14,6 +14,8 @@ from constants import S3_BUCKET
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(DIR_PATH, 'data')
 
+NODE_NAME = "0"
+
 
 def get_s3_data():
     res = subprocess.run(["aws sts get-caller-identity"], shell=True, stdout=subprocess.PIPE,
@@ -29,14 +31,14 @@ def get_s3_data():
 
 
 def plot_graph(actual_QPS_list, node_0_mem_list):
-    Y = [x for _, x in sorted(zip(actual_QPS_list, node_0_mem_list))]
-    X = sorted(actual_QPS_list)
+    x_y_tuple = [(x, y) for x, y in sorted(zip(actual_QPS_list, node_0_mem_list))]
+    X, Y = zip(*x_y_tuple)
     xpoints = np.array(X)
     ypoints = np.array(Y)
 
     plt.figure(figsize=(10, 5))
     plt.bar(xpoints, ypoints, width=20)
-    plt.ylabel('Node-0 (MiB)')
+    plt.ylabel('Node-{} (MiB)'.format(NODE_NAME))
     plt.xlabel('Actual QPS')
     print("Plotting graph...")
     plt.show()
@@ -67,9 +69,13 @@ def read_load_test_data():
                 with open(f) as csv_f:
                     c = csv.reader(csv_f, delimiter=',', skipinitialspace=True)
                     node_0_mem = []
+                    node_found = False
                     for line in c:
-                        if "node-0" in line[0]:
+                        if "node-" + NODE_NAME in line[0]:
                             node_0_mem.append(float(line[2]))
+                            node_found = True
+                    if not node_found:
+                        raise Exception("Node not found: {} in experiment file: {}".format(NODE_NAME, f))
                     max_mem = max(node_0_mem)
                     node_0_mem_list.append(max_mem)
                     attrb["max_mem"] = max_mem
@@ -80,7 +86,7 @@ def read_load_test_data():
     sorted_experiment_results = OrderedDict()
     for k, v in sorted(experiment_results.items(), key=lambda item: item[1]['max_mem']):
         sorted_experiment_results[k] = v
-    print("Experiment results sorted:\n")
+    print("Experiment results sorted:")
     pprint(sorted_experiment_results)
 
     return actual_qps_list, node_0_mem_list
@@ -93,5 +99,8 @@ def plot_qps_vs_container_mem():
 
 
 if __name__ == '__main__':
+    node_name = input('Enter the node name (or press enter for default node "0"): ')
+    if node_name != "":
+        NODE_NAME = node_name
     get_s3_data()
     plot_qps_vs_container_mem()
