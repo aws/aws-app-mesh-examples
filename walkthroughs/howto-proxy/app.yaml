@@ -339,8 +339,8 @@ Resources:
       VirtualServiceName: !Ref BackendRecordSet
       Spec:
         Provider:
-          VirtualRouter:
-            VirtualRouterName: !GetAtt BackendVirtualRouter.VirtualRouterName
+          VirtualNode:
+            VirtualNodeName: !GetAtt BackendV2VirtualNode.VirtualNodeName
 
   BackendVirtualRouter:
     Type: AWS::AppMesh::VirtualRouter
