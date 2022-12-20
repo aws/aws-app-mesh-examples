@@ -330,8 +330,6 @@ Resources:
 
   BackendVirtualService:
     Type: AWS::AppMesh::VirtualService
-    DependsOn:
-      - BackendVirtualRouter
     Properties:
       MeshName:
         Fn::ImportValue:
@@ -341,39 +339,6 @@ Resources:
         Provider:
           VirtualNode:
             VirtualNodeName: !GetAtt BackendV2VirtualNode.VirtualNodeName
-
-  BackendVirtualRouter:
-    Type: AWS::AppMesh::VirtualRouter
-    Properties:
-      MeshName:
-        Fn::ImportValue:
-          !Sub '${ProjectName}:Mesh'
-      VirtualRouterName: !Sub '${ProjectName}-backend-router'
-      Spec:
-        Listeners:
-          - PortMapping:
-              Port: !Ref ContainerPort
-              Protocol: http
-
-  BackendRoute:
-    Type: AWS::AppMesh::Route
-    DependsOn:
-      - BackendVirtualRouter
-      - BackendV2VirtualNode
-    Properties:
-      MeshName:
-        Fn::ImportValue:
-          !Sub '${ProjectName}:Mesh'
-      VirtualRouterName: !GetAtt BackendVirtualRouter.VirtualRouterName
-      RouteName: !Sub '${ProjectName}-backend-route'
-      Spec:
-        HttpRoute:
-          Match:
-            Prefix: '/'
-          Action:
-            WeightedTargets:
-              - VirtualNode: !GetAtt BackendV2VirtualNode.VirtualNodeName
-                Weight: 100
 
   # Frontend
   SecurityGroupIngressFromPublicALB:
