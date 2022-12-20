@@ -121,51 +121,6 @@ Resources:
       SecurityGroups:
         - !Ref TaskSecurityGroup
 
-  BackendV1TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 60
-      HealthCheckPath: '/ping'
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      TargetType: ip
-      Name: !Sub '${ProjectName}-backendtarget'
-      Port: !Ref ContainerPort
-      Protocol: HTTP
-      UnhealthyThresholdCount: 2
-      TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: 120
-      VpcId:
-        Fn::ImportValue:
-          !Sub "${ProjectName}:VPC"
-
-  BackendV1LoadBalancerListener:
-    DependsOn:
-      - BackendV1LoadBalancer
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - TargetGroupArn: !Ref BackendV1TargetGroup
-          Type: 'forward'
-      LoadBalancerArn: !Ref BackendV1LoadBalancer
-      Port: !Ref ContainerPort
-      Protocol: HTTP
-
-  BackendV1LoadBalancerRule:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-        - TargetGroupArn: !Ref BackendV1TargetGroup
-          Type: 'forward'
-      Conditions:
-        - Field: path-pattern
-          Values:
-            - '*'
-      ListenerArn: !Ref BackendV1LoadBalancerListener
-      Priority: 1
-
   # Backend V2 with CloudMap service registry
   BackendV2ServiceRegistry:
     Type: AWS::ServiceDiscovery::Service
