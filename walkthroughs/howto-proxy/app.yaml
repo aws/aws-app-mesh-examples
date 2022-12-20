@@ -166,91 +166,6 @@ Resources:
       ListenerArn: !Ref BackendV1LoadBalancerListener
       Priority: 1
 
-  BackendV1TaskDef:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      RequiresCompatibilities:
-        - 'FARGATE'
-      Family: 'blue'
-      NetworkMode: 'awsvpc'
-      Cpu: 256
-      Memory: 512
-      TaskRoleArn: !Ref TaskIamRole
-      ExecutionRoleArn: !Ref TaskExecutionIamRole
-      ContainerDefinitions:
-        - Name: 'app'
-          Image: !Ref ColorAppImage
-          Essential: true
-          DependsOn:
-            - ContainerName: 'xray'
-              Condition: 'START'
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Sub ${ProjectName}-log-group
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'backend-v1'
-          PortMappings:
-            - ContainerPort: !Ref ContainerPort
-              HostPort: !Ref ContainerPort
-              Protocol: 'tcp'
-          Environment:
-            - Name: COLOR
-              Value: 'blue'
-            - Name: PORT
-              Value: !Sub '${ContainerPort}'
-            - Name: XRAY_APP_NAME
-              Value:
-                Fn::Join:
-                  - ''
-                  -
-                    - Fn::ImportValue:
-                        !Sub '${ProjectName}:Mesh'
-                    - '/'
-                    - !GetAtt 'BackendV1VirtualNode.VirtualNodeName'
-        - Name: 'xray'
-          Image: "public.ecr.aws/xray/aws-xray-daemon"
-          Essential: true
-          User: '1337'
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Sub '${ProjectName}-log-group'
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: 'front'
-          PortMappings:
-            - ContainerPort: 2000
-              Protocol: 'udp'
-
-  BackendV1Service:
-    Type: AWS::ECS::Service
-    DependsOn:
-      - BackendV1LoadBalancerListener
-    Properties:
-      Cluster:
-        Fn::ImportValue:
-          !Sub "${ProjectName}:ECSCluster"
-      DeploymentConfiguration:
-        MaximumPercent: 200
-        MinimumHealthyPercent: 100
-      DesiredCount: 1
-      LaunchType: 'FARGATE'
-      LoadBalancers:
-        - ContainerName: app
-          ContainerPort: !Ref ContainerPort
-          TargetGroupArn: !Ref BackendV1TargetGroup
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
-          SecurityGroups:
-            - !Ref TaskSecurityGroup
-          Subnets:
-            - Fn::ImportValue:
-                !Sub '${ProjectName}:PrivateSubnet1'
-            - Fn::ImportValue:
-                !Sub '${ProjectName}:PrivateSubnet2'
-      TaskDefinition: !Ref BackendV1TaskDef
-
   # Backend V2 with CloudMap service registry
   BackendV2ServiceRegistry:
     Type: AWS::ServiceDiscovery::Service
@@ -391,23 +306,6 @@ Resources:
                 !Sub '${ProjectName}:PrivateSubnet2'
       TaskDefinition: !Ref BackendV2TaskDef
 
-  # Backend exposed in mesh as virtual-service
-  BackendV1VirtualNode:
-    Type: AWS::AppMesh::VirtualNode
-    Properties:
-      MeshName:
-        Fn::ImportValue:
-          !Sub '${ProjectName}:Mesh'
-      VirtualNodeName: !Sub '${ProjectName}-backend-v1-node'
-      Spec:
-        Listeners:
-          - PortMapping:
-              Port: !Ref ContainerPort
-              Protocol: http
-        ServiceDiscovery:
-          DNS:
-            Hostname: !GetAtt BackendV1LoadBalancer.DNSName
-
   BackendV2VirtualNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:
@@ -461,7 +359,6 @@ Resources:
     Type: AWS::AppMesh::Route
     DependsOn:
       - BackendVirtualRouter
-      - BackendV1VirtualNode
       - BackendV2VirtualNode
     Properties:
       MeshName:
@@ -475,8 +372,6 @@ Resources:
             Prefix: '/'
           Action:
             WeightedTargets:
-              - VirtualNode: !GetAtt BackendV1VirtualNode.VirtualNodeName
-                Weight: 0
               - VirtualNode: !GetAtt BackendV2VirtualNode.VirtualNodeName
                 Weight: 100
 
