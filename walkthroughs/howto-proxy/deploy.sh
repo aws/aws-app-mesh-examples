@@ -34,7 +34,7 @@ ecr_login() {
 
 deploy_images() {
     ecr_login
-    for app in colorproxy colorapp colorappssl feapp; do
+    for app in colorproxy colorappssl feapp; do
         aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app >/dev/null
         docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app}
         docker push ${ECR_IMAGE_PREFIX}/${app}
@@ -57,7 +57,7 @@ deploy_app() {
         --stack-name "${PROJECT_NAME}-app" \
         --template-file "${DIR}/app.yaml" \
         --capabilities CAPABILITY_IAM \
-        --parameter-overrides "ProjectName=${PROJECT_NAME}" "EnvoyImage=${ENVOY_IMAGE}" "ColorAppSslImage=${ECR_IMAGE_PREFIX}/colorappssl" "ColorAppImage=${ECR_IMAGE_PREFIX}/colorapp" "ColorProxyImage=${ECR_IMAGE_PREFIX}/colorproxy" "FrontAppImage=${ECR_IMAGE_PREFIX}/feapp"
+        --parameter-overrides "ProjectName=${PROJECT_NAME}" "EnvoyImage=${ENVOY_IMAGE}" "ColorAppSslImage=${ECR_IMAGE_PREFIX}/colorappssl" "ColorProxyImage=${ECR_IMAGE_PREFIX}/colorproxy" "FrontAppImage=${ECR_IMAGE_PREFIX}/feapp"
 }
 
 delete_cfn_stack() {
@@ -101,7 +101,7 @@ deploy_resources() {
 }
 
 delete_images() {
-    for app in colorproxy colorapp colorappssl feapp; do
+    for app in colorproxy colorappssl feapp; do
         echo "deleting repository..."
         aws ecr delete-repository \
            --repository-name $PROJECT_NAME/$app \

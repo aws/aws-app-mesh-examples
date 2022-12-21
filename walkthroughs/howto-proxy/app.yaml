@@ -16,10 +16,6 @@ Parameters:
     Type: String
     Description: Front app container image
 
-  ColorAppImage:
-    Type: String
-    Description: Color app container image
-
   ContainerPort:
     Type: Number
     Description: Port number to use for applications
