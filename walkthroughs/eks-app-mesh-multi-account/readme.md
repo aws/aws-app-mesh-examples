@@ -21,7 +21,7 @@ region = us-west-2
 ## Deploy the Infrastructure
 
 ```
-./infrasctucture/setup.sh
+./infrastructure/setup.sh
 ```
 
 ## Deploy EKS
@@ -41,6 +41,7 @@ helm repo add eks https://aws.github.io/eks-charts
 ```
 
 ```
+**Make sure that appmesh-controller version is not v1.7.0 as this does have bugs in supporting ARN's. so make sure of using latest version**.
 kubectl create ns appmesh-system
 helm upgrade -i appmesh-controller eks/appmesh-controller \
 --namespace appmesh-system
@@ -81,7 +82,7 @@ aws --profile backend ram accept-resource-share-invitation \
 ## Deploy the App Mesh Controller on our Backend Cluster
 
 ```
-kubectl config use-context <iam_user@am-multi-account-2.<region>.eksctl.io
+kubectl config use-context <iam_user>@am-multi-account-2.<region>.eksctl.io
 ```
 
 ```
@@ -89,6 +90,7 @@ helm repo add eks https://aws.github.io/eks-charts
 ```
 
 ```
+**Make sure that appmesh-controller version is not v1.7.0 as this does have bugs in supporting ARN's. so make sure of using latest version**.
 kubectl create ns appmesh-system
 helm upgrade -i appmesh-controller eks/appmesh-controller \
 --namespace appmesh-system
