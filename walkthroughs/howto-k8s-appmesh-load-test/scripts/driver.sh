@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 err() {
     msg="Error: $1"
     echo "${msg}"
@@ -39,31 +41,6 @@ if [ -z "${VPC_ID}" ]; then
     err "VPC_ID is not set"
 fi
 
-# Check creds
-if [ -n "${USER}" ]; then
-  check_version "isengardcli version"
-  if [ $? -eq 0 ]
-  then
-    eval "$(isengardcli creds "$USER")"
-    status=$?
-    [ $status -eq 0 ] && echo "Ran isengard creds successfully!" || (err "isengard creds error.")
-  fi
-fi
-
-# Install python3 dependencies
-exec_command "python3 --version"
-
-declare -a libraries=("boto3" "numpy" "pandas" "requests" "botocore" "matplotlib")
-
-for i in "${libraries[@]}"
-do
-  check_version "pip3 show $i"
-  if [ $? -ne 0 ]
-  then
-       exec_command "pip3 install $i"
-  fi
-done
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 APPMESH_LOADTESTER_PATH="$(dirname "$DIR")"
 echo "APPMESH_LOADTESTER_PATH -: $APPMESH_LOADTESTER_PATH"
@@ -74,7 +51,7 @@ kubectl --namespace appmesh-system port-forward service/appmesh-prometheus 9090 
 pid=$!
 
 # call ginkgo
-echo "Starting Ginkgo test"
+echo "Starting Ginkgo test. This may take a while! So hang tight and do not close this window"
 cd $CONTROLLER_PATH && ginkgo -v -r --focus "DNS" "$CONTROLLER_PATH"/test/e2e/fishapp/load -- --cluster-kubeconfig=$KUBECONFIG \
 --cluster-name=$CLUSTER_NAME --aws-region=$AWS_REGION --aws-vpc-id=$VPC_ID \
 --base-path=$APPMESH_LOADTESTER_PATH
@@ -83,3 +60,5 @@ cd $CONTROLLER_PATH && ginkgo -v -r --focus "DNS" "$CONTROLLER_PATH"/test/e2e/fi
 echo "Killing Prometheus port-forward"
 kill -9 $pid
 [ $status -eq 0 ] && echo "Killed Prometheus port-forward" || echo "Error when killing Prometheus port forward"
+
+cd "$DIR" || exit
