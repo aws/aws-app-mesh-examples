@@ -17,14 +17,16 @@ In this section, we'll install Fluentd to your cluster and use it to forward acc
 First, create an IAM policy as defined in [logs-policy.json](logs-policy.json) and attach it to the EC2 auto-scaling group of your EKS cluster. To attach the IAM logs policy via the command line, use:
 
 ```
-$ INSTANCE_PROFILE_PREFIX=$(aws cloudformation describe-stacks | jq -r '.Stacks[].StackName' | grep eksctl-appmeshtest-nodegroup-ng)
-$ INSTANCE_PROFILE_NAME=$(aws iam list-instance-profiles | jq -r '.InstanceProfiles[].InstanceProfileName' | grep $INSTANCE_PROFILE_PREFIX)
-$ ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE_NAME | jq -r '.InstanceProfile.Roles[] | .RoleName')
-$ aws iam put-role-policy \
+INSTANCE_PROFILE_PREFIX=$(aws cloudformation describe-stacks | jq -r '.Stacks[].StackName' | grep eksctl-appmeshtest-nodegroup-ng | awk -F- '{print $(NF)}')
+INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=*$INSTANCE_PROFILE_PREFIX*" --query 'Reservations[].Instances[].InstanceId' --output json | jq -r '.[0]')
+INSTANCE_PROFILE_NAME=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[].Instances[].IamInstanceProfile[].Arn' --output json | jq -r '.[0]' | awk -F/ '{print $NF}')
+ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE_NAME | jq -r '.InstanceProfile.Roles[] | .RoleName')
+aws iam put-role-policy \
       --role-name $ROLE_NAME \
       --policy-name Worker-Logs-Policy \
       --policy-document file://./logs-policy.json
-```
+```  
+Alternatively, you can use the AWS console, find the instance belonging to our appmesh example auto-scaling group in ec2 instances (name start with appmeshtest-ng), and find its IAM Role in detail section. Open it, select attach policies in the upper right corner, create policy using JSON format, and paste the contents of `logs-policy.json` into the text box.   
 
 Next, deploy Fluentd as a log forwarder using a `DaemonSet` as defined in the [fluentd.yaml](fluentd.yaml) manifest:
 
