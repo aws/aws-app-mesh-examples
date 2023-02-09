@@ -2,7 +2,7 @@
 This example shows how to custom format Envoy access logs using either json or custom string. 
 
 ## Prerequisites
-1. [Walkthrough: App Mesh with EKS](../eks/)
+1. [Walkthrough: App Mesh with EKS (Finish Base Deployment-Cluster provisioning and Install App Mesh Kubernetes components)](../eks/)
 
 2. v1beta2 example manifest requires [aws-app-mesh-controller-for-k8s](https://github.com/aws/aws-app-mesh-controller-for-k8s) version [>=v1.0.0](https://github.com/aws/aws-app-mesh-controller-for-k8s/releases/tag/v1.0.0). Run the following to check the version of controller you are running.
 ```

@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: 927633306431.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-envoy-logging-custom-format/feapp
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-envoy-logging-custom-format/feapp
           ports:
             - containerPort: 8080
           env:
@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: 927633306431.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-envoy-logging-custom-format/colorapp
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/howto-k8s-envoy-logging-custom-format/colorapp
           ports:
             - containerPort: 8080
           env:
