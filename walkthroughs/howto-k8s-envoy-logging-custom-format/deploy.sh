@@ -49,7 +49,10 @@ main() {
         echo "deploy images..."
         deploy_images
     fi
-
+    eval "cat <<EOF
+$(<${DIR}/manifest.yaml.template)
+EOF
+" >${DIR}/manifest.yaml
     kubectl apply -f ${DIR}/manifest.yaml
 }
 
