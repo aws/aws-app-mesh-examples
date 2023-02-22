@@ -7,7 +7,7 @@ require github.com/aws/aws-xray-sdk-go v1.6.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
-	github.com/aws/aws-sdk-go v1.19.0 // indirect
+	github.com/aws/aws-sdk-go v1.34.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.11.8 // indirect
