@@ -1,7 +1,7 @@
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
-github.com/aws/aws-sdk-go v1.44.207 h1:7O0AMKxTm+/GUx6zw+3dqc+fD3tTzv8xaZPYo+ywRwE=
-github.com/aws/aws-sdk-go v1.44.207/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
+github.com/aws/aws-sdk-go v1.44.209 h1:wZuiaA4eaqYZmoZXqGgNHqVD7y7kUGFvACDGBgowTps=
+github.com/aws/aws-sdk-go v1.44.209/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-xray-sdk-go v0.9.4 h1:3mtFCrgFR5IefmWFV5pscHp9TTyOWuqaIKJIY0d1Y4g=
 github.com/aws/aws-xray-sdk-go v0.9.4/go.mod h1:XtMKdBQfpVut+tJEwI7+dJFRxxRdxHDyVNp2tHXRq04=
 github.com/cihub/seelog v0.0.0-20151216151435-d2c6e5aa9fbf h1:XI2tOTCBqEnMyN2j1yPBI07yQHeywUSCEf8YWqf0oKw=
