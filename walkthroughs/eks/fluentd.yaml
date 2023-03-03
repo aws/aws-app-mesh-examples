@@ -4,7 +4,7 @@ metadata:
   name: fluentd
   namespace: kube-system
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: fluentd
@@ -16,7 +16,7 @@ rules:
   - pods
   verbs: ["get", "list", "watch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: fluentd
@@ -162,7 +162,7 @@ data:
       </match>
     </label>
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: fluentd-cloudwatch
@@ -170,6 +170,9 @@ metadata:
   labels:
     k8s-app: fluentd-cloudwatch
 spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-cloudwatch
   template:
     metadata:
       labels:
