@@ -54,3 +54,44 @@ When you now go to the CloudWatch console you should see something like this:
 
 ![CloudWatch console output of AppMesh virtual node](cloudwatch.png)
 
+## Logs via Fluentbit
+
+Fluentbit is a lightweight and high-performance log collector and forwarder. It has a smaller memory footprint and provides a smaller set of plugins compared to Fluentd. 
+
+1 Create a ConfigMap named `fluent-bit-cluster-info` with the cluster name and the aws region to send logs to.
+
+```
+ClusterName=appmeshtest
+RegionName=us-west-2
+FluentBitHttpPort='2020'
+FluentBitReadFromHead='Off'
+[[ ${FluentBitReadFromHead} = 'On' ]] && FluentBitReadFromTail='Off'|| FluentBitReadFromTail='On'
+[[ -z ${FluentBitHttpPort} ]] && FluentBitHttpServer='Off' || FluentBitHttpServer='On'
+kubectl create configmap fluent-bit-cluster-info \
+--from-literal=cluster.name=${ClusterName} \
+--from-literal=http.server=${FluentBitHttpServer} \
+--from-literal=http.port=${FluentBitHttpPort} \
+--from-literal=read.head=${FluentBitReadFromHead} \
+--from-literal=read.tail=${FluentBitReadFromTail} \
+--from-literal=logs.region=${RegionName} -n kube-system
+```
+
+2 Next, same as deploying fluentd, deploy fluentbit instead as the log forwarder using a `DaemonSet` as defined in the [fluentbit.yaml](fluentbit.yaml) manifest:
+
+```
+$ kubectl apply -f fluentbit.yaml
+```
+
+3 Verify that the fluentbit pods are running in the kube-system namespace:
+![AppMesh fluentbit daemonset](fluentbit-2.png)
+
+4 Again, now we can check the fluentbit logstreams in cloudwatch log groups:
+![AppMesh fluentbit daemonset](fluentbit-0.png)
+![AppMesh fluentbit daemonset](fluentbit-1.png)
+
+## Cleanup
+```
+kubectl delete daemonset fluentd-cloudwatch -n kube-system
+kubectl delete daemonset fluent-bit-compatible -n kube-system
+```
+
