@@ -58,7 +58,19 @@ When you now go to the CloudWatch console you should see something like this:
 
 Fluentbit is a lightweight and high-performance log collector and forwarder. It has a smaller memory footprint and provides a smaller set of plugins compared to Fluentd. 
 
-1 Create a ConfigMap named `fluent-bit-cluster-info` with the cluster name and the aws region to send logs to.
+Create an IAM policy to give log permission, if haven't been done this step in fluentd part
+```
+INSTANCE_PROFILE_PREFIX=$(aws cloudformation describe-stacks | jq -r '.Stacks[].StackName' | grep eksctl-appmeshtest-nodegroup-ng | awk -F- '{print $(NF)}')
+INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=*$INSTANCE_PROFILE_PREFIX*" --query 'Reservations[].Instances[].InstanceId' --output json | jq -r '.[0]')
+INSTANCE_PROFILE_NAME=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[].Instances[].IamInstanceProfile[].Arn' --output json | jq -r '.[0]' | awk -F/ '{print $NF}')
+ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE_NAME | jq -r '.InstanceProfile.Roles[] | .RoleName')
+aws iam put-role-policy \
+      --role-name $ROLE_NAME \
+      --policy-name Worker-Logs-Policy \
+      --policy-document file://./logs-policy.json
+``` 
+
+2 Create a ConfigMap named `fluent-bit-cluster-info` with the cluster name and the aws region to send logs to.
 
 ```
 ClusterName=appmeshtest
@@ -76,18 +88,56 @@ kubectl create configmap fluent-bit-cluster-info \
 --from-literal=logs.region=${RegionName} -n kube-system
 ```
 
-2 Next, same as deploying fluentd, deploy fluentbit instead as the log forwarder using a `DaemonSet` as defined in the [fluentbit.yaml](fluentbit.yaml) manifest:
+3 Next, same as deploying fluentd, deploy fluentbit instead as the log forwarder using a `DaemonSet` as defined in the [fluentbit.yaml](fluentbit.yaml) manifest:
 
 ```
-$ kubectl apply -f fluentbit.yaml
+kubectl apply -f fluentbit.yaml
 ```
 
-3 Verify that the fluentbit pods are running in the kube-system namespace:
+4 Verify that the fluentbit pods are running in the kube-system namespace:
 ![AppMesh fluentbit daemonset](fluentbit-2.png)
 
-4 Again, now we can check the fluentbit logstreams in cloudwatch log groups:
+5 Again, now we can check the fluentbit logstreams in cloudwatch log groups:
 ![AppMesh fluentbit daemonset](fluentbit-0.png)
 ![AppMesh fluentbit daemonset](fluentbit-1.png)
+
+## Activate container insights
+
+CloudWatch Container Insights provides preconfigured dashboards for monitoring metrics such as CPU and memory utilization, network traffic, and request latency, as well as logs from applications and container infrastructure.  you can filter and group metrics and logs by cluster, namespace, service, and pod, allowing for granular insights into specific areas of your application architecture.  
+To use it, you need to add the cloudwatch agent daemonset to the cluster:
+
+1 Add OIDC provider to the cluster for authentication if haven't:
+```
+eksctl utils associate-iam-oidc-provider --region=us-west-2 --cluster=appmeshtest --approve
+```
+
+2 Create a service account for the cloudwatch agent:
+```
+eksctl create iamserviceaccount \
+  --cluster appmeshtest \
+  --namespace kube-system \
+  --name cloudwatch-agent \
+  --attach-policy-arn  arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy \
+  --override-existing-serviceaccounts \
+  --approve   
+```
+
+3 Deploy the cloudwatch agent daemonset:
+```
+kubectl apply -f cwagent.yaml
+```
+
+4 Verify that the cloudwatch agent pods are running in the kube-system namespace:
+Change the *cloudwatch-agent-suffix* to the actual pod name in two cloudwatch agent pods:
+```
+kubectl -n kube-system get po -l name=cloudwatch-agent
+kubectl logs cloudwatch-agent-suffix -n kube-system
+```
+![AppMesh cloudwatch agent](insights-0.png)
+
+5 View metrics in Cloudwatch, select `appmeshtest` as the cluster name in the dropdown list:
+![AppMesh cloudwatch container insights](insights-1.png)
+![AppMesh cloudwatch container insights](insights-2.png)
 
 ## Cleanup
 ```
