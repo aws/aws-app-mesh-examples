@@ -63,12 +63,12 @@ data:
   cwagentconfig.json: |
     {
       "agent": {
-        "region": ${AWS_REGION}
+        "region": "us-west-2"
       },
       "logs": {
         "metrics_collected": {
           "kubernetes": {
-            "cluster_name": "${CLUSTER_NAME}",
+            "cluster_name": "appmeshtest",
             "metrics_collection_interval": 60
           }
         },
@@ -180,8 +180,8 @@ spec:
 # need to replace the placeholders {{cluster_name}} and {{region_name}}
 apiVersion: v1
 data:
-  cluster.name: ${CLUSTER_NAME}
-  logs.region: ${AWS_REGION}
+  cluster.name: appmeshtest
+  logs.region: us-west-2
 kind: ConfigMap
 metadata:
   name: cluster-info
