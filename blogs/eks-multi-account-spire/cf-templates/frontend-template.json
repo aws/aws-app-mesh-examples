@@ -153,7 +153,7 @@
               "Arn"
             ]
           },
-          "Version": "1.19"
+          "Version": "1.22"
         }
       },
       "ControlPlaneSecurityGroup": {
@@ -1048,7 +1048,7 @@
             ]
           },
           "NodegroupName": "nodegroup",
-          "ReleaseVersion": "1.19.6-20210322",
+          "ReleaseVersion": "1.22.17-20230127",
           "ScalingConfig": {
             "DesiredSize": 3,
             "MaxSize": 3,

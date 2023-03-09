@@ -73,7 +73,7 @@ aws --profile shared cloudformation deploy \
    BackendAccountId=$(aws --profile backend sts get-caller-identity | jq -r '.Account')
 
 aws --profile shared cloudformation wait stack-create-complete \
- --stack-name ks-cluster-shared-services-stack
+ --stack-name eks-cluster-shared-services-stack
 ```
 This CloudFormation stack will create the following resources: 
 - a new EKS cluster named **eks-cluster-shared** 
