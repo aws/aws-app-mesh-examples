@@ -161,8 +161,7 @@
             "ServiceRole",
             "Arn"
           ]
-        },
-        "Version": "1.22"
+        }
       }
     },
     "ControlPlaneSecurityGroup": {
@@ -1098,7 +1097,6 @@
           ]
         },
         "NodegroupName": "nodegroup",
-        "ReleaseVersion": "1.22.17-20230127",
         "ScalingConfig": {
           "DesiredSize": 3,
           "MaxSize": 3,
