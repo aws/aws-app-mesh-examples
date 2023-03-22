@@ -21,7 +21,7 @@ cat > /tmp/eks-frontend-configuration.yml <<-EKS_FRONTEND_CONF
   metadata:
     name: am-multi-account-1
     region: $FRONTEND_AWS_REGION
-    version: "1.18"
+    version: "1.22"
   vpc:
     subnets:
       private:
@@ -74,7 +74,7 @@ cat > /tmp/eks-backend-configuration.yml <<-EKS_BACKEND_CONF
   metadata:
     name: am-multi-account-2
     region: $BACKEND_AWS_REGION
-    version: "1.18"
+    version: "1.22"
   vpc:
     subnets:
       private:
