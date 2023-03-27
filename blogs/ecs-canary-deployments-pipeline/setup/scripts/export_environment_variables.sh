@@ -4,7 +4,7 @@ set -e
 AWS_REGION=us-west-2
 ENVIRONMENT_NAME=ecs-blogpost
 NAMESPACE=yelb.local
-ENVOY_IMAGE=840364872350.dkr.ecr.${AWS_REGION}.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod
+ENVOY_IMAGE=public.ecr.aws/appmesh/aws-appmesh-envoy:v1.25.1.0-prod
 SHARED_STACK_NAME=${ENVIRONMENT_NAME}-deployment-stepfunctions
 BUILD_COMPUTE_TYPE=BUILD_GENERAL1_SMALL
 USE_SAMPLE_MICROSERVICES='True'

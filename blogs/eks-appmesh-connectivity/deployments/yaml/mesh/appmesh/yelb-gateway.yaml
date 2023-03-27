@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: envoy
-          image: 840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.15.1.0-prod
+          image: public.ecr.aws/appmesh/aws-appmesh-envoy:v1.25.1.0-prod
           ports:
             - containerPort: 8088
           resources:
