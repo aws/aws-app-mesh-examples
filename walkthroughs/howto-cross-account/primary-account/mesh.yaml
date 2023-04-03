@@ -35,6 +35,7 @@ Resources:
             Prefix: /
       VirtualGatewayName: !GetAtt VirtualGateway.VirtualGatewayName
 
+
   BackendNode:
     Type: AWS::AppMesh::VirtualNode
     Properties:

@@ -30,7 +30,7 @@ These backends will be configured in distinct accounts and made accessible throu
 
     1. **Project Name** used to isolate resources created in this demo from other's in your account. e.g. howto-cross-account
         ```
-        export PROJECT_NAME=howto-cross-account
+        export PROJECT_NAME=cross-account
         ```
     2. **Account IDs**:
         This demo needs two accounts to which are in the same AWS Organization.
