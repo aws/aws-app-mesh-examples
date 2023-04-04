@@ -90,6 +90,11 @@ GO_PROXY=direct ./src/colorteller_with_external_traffic/deploy.sh
 
 This mesh will be a simplified version of the original Color App Example, so we'll only be deploying the gateway and one color teller service (white).
 
+This mesh includes two parts. One is the normal solution we use, i.e. modeling the external service as a virtual services backed up by a virtaul node. Another is a workaround
+to model multiple TCP external services with the same port. For detail for the workaround please see [here](#2-can-i-configure-multiple-external-services-for-the-same-mesh).
+
+![Mesh](./images/2-meshify-app.png "Mesh")
+
 The external service can be modelled by a virtual service with virtual node as provider. The spec for virtual service looks like this:
 
 ```yaml
@@ -156,7 +161,7 @@ Let's create the mesh.
 ./mesh/mesh.sh up
 ```
 
-## Step 4: Deploy and Verify
+## Step 3: Deploy and Verify
 
 Our final step is to deploy the service and test it out.
 
@@ -170,7 +175,7 @@ Let's issue a request to the color gateway.
 COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
     --stack-name $ENVIRONMENT_NAME-ecs-service \
     | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="ColorAppEndpoint") | .OutputValue')
-curl "${COLORAPP_ENDPOINT}/external"
+curl "${COLORAPP_ENDPOINT}/external_github"
 ```
 
 You should see a successful response with homepage of GitHub. You can also access the link through your browser.
@@ -184,10 +189,10 @@ You can also send a request to the color gateway regarding the workaround. Feel 
 COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
     --stack-name $ENVIRONMENT_NAME-ecs-service \
     | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="ColorAppEndpoint") | .OutputValue')
-curl "${COLORAPP_ENDPOINT}/external2"
+curl "${COLORAPP_ENDPOINT}/external_godev"
 ```
 
-## Step 5: Clean Up
+## Step 4: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
 Run the following commands to clean up and tear down the resources that we've created.
@@ -214,6 +219,6 @@ With egress filter set to ``DROP_ALL``, this depends on the situation. If you ar
 
 If you want to model multiple external services as TCP virtual nodes with the same ports, e.g. 443, then you cannot directly do that. Please refer to [the troubleshooting doc](https://docs.aws.amazon.com/app-mesh/latest/userguide/troubleshooting-connectivity.html#ts-connectivity-virtual-node-router) for more detail. But there is a workaround for this. Create a VirtualRouter for the VirtualService linked to an external service (e.g. example.com). Assign a unique port number (e.g. 444) to the VirtualRouter. On the client (app) side, update the connection to use the VirtualRouter's port (e.g. 444). The request will then be redirected to the actual VirtualNode port of the target service (e.g. 443).
 
-The workaround is also included in this walkthrough. Instead of just having ``github.com`` as an external service, this walkthrough also includes a workaround to model ``go.dev`` into the service mesh, while both websites use HTTPS, i.e. 443, as the listening port. You can send a request to ``${COLORAPP_ENDPOINT}/external2`` to see it working.
+The workaround is also included in this walkthrough. Instead of just having ``github.com`` as an external service, this walkthrough also includes a workaround to model ``go.dev`` into the service mesh, while both websites use HTTPS, i.e. 443, as the listening port. You can send a request to ``${COLORAPP_ENDPOINT}/external_godev`` to see it working.
 
 Note that this workaround might need HTTP header manipulation on client side if the destination side uses strict SNI/vHost configurations. For more detail please see [this Github issue](https://github.com/aws/aws-app-mesh-roadmap/issues/195).

@@ -90,7 +90,7 @@ func main() {
 	log.Println("starting server, listening on port " + getServerPort())
 	http.Handle("/", &colorHandler{})
 	http.Handle("/ping", &pingHandler{})
-	http.Handle("/external", &externalHandler{})
-	http.Handle("/external2", &externalHandler2{})
+	http.Handle("/external_github", &externalHandler{})
+	http.Handle("/external_godev", &externalHandler2{})
 	http.ListenAndServe(":"+getServerPort(), nil)
 }
