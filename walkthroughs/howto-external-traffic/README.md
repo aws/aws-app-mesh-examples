@@ -175,6 +175,18 @@ curl "${COLORAPP_ENDPOINT}/external"
 
 You should see a successful response with homepage of GitHub. You can also access the link through your browser.
 
+This walkthrough also includes a workaround when you want to access multiple TCP external services with the same port, for more detail please refer to
+[question 2 in FAQ](#2-can-i-configure-multiple-external-services-for-the-same-mesh).
+
+You can also send a request to the color gateway regarding the workaround. Feel free to use your browser if you want.
+
+```bash
+COLORAPP_ENDPOINT=$(aws cloudformation describe-stacks \
+    --stack-name $ENVIRONMENT_NAME-ecs-service \
+    | jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="ColorAppEndpoint") | .OutputValue')
+curl "${COLORAPP_ENDPOINT}/external2"
+```
+
 ## Step 5: Clean Up
 
 If you want to keep the application running, you can do so, but this is the end of this walkthrough.
