@@ -11,6 +11,7 @@ import (
 const defaultPort = "8080"
 const defaultColor = "black"
 const defaultStage = "default"
+const alternativePort = "444"
 
 func getServerPort() string {
 	port := os.Getenv("SERVER_PORT")
@@ -68,10 +69,28 @@ func (h *externalHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	writer.Write(responseData)
 }
 
+type externalHandler2 struct{}
+func (h *externalHandler2) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	log.Println("external service requested, reponding with service response")
+	resp, err := http.Get("https://go.dev" + ":" + alternativePort)
+	if err != nil {
+		log.Println(err)
+		fmt.Println("HTTP Response Status:", resp.StatusCode, http.StatusText(resp.StatusCode))
+		return
+	}
+	defer resp.Body.Close()
+	responseData, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        log.Println(err)
+    }
+	writer.Write(responseData)
+}
+
 func main() {
 	log.Println("starting server, listening on port " + getServerPort())
 	http.Handle("/", &colorHandler{})
 	http.Handle("/ping", &pingHandler{})
 	http.Handle("/external", &externalHandler{})
+	http.Handle("/external2", &externalHandler2{})
 	http.ListenAndServe(":"+getServerPort(), nil)
 }

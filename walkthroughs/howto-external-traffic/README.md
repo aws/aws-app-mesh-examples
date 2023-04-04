@@ -190,7 +190,18 @@ aws cloudformation delete-stack --stack-name $ENVIRONMENT_NAME-vpc
 ```
 
 ## Frequently Asked Questions
-### 1. Can I configure multiple external services for the same mesh?
-With egress filter set to ``ALLOW_ALL``, you don't need to configure any external services because the mesh will allow all outgoing traffic.
+### 1. Can I model the external service as a HTTP backend or a TCP backend?
+The external service can be modeled as either HTTP or TCP backend depends on the use cases.
 
-With egress filter set to ``DROP_ALL``, that depends on the situation. If you want to model multiple external services as TCP virtual nodes with the same ports, e.g. 443, then you cannot do that. Please refer to [the troubleshotting doc](https://docs.aws.amazon.com/app-mesh/latest/userguide/troubleshooting-connectivity.html#ts-connectivity-virtual-node-router) for more detail. If these TCP virtual nodes don't share the same port or you are using HTTP virtual nodes, even sharing the same port, you can do that.
+If the external service uses HTTP protocol for communication, then it can be modeled as either HTTP or TCP backend. If the external service uses HTTPS/TCP protocol, you can only model it as a TCP backend.
+
+### 2. Can I configure multiple external services for the same mesh?
+With egress filter set to ``ALLOW_ALL``, you don't need to configure any external services because the mesh will allow all outgoing traffic by default.
+
+With egress filter set to ``DROP_ALL``, this depends on the situation. If you are using HTTP virtual nodes, even sharing the same port, you can do that. If you want to model multiple external services as TCP virtual nodes with different ports you can still do that.
+
+If you want to model multiple external services as TCP virtual nodes with the same ports, e.g. 443, then you cannot directly do that. Please refer to [the troubleshotting doc](https://docs.aws.amazon.com/app-mesh/latest/userguide/troubleshooting-connectivity.html#ts-connectivity-virtual-node-router) for more detail. But there is a workaround for this. Create a VirtualRouter for the VirtualService linked to an external service (e.g. example.com). Assign a unique port number (e.g. 444) to the VirtualRouter. On the client (app) side, update the connection to use the VirtualRouter's port (e.g. 444). The request will then be redirected to the actual VirtualNode port of the target service (e.g. 443).
+
+The workaround is also included in this walkthrough. Instead of just having ``github.com`` as an external service, this walkthrough also includes a workaround to model ``go.dev`` into the service mesh, while both websites use HTTPS, i.e. 443, as the listening port. You can send a request to ``${COLORAPP_ENDPOINT}/external2`` to see it working.
+
+Note that this workaround might need HTTP header manipulation on client side if the destination side uses strict SNI/vHost configurations. For more detail please see [this Github issue](https://github.com/aws/aws-app-mesh-roadmap/issues/195).
