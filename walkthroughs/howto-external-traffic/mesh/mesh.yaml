@@ -68,6 +68,47 @@ Resources:
             Hostname: github.com
             IpPreference: IPv4_ONLY
 
+  ExternalServiceVirtualNode2:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualNodeName: ExternalService2
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 443
+              Protocol: tcp
+        Logging: {}
+        ServiceDiscovery:
+          DNS:
+            Hostname: go.dev
+            IpPreference: IPv4_ONLY
+  
+  ExternalVirtualRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualRouterName: external
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 444
+              Protocol: tcp
+
+  ExternalRouterRoute:
+    Type: AWS::AppMesh::Route
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      RouteName: go
+      VirtualRouterName: !GetAtt ExternalVirtualRouter.VirtualRouterName
+      Spec:
+        TcpRoute:
+          Action:
+            WeightedTargets:
+              - Port: 443
+                VirtualNode: !GetAtt ExternalServiceVirtualNode2.VirtualNodeName
+                Weight: 1
+
   ExternalServiceVirtualService:
     Type: AWS::AppMesh::VirtualService
     Properties:
@@ -77,6 +118,16 @@ Resources:
         Provider:
           VirtualNode:
             VirtualNodeName: !GetAtt ExternalServiceVirtualNode.VirtualNodeName
+
+  ExternalServiceVirtualService2:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt Mesh.MeshName
+      VirtualServiceName: go.dev
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: !GetAtt ExternalVirtualRouter.VirtualRouterName
 
   ColorTellerVirtualNode:
     Type: AWS::AppMesh::VirtualNode
@@ -98,6 +149,8 @@ Resources:
         Backends:
           - VirtualService:
               VirtualServiceName: !GetAtt ExternalServiceVirtualService.VirtualServiceName
+          - VirtualService:
+              VirtualServiceName: !GetAtt ExternalServiceVirtualService2.VirtualServiceName
         ServiceDiscovery:
           DNS:
             Hostname: !Sub "colorteller.${ServicesDomain}"
