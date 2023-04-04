@@ -27,7 +27,7 @@ Mesh:
         Type: DROP_ALL
 ```
 
-Let's jump into a brief example of App Mesh external traffic in action.
+Let's jump into a brief example of App Mesh external traffic in action. Note that the following example is bsaed on an assumption that you set the mesh's egress tiler to ``DROP_ALL``. If you set it to ``ALLOW_ALL`` you don't need to model any of the external services to AppMesh resources.
 
 ## Prerequisites
 
