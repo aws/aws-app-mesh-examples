@@ -355,7 +355,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'feapp-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/front-node'
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'
@@ -433,7 +433,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'blue-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/blue-node'
 
   FrontService:

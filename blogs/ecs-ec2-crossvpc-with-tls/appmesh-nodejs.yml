@@ -70,7 +70,7 @@ Resources:
           Essential: true
           User: 1337
           Environment:
-           - Name: "APPMESH_VIRTUAL_NODE_NAME"
+           - Name: "APPMESH_RESOURCE_ARN"
              Value: "mesh/appmesh-workshop/virtualNode/nodejs-lb-strawberry"
           HealthCheck:
             Command:

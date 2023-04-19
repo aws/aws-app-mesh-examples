@@ -171,7 +171,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'backend-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh@${MeshOwner}/virtualNode/backend-2-vn'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'

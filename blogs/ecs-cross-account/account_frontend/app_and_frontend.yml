@@ -263,7 +263,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: "appserver-envoy"
           Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+            - Name: "APPMESH_RESOURCE_ARN"
               Value: !Sub "mesh/${MeshName}@${MeshOwner}/virtualNode/yelb-appserver-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: "debug"
@@ -394,7 +394,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: "ui-envoy"
           Environment:
-            - Name: "APPMESH_VIRTUAL_NODE_NAME"
+            - Name: "APPMESH_RESOURCE_ARN"
               Value: !Sub "mesh/${MeshName}@${MeshOwner}/virtualNode/yelb-ui-vn"
             - Name: "ENVOY_LOG_LEVEL"
               Value: "debug"

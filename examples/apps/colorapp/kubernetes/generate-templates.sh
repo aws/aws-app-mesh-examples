@@ -51,7 +51,7 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
+            - name: "APPMESH_RESOURCE_ARN"
               value: "mesh/${MESH_NAME}/virtualNode/colorgateway-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
@@ -126,7 +126,7 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
+            - name: "APPMESH_RESOURCE_ARN"
               value: "mesh/${MESH_NAME}/virtualNode/colorteller-white-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
@@ -202,7 +202,7 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
+            - name: "APPMESH_RESOURCE_ARN"
               value: "mesh/${MESH_NAME}/virtualNode/colorteller-black-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
@@ -277,7 +277,7 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
+            - name: "APPMESH_RESOURCE_ARN"
               value: "mesh/${MESH_NAME}/virtualNode/colorteller-blue-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"
@@ -352,7 +352,7 @@ spec:
           securityContext:
             runAsUser: 1337
           env:
-            - name: "APPMESH_VIRTUAL_NODE_NAME"
+            - name: "APPMESH_RESOURCE_ARN"
               value: "mesh/${MESH_NAME}/virtualNode/colorteller-red-vn"
             - name: "ENVOY_LOG_LEVEL"
               value: "debug"

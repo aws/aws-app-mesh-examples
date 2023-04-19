@@ -123,7 +123,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'white-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorTellerWhite'
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'
