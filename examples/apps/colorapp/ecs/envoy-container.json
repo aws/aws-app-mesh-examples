@@ -29,7 +29,7 @@
   ],
   "environment": [
     {
-      "name": "APPMESH_VIRTUAL_NODE_NAME",
+      "name": "APPMESH_RESOURCE_ARN",
       "value": $VIRTUAL_NODE
     },
     {

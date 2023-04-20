@@ -127,7 +127,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'white-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorTellerWhite'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
@@ -251,7 +251,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'red-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorTellerRed'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
@@ -376,7 +376,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'gateway-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorGateway'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'
@@ -467,7 +467,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'publicgateway-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualGateway/publicgateway-vg'
             - Name: 'APPMESH_PREVIEW'
               Value: '1'

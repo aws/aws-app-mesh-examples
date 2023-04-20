@@ -45,7 +45,7 @@ mainSteps:
         $(aws ecr get-login --no-include-email --region {{region}} --registry-ids 840364872350)
         # Install and run envoy
         sudo docker run --detach \
-          --env APPMESH_VIRTUAL_NODE_NAME=mesh/{{meshName}}/virtualNode/{{vNodeName}} \
+          --env APPMESH_RESOURCE_ARN=mesh/{{meshName}}/virtualNode/{{vNodeName}} \
           --env ENABLE_ENVOY_XRAY_TRACING=1 \
           --log-driver=awslogs \
           --log-opt awslogs-region={{region}} \

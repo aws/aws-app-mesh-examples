@@ -346,7 +346,7 @@ Resources:
                 awslogs-region: !Ref AWS::Region
                 awslogs-stream-prefix: 'color-envoy'
             Environment:
-              - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+              - Name: 'APPMESH_RESOURCE_ARN'
                 Value: !Ref ColorNodeName
     
     FrontService:

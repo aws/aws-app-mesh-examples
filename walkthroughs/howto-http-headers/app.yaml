@@ -652,7 +652,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'feapp-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/front-node'
             - Name: 'ENVOY_LOG_LEVEL'
               Value: 'debug'
@@ -730,7 +730,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'blue-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/blue-node'
 
   GreenTaskDef:
@@ -806,7 +806,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'green-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/green-node'
 
   RedTaskDef:
@@ -882,7 +882,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'red-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/red-node'
 
   YellowTaskDef:
@@ -958,7 +958,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'yellow-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/yellow-node'
 
   PurpleTaskDef:
@@ -1034,7 +1034,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'purple-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/purple-node'
 
   WhiteTaskDef:
@@ -1110,7 +1110,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'white-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/white-node'
 
   BlackTaskDef:
@@ -1186,7 +1186,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'black-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${ProjectName}/virtualNode/black-node'
 
   FrontService:

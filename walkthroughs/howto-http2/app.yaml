@@ -262,7 +262,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'color_client-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_client'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
@@ -339,7 +339,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'color_server-red-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_server-red'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
@@ -416,7 +416,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'color_server-green-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_server-green'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
@@ -493,7 +493,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'color_server-blue-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_server-blue'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'

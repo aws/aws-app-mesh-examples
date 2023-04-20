@@ -353,7 +353,7 @@ Resources:
               Value: '1'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value:
                 Fn::Join:
                   - ''
@@ -694,7 +694,7 @@ Resources:
               Value: '1'
             - Name: 'ENABLE_ENVOY_STATS_TAGS'
               Value: '1'
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value:
                 Fn::Join:
                   - ''

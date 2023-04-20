@@ -127,7 +127,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'white-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorTellerWhite'
             - Name: CERTIFICATE_NAME
               Value: 'colorteller_white'
@@ -248,7 +248,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: 'green-envoy'
           Environment:
-            - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+            - Name: 'APPMESH_RESOURCE_ARN'
               Value: !Sub 'mesh/${AppMeshMeshName}/virtualNode/ColorTellerGreen'
             - Name: CERTIFICATE_NAME
               Value: 'colorteller_green'

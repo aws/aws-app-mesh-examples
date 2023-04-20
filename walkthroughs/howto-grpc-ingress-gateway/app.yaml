@@ -199,7 +199,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'color_gateway-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualGateway/color_gateway'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
@@ -311,7 +311,7 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: 'color_server-envoy'
         Environment:
-        - Name: 'APPMESH_VIRTUAL_NODE_NAME'
+        - Name: 'APPMESH_RESOURCE_ARN'
           Value: !Sub 'mesh/${ProjectName}-mesh/virtualNode/color_server'
         - Name: 'ENVOY_LOG_LEVEL'
           Value: 'debug'
