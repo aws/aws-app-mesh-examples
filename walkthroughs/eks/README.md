@@ -10,3 +10,5 @@ In this walkthrough we will be setting up AWS App Mesh with Amazon Elastic Conta
     * [Prometheus](o11y-prometheus.md)
     * [X-Ray](o11y-xray.md)
     * [Jaeger](o11y-jaeger.md)
+  * Sidecar configuration:
+    * [volumeMounts&sidecarEnv](volumeMounts-sidecarEnv.md)
