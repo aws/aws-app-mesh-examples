@@ -19,8 +19,8 @@ MESH_NAME=${PROJECT_NAME}
 CLOUDMAP_NAMESPACE="${APP_NAMESPACE}.svc.cluster.local"
 ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
 ECR_IMAGE_PREFIX="${ECR_URL}/${PROJECT_NAME}"
-CLIENT_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_client"
-COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_server"
+CLIENT_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_client:latest"
+COLOR_APP_IMAGE="${ECR_IMAGE_PREFIX}/color_server:latest"
 MANIFEST_VERSION="${1:-v1beta2}"
 AWS_CLI_VERSION=$(aws --version 2>&1 | cut -d/ -f2 | cut -d. -f1)
 
@@ -83,8 +83,21 @@ deploy_images() {
     ecr_login
     for app in color_client color_server; do
         aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || aws ecr create-repository --repository-name $PROJECT_NAME/$app >/dev/null
-        docker build -t ${ECR_IMAGE_PREFIX}/${app} ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
-        docker push ${ECR_IMAGE_PREFIX}/${app}
+    
+        # performs a multiarch build and deploy if cross-build tools are
+        # available. Otherwise, builds on the current architecture.
+        docker image rm "${ECR_IMAGE_PREFIX}/${app}:latest" 1>/dev/null 2>/dev/null || :
+        missing_buildx=`docker buildx version 1>/dev/null 2>/dev/null; echo $?`
+        if [[ "$missing_buildx" -eq "0" ]]; then
+            docker manifest rm "${ECR_IMAGE_PREFIX}/${app}:latest" 1>/dev/null 2>/dev/null || :
+            docker buildx build --platform linux/amd64 -t "${ECR_IMAGE_PREFIX}/${app}:latest-linux_amd64" ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"} --push
+            docker buildx build --platform linux/arm64 -t "${ECR_IMAGE_PREFIX}/${app}:latest-linux_arm64" ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"} --push
+            docker manifest create "${ECR_IMAGE_PREFIX}/${app}:latest" "${ECR_IMAGE_PREFIX}/${app}:latest-linux_amd64" "${ECR_IMAGE_PREFIX}/${app}:latest-linux_arm64"
+            docker manifest push "${ECR_IMAGE_PREFIX}/${app}:latest"
+        else
+            docker build -t "${ECR_IMAGE_PREFIX}/${app}:latest" ${DIR}/${app} --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
+            docker push "${ECR_IMAGE_PREFIX}/${app}:latest"
+        fi
     done
 }
 
