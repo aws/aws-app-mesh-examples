@@ -417,7 +417,6 @@ Resources:
         HttpRoute:
           Match:
             Prefix: '/'
-            Scheme: "https"
           Action:
             WeightedTargets:
               - VirtualNode: 'black-node'
