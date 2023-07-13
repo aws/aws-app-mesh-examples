@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scripts-configmap
+data:
+  request_handler_driver.sh: "<path-to>/scripts/request_handler_driver.sh"
