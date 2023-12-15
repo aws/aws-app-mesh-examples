@@ -1,0 +1,48 @@
+{
+        "meshName": "appmesh-mesh-logging",
+        "spec": {
+            "backends": [],
+            "listeners": [
+                {
+                    "healthCheck": {
+                        "healthyThreshold": 2,
+                        "intervalMillis": 5000,
+                        "path": "/ping",
+                        "port": 9080,
+                        "protocol": "http",
+                        "timeoutMillis": 2000,
+                        "unhealthyThreshold": 2
+                    },
+                    "portMapping": {
+                        "port": 9080,
+                        "protocol": "http"
+                    }
+                }
+            ],
+            "logging": {
+                "accessLog": {
+                    "file": {
+                        "path": "/dev/stdout",
+                        "format": {
+                            "json": [
+                                {
+                                "key": "GreenTestLog",
+                                "value": "%RESPONSE_CODE%"
+                                },
+                                {
+                                "key": "protocol",
+                                "value": "%PROTOCOL%"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "serviceDiscovery": {
+                "dns": {
+                    "hostname": "colorteller-green.logging.local"
+                }
+            }
+        },
+        "virtualNodeName": "colorteller-green-vn"
+}

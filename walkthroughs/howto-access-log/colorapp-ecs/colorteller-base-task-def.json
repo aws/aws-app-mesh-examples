@@ -1,0 +1,77 @@
+{
+  "family": $NAME,
+  "proxyConfiguration":{
+    "type": "APPMESH",
+    "containerName": "envoy",
+    "properties": [
+      {
+        "name": "IgnoredUID",
+        "value": "1337"
+      },
+      {
+        "name": "ProxyIngressPort",
+        "value": "15000"
+      },
+      {
+        "name": "ProxyEgressPort",
+        "value": "15001"
+      },
+      {
+        "name": "AppPorts",
+        "value": "9080"
+      },
+      {
+        "name": "EgressIgnoredIPs",
+        "value": "169.254.170.2,169.254.169.254"
+      }
+    ]
+  },
+  "containerDefinitions": [
+    {
+      "name": "app",
+      "image": $APP_IMAGE,
+      "portMappings": [
+        {
+          "containerPort": 9080,
+          "hostPort": 9080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "COLOR",
+          "value": $COLOR
+        },
+        {
+          "name": "SERVER_PORT",
+          "value": "9080"
+        },
+        {
+          "name": "STAGE",
+          "value": $STAGE
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": $ECS_SERVICE_LOG_GROUP,
+          "awslogs-region": $AWS_REGION,
+          "awslogs-stream-prefix": $AWS_LOG_STREAM_PREFIX_APP
+        }
+      },
+      "essential": true,
+      "dependsOn": [
+        {
+          "containerName": "envoy",
+          "condition": "HEALTHY"
+        }
+      ]
+    },
+    $ENVOY_CONTAINER_JSON,
+    $XRAY_CONTAINER_JSON
+  ],
+  "taskRoleArn": $TASK_ROLE_ARN,
+  "executionRoleArn": $EXECUTION_ROLE_ARN,
+  "networkMode": "awsvpc",
+  "memory": "256"
+}

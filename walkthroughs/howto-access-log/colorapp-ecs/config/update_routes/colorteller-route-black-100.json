@@ -1,0 +1,19 @@
+{
+    "routeName": "colorteller-route",
+    "spec": {
+        "httpRoute": {
+            "action": {
+                "weightedTargets": [
+                    {
+                        "virtualNode": "colorteller-black-vn",
+                        "weight": 1
+                    }
+                ]
+            },
+            "match": {
+                "prefix": "/"
+            }
+        }
+    },
+    "virtualRouterName": "colorteller-vr"
+}
