@@ -1,4 +1,5 @@
 flask
 requests
 aws-xray-sdk
+urllib3<2
 gunicorn==19.9.0
