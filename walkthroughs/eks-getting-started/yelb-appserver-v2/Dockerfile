@@ -16,6 +16,7 @@ ENV RACK_ENV=production
 
 RUN gem install sinatra --no-document
 RUN gem install redis --no-document
+RUN gem install rackup --no-document
 ### hack to allow the setup of the pg gem (which would fail otherwise)
 RUN apt-get update
 RUN apt-get install libpq-dev zlib1g zlib1g-dev -y
