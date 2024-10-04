@@ -1,0 +1,25 @@
+---
+Parameters:
+
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  AppMeshMeshName:
+    Type: String
+    Description: Name of mesh
+
+Resources:
+
+  Mesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+
+Outputs:
+
+  Mesh:
+    Description: A reference to the AppMesh Mesh
+    Value: !Ref Mesh
+    Export:
+      Name: !Sub "${EnvironmentName}:Mesh"
