@@ -4,8 +4,8 @@ RUN yum update -y && \
     yum clean all && \
     rm -rf /var/cache/yum
 
-RUN curl -LO https://golang.org/dl/go1.17.1.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzvf go1.17.1.linux-amd64.tar.gz
+RUN curl -LO https://golang.org/dl/go1.18.1.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzvf go1.18.1.linux-amd64.tar.gz
 
 ENV PATH="${PATH}:/usr/local/go/bin"
 ENV GOPATH="${HOME}/go"
@@ -17,9 +17,9 @@ COPY Gopkg.toml Gopkg.lock ./
 COPY . ./
 
 # Use the default go proxy
-ARG GO_PROXY=https://proxy.golang.org
+ARG GO_PROXY=https://goproxy.io
 ENV GOPROXY=$GO_PROXY
-RUN go mod tidy
+RUN go mod tidy -go=1.16 && go mod tidy -go=1.17
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -a -installsuffix nocgo -o /app .
 
 FROM scratch

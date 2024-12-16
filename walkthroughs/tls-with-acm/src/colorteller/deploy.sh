@@ -35,6 +35,6 @@ ecr_login() {
 }
 
 # build and push
-docker build -t $IMAGE $DIR --build-arg GO_PROXY=${GO_PROXY:-"https://proxy.golang.org"}
+docker build -t $IMAGE $DIR --build-arg GO_PROXY=${GO_PROXY:-"https://goproxy.io"}
 ecr_login
 docker push $IMAGE
