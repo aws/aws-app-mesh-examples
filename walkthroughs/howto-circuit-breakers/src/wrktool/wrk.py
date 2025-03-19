@@ -38,12 +38,12 @@ def wrk():
         else:
             abort(400, 'Required param \'rate\' not specified')
         if 'url' in params:
-            url = params['url']
+            url = str(params['url'])
         else:
             abort(400, 'Required param \'url\' not specified')
 
-        command = 'wrk {} {} {} {} {} {}'.format(connections, rate, duration, threads, timeout, url)
-        out = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+        command = ['wrk', connections, rate, duration, threads, timeout, url]
+        out = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=False)
         logging.info('Result: %s', out)
         return jsonify({'out': out.stdout, 'err': out.stderr, 'code': out.returncode})
 
