@@ -64,7 +64,9 @@ Resources:
       VPCZoneIdentifier: 
         - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet1"
         - 'Fn::ImportValue': !Sub "${EnvironmentName}:PrivateSubnet2"
-      LaunchConfigurationName: !Ref ECSLaunchConfiguration
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ECSLaunchTemplate
+        Version: !GetAtt ECSLaunchTemplate.LatestVersionNumber
       MinSize: !Ref ClusterSize
       MaxSize: !Ref ClusterSize
       DesiredCapacity: !Ref ClusterSize
@@ -88,24 +90,26 @@ Resources:
           - ScheduledActions
         WaitOnResourceSignals: true
 
-  ECSLaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
+  ECSLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
     Properties:
-      ImageId: !Ref ECSAmi
-      InstanceType: !Ref InstanceType
-      KeyName: !Ref KeyName
-      SecurityGroups:
-        - !Ref ECSInstancesSecurityGroup
-      IamInstanceProfile: !Ref ECSInstanceProfile
-      UserData:
-        "Fn::Base64": !Sub |
-          #!/bin/bash
-          yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-          yum install -y aws-cfn-bootstrap hibagent
-          /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchConfiguration
-          /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSAutoScalingGroup
-          /usr/bin/enable-ec2-spot-hibernation
-
+      LaunchTemplateName: !Sub "${EnvironmentName}-lt-01"
+      LaunchTemplateData:
+        ImageId: !Ref ECSAmi
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref ECSInstancesSecurityGroup
+        IamInstanceProfile:
+          Arn: !GetAtt ECSInstanceProfile.Arn
+        UserData:
+          "Fn::Base64": !Sub |
+            #!/bin/bash
+            yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+            yum install -y aws-cfn-bootstrap hibagent
+            /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchTemplate
+            /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSAutoScalingGroup
+            /usr/bin/enable-ec2-spot-hibernation
     Metadata:
       AWS::CloudFormation::Init:
         config:
@@ -130,8 +134,8 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.ECSLaunchConfiguration.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchConfiguration
+                path=Resources.ECSLaunchTemplate.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchTemplate
 
             "/etc/awslogs/awscli.conf":
               content: !Sub |
