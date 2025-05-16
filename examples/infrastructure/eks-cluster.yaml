@@ -202,7 +202,9 @@ Resources:
     DependsOn: EKSCluster
     Properties:
       DesiredCapacity: !Ref NodeAutoScalingGroupMaxSize
-      LaunchConfigurationName: !Ref NodeLaunchConfig
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
       MinSize: !Ref NodeAutoScalingGroupMinSize
       MaxSize: !Ref NodeAutoScalingGroupMaxSize
       VPCZoneIdentifier:
@@ -220,32 +222,36 @@ Resources:
         MinInstancesInService: '1'
         MaxBatchSize: '1'
 
-  NodeLaunchConfig:
-    Type: AWS::AutoScaling::LaunchConfiguration
+  NodeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
     Properties:
-      AssociatePublicIpAddress: 'true'
-      IamInstanceProfile: !Ref NodeInstanceProfile
-      ImageId: !FindInMap [AWSRegionToEKSAmi, !Ref "AWS::Region", AMI]
-      InstanceType: !Ref InstanceType
-      KeyName: !Ref KeyName
-      SecurityGroups:
-      - !Ref NodeSecurityGroup
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            VolumeSize: !Ref NodeVolumeSize
-            VolumeType: gp2
-            DeleteOnTermination: true
-      UserData:
-        Fn::Base64:
-          !Sub |
-            #!/bin/bash
-            set -o xtrace
-            /etc/eks/bootstrap.sh ${EnvironmentName} ${BootstrapArguments}
-            /opt/aws/bin/cfn-signal --exit-code $? \
-                     --stack  ${AWS::StackName} \
-                     --resource NodeGroup  \
-                     --region ${AWS::Region}
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: 'true'
+            DeviceIndex: 0
+            Groups:
+              - !Ref NodeSecurityGroup
+        IamInstanceProfile:
+          Arn: !GetAtt NodeInstanceProfile.Arn
+        ImageId: !FindInMap [AWSRegionToEKSAmi, !Ref "AWS::Region", AMI]
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: !Ref NodeVolumeSize
+              VolumeType: gp2
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64:
+            !Sub |
+              #!/bin/bash
+              set -o xtrace
+              /etc/eks/bootstrap.sh ${EnvironmentName} ${BootstrapArguments}
+              /opt/aws/bin/cfn-signal --exit-code $? \
+                       --stack  ${AWS::StackName} \
+                       --resource NodeGroup  \
+                       --region ${AWS::Region}
 
 Outputs:
   NodeInstanceRole:
