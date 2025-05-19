@@ -4,8 +4,8 @@ RUN yum update -y && \
     yum clean all && \
     rm -rf /var/cache/yum
 
-RUN curl -LO https://golang.org/dl/go1.17.1.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzvf go1.17.1.linux-amd64.tar.gz
+RUN curl -LO https://golang.org/dl/go1.23.6.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzvf go1.23.6.linux-amd64.tar.gz
 
 ENV PATH="${PATH}:/usr/local/go/bin"
 ENV GOPATH="${HOME}/go"
