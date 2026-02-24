@@ -31,6 +31,97 @@ v1.3.0
 
 4. Install Docker. It is needed to build the demo application images.
 
+5. **EBS CSI Driver Setup (Required for SPIRE StatefulSet with Persistent Storage)**
+
+   The SPIRE server uses a StatefulSet with persistent storage to ensure data survives pod restarts. This requires the Amazon EBS CSI driver to be installed and configured on your EKS cluster.
+
+   **Check if EBS CSI driver is already installed:**
+   ```bash
+   kubectl get pods -n kube-system | grep ebs-csi
+   ```
+
+   If you see `ebs-csi-controller` and `ebs-csi-node` pods running, the driver is already installed. Otherwise, follow these steps:
+
+   **a. Create OIDC provider for your cluster (if not already created):**
+   ```bash
+   eksctl utils associate-iam-oidc-provider --cluster <your-cluster-name> --region <your-region> --approve
+   ```
+
+   **b. Create IAM role for EBS CSI driver:**
+   
+   First, get your cluster's OIDC provider ID:
+   ```bash
+   aws eks describe-cluster --name <your-cluster-name> --region <your-region> --query "cluster.identity.oidc.issuer" --output text
+   # Output example: https://oidc.eks.us-west-2.amazonaws.com/id/EXAMPLED539D4633E53DE1B71EXAMPLE
+   ```
+
+   Create a trust policy file (`ebs-csi-trust-policy.json`):
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/oidc.eks.<REGION>.amazonaws.com/id/<OIDC_ID>"
+         },
+         "Action": "sts:AssumeRoleWithWebIdentity",
+         "Condition": {
+           "StringEquals": {
+             "oidc.eks.<REGION>.amazonaws.com/id/<OIDC_ID>:aud": "sts.amazonaws.com",
+             "oidc.eks.<REGION>.amazonaws.com/id/<OIDC_ID>:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+           }
+         }
+       }
+     ]
+   }
+   ```
+   Replace `<AWS_ACCOUNT_ID>`, `<REGION>`, and `<OIDC_ID>` with your values.
+
+   Create the IAM role:
+   ```bash
+   aws iam create-role \
+     --role-name AmazonEKS_EBS_CSI_DriverRole \
+     --assume-role-policy-document file://ebs-csi-trust-policy.json
+   ```
+
+   Attach the AWS managed policy:
+   ```bash
+   aws iam attach-role-policy \
+     --role-name AmazonEKS_EBS_CSI_DriverRole \
+     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+   ```
+
+   **c. Install the EBS CSI driver addon:**
+   ```bash
+   aws eks create-addon \
+     --cluster-name <your-cluster-name> \
+     --addon-name aws-ebs-csi-driver \
+     --service-account-role-arn arn:aws:iam::<AWS_ACCOUNT_ID>:role/AmazonEKS_EBS_CSI_DriverRole \
+     --region <your-region>
+   ```
+
+   **d. Verify the installation:**
+   ```bash
+   # Check addon status
+   aws eks describe-addon \
+     --cluster-name <your-cluster-name> \
+     --addon-name aws-ebs-csi-driver \
+     --region <your-region> \
+     --query 'addon.status'
+   
+   # Should return "ACTIVE"
+   
+   # Check pods are running
+   kubectl get pods -n kube-system | grep ebs-csi
+   
+   # Should show:
+   # ebs-csi-controller-xxx   6/6     Running
+   # ebs-csi-node-xxx         3/3     Running
+   ```
+
+   **Note:** The SPIRE server StatefulSet uses a PersistentVolumeClaim with the `gp2` storage class. Without the EBS CSI driver, the PVC will remain in `Pending` state and the SPIRE server pod will not start.
+
 ## Step 1: Setup Environment
 1. Clone this repository and navigate to the walkthrough/howto-k8s-mtls-sds-based folder, all commands will be ran from this location
 2. Your AWS account id:
@@ -57,7 +148,7 @@ Walk through uses built-in k8s node attestor([k8s_sat](https://github.com/spiffe
 ./deploy_spire.sh
 ```
 **Note:** You can also install sample SPIRE Server and Agent via helm. Please refer to [SPIRE Server](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-server) and [SPIRE Agent](https://github.com/aws/eks-charts/tree/master/stable/appmesh-spire-agent) charts in EKS charts repository for instructions on how to install them. If you prefer to install SPIRE via the sample helm charts for this walkthrough then please make sure to set the SPIRE trust domain to `howto-k8s-mtls-sds-based.aws` (--set config.trustDomain=howto-k8s-mtls-sds-based.aws)  
-The following walkthrough is designed to work with spire version >= v0.12.0 and < v1.0.0 with default set to 0.12.0
+The following walkthrough is designed to work with SPIRE version >= v1.8.0
 
 Let's check if both SPIRE Server and Agent are up and running. You should see a SPIRE Agent up and running on every node on your cluster.
 
@@ -94,7 +185,8 @@ Let's go ahead and register the entries with SPIRE server.
 You should now be able to check the registered entries in the SPIRE Server
 
 ```bash
-kubectl exec -n spire spire-server-0 -- /opt/spire/bin/spire-server entry show
+SPIRE_SERVER_POD=$(kubectl get pod -n spire -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n spire $SPIRE_SERVER_POD -- /opt/spire/bin/spire-server entry show
 Found 4 entries
 Entry ID      : 20ab95a6-e988-4628-9191-cc7e24acdb84
 SPIFFE ID     : spiffe://howto-k8s-mtls-sds-based.aws/colorblue
@@ -198,7 +290,7 @@ virtualnode.appmesh.k8s.aws/red     arn:aws:appmesh:us-west-2:1111111111:mesh/ho
 Note: "1111111111" is a dummy Account ID. You should see your Accoount ID in place of "1111111111"
 ```
 
-Let's look at the spec for `front` Virtual Node that has `green`, `red` and `blue` as it's backends. In order to enable mTLS, we need to specify both the `certificate` and `validation` sections of the `tls` block. The `certificate` block under `tls` specifies the SDS secret name(SPIFFE ID that was assigned for this workload) of the `front` app and the `validation` block specifies trust domain that it is part of. TLS `mode` is set to `STRICT` which will only allow mTLS traffic. `mode` can be set to `PERMISSIVE` if you wish to allow both plaintext traffic and mutual mTLS traffic at the same time. Use `subjectAlternativeNames` section to list out any alternative names for the services.
+Let's look at the spec for `front` Virtual Node that has `green`, `red` and `blue` as it's backends. In order to enable mTLS, we need to specify both the `certificate` and `validation` sections of the `tls` block. The `certificate` block under `tls` specifies the SDS secret name(SPIFFE ID that was assigned for this workload) of the `front` app and the `validation` block specifies trust domain that it is part of. The `enforce` field is set to `true` which enforces mTLS for all backend connections. Use `subjectAlternativeNames` section to list out any alternative names for the services.
 
 ```
 apiVersion: appmesh.k8s.aws/v1beta2
@@ -229,7 +321,6 @@ spec:
     clientPolicy:
       tls:
         enforce: true
-        mode: STRICT
         certificate:
           sds:
             secretName: spiffe://howto-k8s-mtls-sds-based.aws/front

@@ -3,7 +3,9 @@
 set -e
 
 register_server_entries() {
-    kubectl exec -n spire spire-server-0 -c spire-server -- /opt/spire/bin/spire-server entry create $@
+    # Get the actual SPIRE server pod name (works with both StatefulSet and Deployment)
+    SPIRE_SERVER_POD=$(kubectl get pod -n spire -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+    kubectl exec -n spire $SPIRE_SERVER_POD -c spire-server -- /opt/spire/bin/spire-server entry create $@
 }
 
 

@@ -44,7 +44,6 @@ spec:
     clientPolicy:
       tls:
         enforce: true
-        mode: STRICT
         certificate:
           sds:
             secretName: ${FRONTEND_APP_SVID}
