@@ -1,0 +1,3 @@
+flask
+aws-xray-sdk
+gunicorn==19.9.0
