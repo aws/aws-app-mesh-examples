@@ -1,0 +1,57 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: fortio
+  namespace: tls-e2e
+spec:
+  podSelector:
+    matchLabels:
+      app: fortio
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: service-0       # Replace with one of the fishap VS
+          namespace: tls-e2e
+  serviceDiscovery:
+    dns:
+      hostname: fortio.tls-e2e.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fortio
+  namespace: tls-e2e
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: fortio
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fortio
+  namespace: tls-e2e
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fortio
+  template:
+    metadata:
+      labels:
+        app: fortio
+    spec:
+      containers:
+        - name: app
+          image: fortio/fortio
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          args: ["server"]
