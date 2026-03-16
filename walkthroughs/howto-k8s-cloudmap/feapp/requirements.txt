@@ -2,4 +2,4 @@ flask
 requests
 aws-xray-sdk
 urllib3<2
-gunicorn==22.0.0
+gunicorn==23.0.0
