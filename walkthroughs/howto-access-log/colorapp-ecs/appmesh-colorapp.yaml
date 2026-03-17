@@ -1,0 +1,200 @@
+---
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Environment name that joins all the stacks
+
+  ServicesDomain:
+    Type: String
+    Description: DNS namespace used by services e.g. default.svc.cluster.local
+
+  AppMeshMeshName:
+    Type: String
+    Description: Name of mesh
+
+Resources:
+
+  ColorTellerBlackVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: colorteller-black-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: "/ping"
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorteller-black.${ServicesDomain}"
+
+  ColorTellerBlueVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: colorteller-blue-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: "/ping"
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorteller-blue.${ServicesDomain}"
+
+  ColorTellerRedVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: colorteller-red-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: "/ping"
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorteller-red.${ServicesDomain}"
+
+  ColorTellerWhiteVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: colorteller-white-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+            HealthCheck:
+              Protocol: http
+              Path: "/ping"
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorteller.${ServicesDomain}"
+
+  ColorTellerVirtualRouter:
+    Type: AWS::AppMesh::VirtualRouter
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualRouterName: colorteller-vr
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+
+  ColorTellerRoute:
+    Type: AWS::AppMesh::Route
+    DependsOn:
+      - ColorTellerVirtualRouter
+      - ColorTellerWhiteVirtualNode
+      - ColorTellerRedVirtualNode
+      - ColorTellerBlueVirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualRouterName: colorteller-vr
+      RouteName: colorteller-route
+      Spec:
+        HttpRoute:
+          Action:
+            WeightedTargets:
+              - VirtualNode: colorteller-white-vn
+                Weight: 1
+              - VirtualNode: colorteller-blue-vn
+                Weight: 1
+              - VirtualNode: colorteller-red-vn
+                Weight: 1
+          Match:
+            Prefix: "/"
+
+  ColorTellerVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    DependsOn:
+      - ColorTellerVirtualRouter
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+      Spec:
+        Provider:
+          VirtualRouter:
+            VirtualRouterName: colorteller-vr
+
+  TcpEchoVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: tcpecho-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 2701
+              Protocol: tcp
+            HealthCheck:
+              Protocol: tcp
+              HealthyThreshold: 2
+              UnhealthyThreshold: 2
+              TimeoutMillis: 2000
+              IntervalMillis: 5000
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "tcpecho.${ServicesDomain}"
+
+  TcpEchoVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    DependsOn:
+      - TcpEchoVirtualNode
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualServiceName: !Sub "tcpecho.${ServicesDomain}"
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: tcpecho-vn
+
+  ColorGatewayVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    DependsOn:
+      - ColorTellerVirtualService
+      - TcpEchoVirtualService
+    Properties:
+      MeshName: !Ref AppMeshMeshName
+      VirtualNodeName: colorgateway-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 9080
+              Protocol: http
+        ServiceDiscovery:
+          DNS:
+            Hostname: !Sub "colorgateway.${ServicesDomain}"
+        Backends:
+          - VirtualService:
+              VirtualServiceName: !Sub "colorteller.${ServicesDomain}"
+          - VirtualService:
+              VirtualServiceName: !Sub "tcpecho.${ServicesDomain}"
